@@ -91,6 +91,6 @@ mod tests {
     #[test]
     fn properties() {
         let scheme: Scheme = unsafe { Scheme::new_unchecked("scheme") };
-        assert_eq!(scheme.scheme(),);
+        assert_eq!(scheme.scheme(), "scheme");
     }
 }
