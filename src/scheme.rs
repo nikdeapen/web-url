@@ -1,4 +1,4 @@
-/// A web URL scheme.
+/// A web-based URL scheme.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Scheme<'a> {
     scheme: &'a str,
@@ -16,16 +16,16 @@ impl<'a> Scheme<'a> {
 impl<'a> Scheme<'a> {
     //! Validation
 
-    /// Checks if the character is a valid letter.
+    /// Checks if the character is a valid first character.
     #[inline(always)]
-    fn is_valid_letter(c: u8, ignore_case: bool) -> bool {
+    fn is_valid_first_char(c: u8, ignore_case: bool) -> bool {
         c.is_ascii_lowercase() || (ignore_case && c.is_ascii_uppercase())
     }
 
     /// Checks if the character is a valid scheme character.
     #[inline(always)]
     fn is_valid_char(c: u8, ignore_case: bool) -> bool {
-        Self::is_valid_letter(c, ignore_case)
+        Self::is_valid_first_char(c, ignore_case)
             || c.is_ascii_digit()
             || c == b'+'
             || c == b'-'
@@ -36,15 +36,13 @@ impl<'a> Scheme<'a> {
     pub fn is_valid(scheme: &'a str, ignore_case: bool) -> bool {
         if scheme.is_empty() {
             false
-        } else if !Self::is_valid_letter(scheme.as_bytes()[0], ignore_case) {
+        } else if !Self::is_valid_first_char(scheme.as_bytes()[0], ignore_case) {
             false
         } else {
-            for c in (&scheme[1..]).as_bytes() {
-                if !Self::is_valid_char(*c, ignore_case) {
-                    return false;
-                }
-            }
-            true
+            (&scheme[1..])
+                .as_bytes()
+                .iter()
+                .all(|c| Self::is_valid_char(*c, ignore_case))
         }
     }
 }
@@ -52,7 +50,7 @@ impl<'a> Scheme<'a> {
 impl<'a> Scheme<'a> {
     //! Properties
 
-    /// Gets the scheme.
+    /// Gets the scheme string.
     pub const fn scheme(&self) -> &str {
         self.scheme
     }
