@@ -1,4 +1,5 @@
-use crate::Param;
+use crate::ParseError::InvalidQuery;
+use crate::{Param, ParseError};
 
 /// A web URL query.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -12,6 +13,18 @@ impl<'a> Query<'a> {
     /// Creates a new query.
     pub const unsafe fn new_unchecked(query: &'a str) -> Self {
         Self { query }
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Query<'a> {
+    type Error = ParseError;
+
+    fn try_from(query: &'a str) -> Result<Self, Self::Error> {
+        if Self::is_valid(query) {
+            Ok(unsafe { Self::new_unchecked(query) })
+        } else {
+            Err(InvalidQuery)
+        }
     }
 }
 
