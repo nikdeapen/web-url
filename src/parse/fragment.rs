@@ -1,31 +1,41 @@
-/// Checks if the fragment is valid. The fragment should start with a '#'.
-pub fn is_valid_fragment(fragment: &str) -> bool {
-    !fragment.is_empty()
-        && fragment.as_bytes()[0] == b'#'
+use crate::ParseError;
+use crate::ParseError::InvalidFragment;
+
+/// Extracts the optional fragment. The fragment should start with a '#'.
+pub fn extract_fragment(fragment: &str) -> Result<Option<&str>, ParseError> {
+    if fragment.is_empty() {
+        Ok(None)
+    } else if fragment.as_bytes()[0] == b'#'
         && (&fragment[1..])
             .as_bytes()
             .iter()
             .all(|c| c.is_ascii_alphanumeric() || c.is_ascii_punctuation())
+    {
+        Ok(Some(&fragment[1..]))
+    } else {
+        Err(InvalidFragment)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::is_valid_fragment;
+    use crate::ParseError::InvalidFragment;
+    use crate::{extract_fragment, ParseError};
 
     #[test]
     fn fn_is_valid_fragment() {
-        let test_cases: &[(&str, bool)] = &[
-            ("", false),
-            ("fragment", false),
-            ("#", true),
-            ("#fragment", true),
-            ("#\x00", false),
-            ("#你好", false),
-            ("#fragment ", false),
+        let test_cases: &[(&str, Result<Option<&str>, ParseError>)] = &[
+            ("", Ok(None)),
+            ("fragment", Err(InvalidFragment)),
+            ("#", Ok(Some(""))),
+            ("#fragment", Ok(Some("fragment"))),
+            ("#\x00", Err(InvalidFragment)),
+            ("#你好", Err(InvalidFragment)),
+            ("#fragment ", Err(InvalidFragment)),
         ];
         for (fragment, expected) in test_cases {
-            let result: bool = is_valid_fragment(*fragment);
-            assert_eq!(result, *expected, "fragment={}", *fragment);
+            let result: Result<Option<&str>, ParseError> = extract_fragment(*fragment);
+            assert_eq!(result, *expected);
         }
     }
 }

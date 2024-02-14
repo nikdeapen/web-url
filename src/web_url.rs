@@ -1,4 +1,5 @@
 use address::{DomainRef, HostRef, IPAddress};
+use std::fmt::{Display, Formatter};
 
 use crate::{Path, Query, Scheme};
 
@@ -128,5 +129,11 @@ impl WebUrl {
     fn fragment_str(&self) -> &str {
         let start: usize = self.query_end as usize;
         &self.url[start..]
+    }
+}
+
+impl Display for WebUrl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.url)
     }
 }
