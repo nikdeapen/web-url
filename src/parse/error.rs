@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub enum ParseError {
     InvalidScheme,
+    InvalidHost,
     InvalidPath,
     InvalidQuery,
 }
@@ -15,6 +16,7 @@ impl ParseError {
     pub const fn message(&self) -> &'static str {
         match self {
             Self::InvalidScheme => "invalid scheme",
+            Self::InvalidHost => "invalid host",
             Self::InvalidPath => "invalid path",
             Self::InvalidQuery => "invalid query",
         }
