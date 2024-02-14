@@ -1,3 +1,6 @@
+use crate::ParseError;
+use crate::ParseError::InvalidPath;
+
 /// A web URL path. (will always start with a '/')
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Path<'a> {
@@ -16,6 +19,18 @@ impl<'a> Path<'a> {
     /// Creates a new path. This constructor does not validate the path.
     pub const unsafe fn new_unchecked(path: &'a str) -> Self {
         Self { path }
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Path<'a> {
+    type Error = ParseError;
+
+    fn try_from(path: &'a str) -> Result<Self, Self::Error> {
+        if Self::is_valid(path) {
+            Ok(unsafe { Self::new_unchecked(path) })
+        } else {
+            Err(InvalidPath)
+        }
     }
 }
 
