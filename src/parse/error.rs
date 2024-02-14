@@ -5,6 +5,7 @@ use std::fmt::{Display, Formatter};
 pub enum ParseError {
     InvalidScheme,
     InvalidPath,
+    InvalidQuery,
 }
 
 impl ParseError {
@@ -15,6 +16,7 @@ impl ParseError {
         match self {
             Self::InvalidScheme => "invalid scheme",
             Self::InvalidPath => "invalid path",
+            Self::InvalidQuery => "invalid query",
         }
     }
 }
