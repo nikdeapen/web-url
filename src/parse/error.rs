@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub enum Error {
     InvalidPath,
+    InvalidQuery,
 }
 
 impl Error {
@@ -13,6 +14,7 @@ impl Error {
     pub const fn message(&self) -> &'static str {
         match self {
             Self::InvalidPath => "invalid path",
+            Self::InvalidQuery => "invalid query",
         }
     }
 }
