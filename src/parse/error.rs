@@ -5,6 +5,7 @@ use std::fmt::{Display, Formatter};
 pub enum Error {
     InvalidPath,
     InvalidQuery,
+    InvalidFragment,
 }
 
 impl Error {
@@ -15,6 +16,7 @@ impl Error {
         match self {
             Self::InvalidPath => "invalid path",
             Self::InvalidQuery => "invalid query",
+            Self::InvalidFragment => "invalid fragment",
         }
     }
 }
