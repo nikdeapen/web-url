@@ -102,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn properties() {
+    fn as_str() {
         let scheme: Scheme = unsafe { Scheme::new_unchecked("scheme") };
         assert_eq!(scheme.as_str(), "scheme");
         assert_eq!(scheme.as_ref(), "scheme");
