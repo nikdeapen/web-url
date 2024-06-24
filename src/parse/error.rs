@@ -9,6 +9,7 @@ pub enum Error {
     InvalidPath,
     InvalidQuery,
     InvalidFragment,
+    UrlTooLong,
 }
 
 impl Error {
@@ -23,6 +24,7 @@ impl Error {
             Self::InvalidPath => "invalid path",
             Self::InvalidQuery => "invalid query",
             Self::InvalidFragment => "invalid fragment",
+            Self::UrlTooLong => "url >= 4 GiB",
         }
     }
 }
