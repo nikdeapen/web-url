@@ -3,6 +3,9 @@ use std::fmt::{Display, Formatter};
 /// An error parsing a web-based URL.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub enum Error {
+    InvalidScheme,
+    InvalidHost,
+    InvalidPort,
     InvalidPath,
     InvalidQuery,
     InvalidFragment,
@@ -14,6 +17,9 @@ impl Error {
     /// Gets the error message.
     pub const fn message(&self) -> &'static str {
         match self {
+            Self::InvalidScheme => "invalid scheme",
+            Self::InvalidHost => "invalid host",
+            Self::InvalidPort => "invalid port",
             Self::InvalidPath => "invalid path",
             Self::InvalidQuery => "invalid query",
             Self::InvalidFragment => "invalid fragment",
