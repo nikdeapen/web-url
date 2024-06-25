@@ -1,10 +1,11 @@
 use crate::parse::Error;
 use crate::Query;
 
-/// Parses the query from the prefix of `s`.
+/// Parses the optional query from the prefix of `s`.
 ///
-/// - `s` should start with a '?' if there is a query.
-/// - Returns `(optional_query, rest_of_s)`.
+/// The query will be validated.
+/// If `s` does not start with a '?' this will return `None`.
+/// Returns `(optional_query, rest_of_s)`.
 pub fn parse_query(s: &str) -> Result<(Option<Query>, &str), Error> {
     if !s.is_empty() && s.as_bytes()[0] == b'?' {
         if let Some(hash) = s.as_bytes().iter().position(|c| *c == b'#') {
