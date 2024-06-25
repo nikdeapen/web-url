@@ -1,8 +1,16 @@
+use std::fmt::{Display, Formatter};
+
 use crate::parse::Error;
 use crate::parse::Error::InvalidQuery;
 use crate::Param;
 
 /// A web-based URL query.
+///
+/// # Validation
+/// A query will never be empty and will always start with a '/'.
+///
+/// The path string can contain any US-ASCII letter, number, or punctuation char excluding '#'
+/// since this char denotes the end of the query in the URL.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Query<'a> {
     query: &'a str,
@@ -14,7 +22,7 @@ impl<'a> Query<'a> {
     /// Creates a new query.
     ///
     /// # Unsafe
-    /// This constructor does not validate the query.
+    /// The query string must be valid.
     pub unsafe fn new_unchecked(query: &'a str) -> Self {
         debug_assert!(Self::is_valid(query));
 
@@ -48,7 +56,7 @@ impl<'a> Query<'a> {
 }
 
 impl<'a> Query<'a> {
-    //! String
+    //! Display
 
     /// Gets the query string.
     pub const fn as_str(&self) -> &str {
@@ -59,6 +67,12 @@ impl<'a> Query<'a> {
 impl<'a> AsRef<str> for Query<'a> {
     fn as_ref(&self) -> &str {
         self.query
+    }
+}
+
+impl<'a> Display for Query<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.query)
     }
 }
 
@@ -126,10 +140,11 @@ mod tests {
     }
 
     #[test]
-    fn as_str() {
+    fn display() {
         let query: Query = unsafe { Query::new_unchecked("?the&query=params") };
         assert_eq!(query.as_str(), "?the&query=params");
         assert_eq!(query.as_ref(), "?the&query=params");
+        assert_eq!(query.to_string(), "?the&query=params");
     }
 
     #[test]

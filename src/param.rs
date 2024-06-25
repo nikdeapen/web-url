@@ -1,4 +1,15 @@
+use std::fmt::{Display, Formatter};
+
 /// A web-based URL query parameter.
+///
+/// # Validation
+/// Both the name and value of a query parameter may be the empty string. The value string may be
+/// absent altogether which signifies a missing '=' in the param string.
+///
+/// Query parameter names & values can contain any US-ASCII letters, numbers, or punctuation chars
+/// excluding '&' and '#' since these chars denote the end of the param or query in the URL.
+///
+/// Names cannot contain the '=' char since this denotes the end of the parameter name.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Param<'a> {
     name: &'a str,
@@ -11,7 +22,7 @@ impl<'a> Param<'a> {
     /// Creates a new query parameter.
     ///
     /// # Unsafe
-    /// This constructor does not validate the name or value.
+    /// The name and value strings must be valid.
     pub unsafe fn new_unchecked(name: &'a str, value: Option<&'a str>) -> Self {
         debug_assert!(Self::is_valid_name(name));
         debug_assert!(value.iter().all(|v| Self::is_valid_value(*v)));
@@ -19,10 +30,12 @@ impl<'a> Param<'a> {
         Self { name, value }
     }
 
-    /// Creates a new query parameter from the string. (the string will be split on the first `=`)
+    /// Creates a new query parameter from the string.
+    ///
+    /// The string will be split on the first `=` char. If not present the value will be `None`.
     ///
     /// # Unsafe
-    /// This constructor does not validate the name or value.
+    /// The string must be valid.
     pub unsafe fn from_str_unchecked(s: &'a str) -> Self {
         if let Some(eq) = s.as_bytes().iter().position(|c| *c == b'=') {
             let (name, eq_value) = s.split_at(eq);
@@ -66,6 +79,16 @@ impl<'a> Param<'a> {
     }
 }
 
+impl<'a> Display for Param<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)?;
+        if let Some(value) = self.value {
+            write!(f, "={}", value)?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::Param;
@@ -97,5 +120,18 @@ mod tests {
         let param: Param = unsafe { Param::new_unchecked("name", Some("value")) };
         assert_eq!(param.name(), "name");
         assert_eq!(param.value(), Some("value"));
+
+        let param: Param = unsafe { Param::new_unchecked("name", None) };
+        assert_eq!(param.name(), "name");
+        assert_eq!(param.value(), None);
+    }
+
+    #[test]
+    fn display() {
+        let param: Param = unsafe { Param::new_unchecked("name", Some("value")) };
+        assert_eq!(param.to_string(), "name=value");
+
+        let param: Param = unsafe { Param::new_unchecked("name", None) };
+        assert_eq!(param.to_string(), "name");
     }
 }
