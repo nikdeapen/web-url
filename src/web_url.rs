@@ -1,11 +1,19 @@
+use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 use address::{DomainRef, HostRef, IPAddress};
 
 use crate::{Path, Query, Scheme};
 
 /// A web-based URL.
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+///
+/// # Format
+/// All web-based URLs will be in the format:    scheme://host:port/path?query#fragment
+///
+/// The port, query, and fragment are all optional.
+/// The path will never be empty and will always start with a '/'.
+#[derive(Clone, Debug)]
 pub struct WebUrl {
     url: String,
     scheme_len: u32,
@@ -17,10 +25,39 @@ pub struct WebUrl {
     query_end: u32,
 }
 
+impl Ord for WebUrl {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.url.cmp(&other.url)
+    }
+}
+
+impl PartialOrd for WebUrl {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.url.partial_cmp(&other.url)
+    }
+}
+
+impl Eq for WebUrl {}
+
+impl PartialEq for WebUrl {
+    fn eq(&self, other: &Self) -> bool {
+        self.url.eq(&other.url)
+    }
+}
+
+impl Hash for WebUrl {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.url.hash(state)
+    }
+}
+
 impl WebUrl {
     //! Construction
 
     /// Creates a new web-based URL.
+    ///
+    /// # Unsafe
+    /// The URL string, end indices, IP address, & port must all be valid.
     pub unsafe fn new_unchecked(
         url: String,
         scheme_len: u32,
@@ -46,11 +83,6 @@ impl WebUrl {
 
 impl WebUrl {
     //! Properties
-
-    /// Gets the full URL string.
-    pub fn as_str(&self) -> &str {
-        self.url.as_str()
-    }
 
     /// Gets the scheme.
     pub fn scheme(&self) -> Scheme {
@@ -86,7 +118,7 @@ impl WebUrl {
         }
     }
 
-    /// Gets the optional fragment. (will not contain the '#')
+    /// Gets the optional fragment. (will not contain the #)
     pub fn fragment(&self) -> Option<&str> {
         self.fragment_with_hash().map(|f| &f[1..])
     }
@@ -118,29 +150,80 @@ impl WebUrl {
         &self.url[start..end]
     }
 
-    /// Gets the path string. (will be a valid path starting with a '/')
+    /// Gets the path string. This will be a valid path starting with a '/'.
     fn path_str(&self) -> &str {
         let start: usize = self.port_end as usize;
         let end: usize = self.path_end as usize;
         &self.url[start..end]
     }
 
-    /// Gets the query string. (will be a valid query string starting with a '?' or empty)
+    /// Gets the query string. This will be a valid query string starting with a '?' or empty.
     fn query_str(&self) -> &str {
         let start: usize = self.path_end as usize;
         let end: usize = self.query_end as usize;
         &self.url[start..end]
     }
 
-    /// Gets the fragment string. (will be a valid fragment string starting with a '#' or empty)
+    /// Gets the fragment string. This will be a valid fragment starting with a '#' or empty.
     fn fragment_str(&self) -> &str {
         let start: usize = self.query_end as usize;
         &self.url[start..]
     }
 }
 
+impl WebUrl {
+    //! Display
+
+    /// Gets the URL string.
+    pub fn as_str(&self) -> &str {
+        self.url.as_str()
+    }
+}
+
+impl AsRef<str> for WebUrl {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl Display for WebUrl {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.url)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use address::{DomainRef, IPv4Address};
+
+    use crate::WebUrl;
+
+    #[test]
+    fn properties() {
+        let url: WebUrl = WebUrl::from_str("scheme://localhost:80/path?query#fragment").unwrap();
+        assert_eq!(url.scheme().as_str(), "scheme");
+        assert_eq!(url.host().to_string(), DomainRef::LOCALHOST.to_string());
+        assert_eq!(url.port().unwrap(), 80);
+        assert_eq!(url.path().as_str(), "/path");
+        assert_eq!(url.query().unwrap().as_str(), "?query");
+        assert_eq!(url.fragment_with_hash().unwrap(), "#fragment");
+
+        let url: WebUrl = WebUrl::from_str("scheme://127.0.0.1/").unwrap();
+        assert_eq!(url.scheme().as_str(), "scheme");
+        assert_eq!(url.host(), IPv4Address::LOCALHOST.to_host().to_ref());
+        assert_eq!(url.port(), None);
+        assert_eq!(url.path().as_str(), "/");
+        assert_eq!(url.query(), None);
+        assert_eq!(url.fragment_with_hash(), None);
+    }
+
+    #[test]
+    fn display() {
+        let url: WebUrl = WebUrl::from_str("scheme://127.0.0.1/").unwrap();
+        assert_eq!(url.as_str(), "scheme://127.0.0.1/");
+        assert_eq!(url.as_ref(), "scheme://127.0.0.1/");
+        assert_eq!(url.to_string(), "scheme://127.0.0.1/");
     }
 }

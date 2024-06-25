@@ -1,10 +1,15 @@
+use std::fmt::{Display, Formatter};
+
 use crate::parse::Error;
 use crate::parse::Error::*;
 
 /// A web-based URL path.
 ///
-/// # Paths
-/// A path will never be empty and will always start with a '/' prefix.
+/// # Validation
+/// A path will never be empty and will always start with a '/'.
+///
+/// The path string can contain any US-ASCII letter, number, or punctuation char excluding '?', and
+/// '#' since these chars denote the end of the path in the URL.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Path<'a> {
     path: &'a str,
@@ -22,7 +27,7 @@ impl<'a> Path<'a> {
     /// Creates a new path.
     ///
     /// # Unsafe
-    /// This constructor does not validate the path.
+    /// The path string must be valid.
     pub unsafe fn new_unchecked(path: &'a str) -> Self {
         debug_assert!(Self::is_valid(path));
 
@@ -62,9 +67,9 @@ impl<'a> Path<'a> {
 }
 
 impl<'a> Path<'a> {
-    //! String
+    //! Display
 
-    /// Gets the path.
+    /// Gets the path string.
     pub const fn as_str(&self) -> &str {
         self.path
     }
@@ -73,6 +78,12 @@ impl<'a> Path<'a> {
 impl<'a> AsRef<str> for Path<'a> {
     fn as_ref(&self) -> &str {
         self.path
+    }
+}
+
+impl<'a> Display for Path<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.path)
     }
 }
 
@@ -123,7 +134,7 @@ mod tests {
     }
 
     #[test]
-    fn validation() {
+    fn is_valid() {
         let test_cases: &[(&str, bool)] = &[
             ("", false),
             ("/", true),
@@ -140,10 +151,11 @@ mod tests {
     }
 
     #[test]
-    fn as_str() {
+    fn display() {
         let path: Path = unsafe { Path::new_unchecked("/the/path") };
         assert_eq!(path.as_str(), "/the/path");
         assert_eq!(path.as_ref(), "/the/path");
+        assert_eq!(path.to_string(), "/the/path");
     }
 
     #[test]
