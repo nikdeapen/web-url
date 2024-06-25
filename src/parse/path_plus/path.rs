@@ -3,7 +3,7 @@ use crate::Path;
 
 /// Parses the path from the prefix of `s`.
 ///
-/// `s` must start with a '/'.
+/// The path will be validated.
 /// Returns `(path, rest_of_s)`.
 pub fn parse_path(s: &str) -> Result<(Path, &str), Error> {
     if let Some(qh) = s.as_bytes().iter().position(|c| *c == b'?' || *c == b'#') {

@@ -41,7 +41,8 @@ impl PrePath {
 }
 
 /// Parses the pre-path portion of the URL.
-/// - The scheme & host will be validated but may be uppercase.
+///
+/// The scheme & host will be validated but may be uppercase.
 pub fn parse_pre_path(url: &str) -> Result<PrePath, Error> {
     let (scheme_len, after_scheme) = parse_scheme_len(url)?;
     let (host_str, after_host) = parse_host(after_scheme);

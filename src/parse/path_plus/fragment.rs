@@ -3,9 +3,9 @@ use crate::parse::Error::InvalidFragment;
 
 /// Parses the optional fragment.
 ///
-/// - `fragment` should start with a `#` or be empty.
-/// -`The fragment will be validated.
-/// - Returns the fragment string with the '#' prefix or `None` if `fragment` was empty.
+/// The `fragment` should start with a `#` or be empty.
+/// The fragment will be validated.
+/// Returns the fragment string with the '#' prefix or `None` if `fragment` was empty.
 pub fn parse_fragment(fragment: &str) -> Result<Option<&str>, Error> {
     if fragment.is_empty() {
         Ok(None)
@@ -15,7 +15,7 @@ pub fn parse_fragment(fragment: &str) -> Result<Option<&str>, Error> {
             .iter()
             .all(|c| c.is_ascii_alphanumeric() || c.is_ascii_punctuation())
     {
-        Ok(Some(&fragment))
+        Ok(Some(fragment))
     } else {
         Err(InvalidFragment)
     }

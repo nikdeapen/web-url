@@ -7,8 +7,8 @@ use crate::parse::Error::InvalidHost;
 
 /// Parses the host string from the prefix of `s`.
 ///
-/// - This function does not validate that the host string is a valid host.
-/// - Returns `(host_string, rest_of_s)`.
+/// The host will **not** be validated.
+/// Returns `(host_string, rest_of_s)`.
 pub fn parse_host(s: &str) -> (&str, &str) {
     let host_and_port: &str = if let Some(slash) = s.as_bytes().iter().position(|c| *c == b'/') {
         &s[..slash]
@@ -32,8 +32,8 @@ pub fn parse_host(s: &str) -> (&str, &str) {
 
 /// Parses the optional IP address from the `host` string.
 ///
-/// - Returns the optional IP address.
-/// - If the host is not an IP address the domain will be validated (case-insensitively).
+/// Returns the optional IP address.
+/// If the host is not an IP address the domain will be validated (case-insensitively).
 pub fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddress>, Error> {
     if host.is_empty() {
         Err(InvalidHost)
