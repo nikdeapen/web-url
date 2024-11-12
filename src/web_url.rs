@@ -1,0 +1,193 @@
+use std::cmp::Ordering;
+use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
+
+use address::{DomainRef, HostRef, IPAddress};
+
+use crate::{Path, Query, Scheme};
+
+/// A web-based URL.
+///
+/// # Format
+/// All web-based URLs will be in the format:    scheme://host:port/path?query#fragment
+///
+/// The port, query, and fragment are all optional.
+/// The path will never be empty and will always start with a '/'.
+#[derive(Clone, Debug)]
+pub struct WebUrl {
+    url: String,
+    scheme_len: u32,
+    host_end: u32,
+    ip: Option<IPAddress>,
+    port_end: u32,
+    port: Option<u16>,
+    path_end: u32,
+    query_end: u32,
+}
+
+impl Ord for WebUrl {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.url.cmp(&other.url)
+    }
+}
+
+impl PartialOrd for WebUrl {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.url.partial_cmp(&other.url)
+    }
+}
+
+impl Eq for WebUrl {}
+
+impl PartialEq for WebUrl {
+    fn eq(&self, other: &Self) -> bool {
+        self.url.eq(&other.url)
+    }
+}
+
+impl Hash for WebUrl {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.url.hash(state)
+    }
+}
+
+impl WebUrl {
+    //! Construction
+
+    /// Creates a new web-based URL.
+    ///
+    /// # Unsafe
+    /// The URL string, end indices, IP address, & port must all be valid.
+    pub unsafe fn new_unchecked(
+        url: String,
+        scheme_len: u32,
+        host_end: u32,
+        ip: Option<IPAddress>,
+        port_end: u32,
+        port: Option<u16>,
+        path_end: u32,
+        query_end: u32,
+    ) -> Self {
+        Self {
+            url,
+            scheme_len,
+            host_end,
+            ip,
+            port_end,
+            port,
+            path_end,
+            query_end,
+        }
+    }
+}
+
+impl WebUrl {
+    //! Properties
+
+    /// Gets the scheme.
+    pub fn scheme(&self) -> Scheme {
+        unsafe { Scheme::new_unchecked(self.scheme_str()) }
+    }
+
+    /// Gets the host reference.
+    pub fn host(&self) -> HostRef {
+        if let Some(ip) = self.ip {
+            HostRef::Address(ip)
+        } else {
+            HostRef::Name(unsafe { DomainRef::new_unchecked(self.host_str()) })
+        }
+    }
+
+    /// Gets the optional port.
+    pub fn port(&self) -> Option<u16> {
+        self.port
+    }
+
+    /// Gets the path.
+    pub fn path(&self) -> Path {
+        unsafe { Path::new_unchecked(self.path_str()) }
+    }
+
+    /// Gets the optional query.
+    pub fn query(&self) -> Option<Query> {
+        let query: &str = self.query_str();
+        if query.is_empty() {
+            None
+        } else {
+            Some(unsafe { Query::new_unchecked(query) })
+        }
+    }
+
+    /// Gets the optional fragment. (will not contain the #)
+    pub fn fragment(&self) -> Option<&str> {
+        self.fragment_with_hash().map(|f| &f[1..])
+    }
+
+    /// Gets the optional fragment with the '#' prefix.
+    pub fn fragment_with_hash(&self) -> Option<&str> {
+        let fragment: &str = self.fragment_str();
+        if fragment.is_empty() {
+            None
+        } else {
+            Some(fragment)
+        }
+    }
+}
+
+impl WebUrl {
+    //! Internal strings
+
+    /// Gets the scheme string. (will be a valid scheme)
+    fn scheme_str(&self) -> &str {
+        let end: usize = self.scheme_len as usize;
+        &self.url[..end]
+    }
+
+    /// Gets the host string. (will be a valid, lowercase host; may include the [] for IPv6)
+    fn host_str(&self) -> &str {
+        let start: usize = (self.scheme_len + 3) as usize;
+        let end: usize = self.host_end as usize;
+        &self.url[start..end]
+    }
+
+    /// Gets the path string. This will be a valid path starting with a '/'.
+    fn path_str(&self) -> &str {
+        let start: usize = self.port_end as usize;
+        let end: usize = self.path_end as usize;
+        &self.url[start..end]
+    }
+
+    /// Gets the query string. This will be a valid query string starting with a '?' or empty.
+    fn query_str(&self) -> &str {
+        let start: usize = self.path_end as usize;
+        let end: usize = self.query_end as usize;
+        &self.url[start..end]
+    }
+
+    /// Gets the fragment string. This will be a valid fragment starting with a '#' or empty.
+    fn fragment_str(&self) -> &str {
+        let start: usize = self.query_end as usize;
+        &self.url[start..]
+    }
+}
+
+impl WebUrl {
+    //! Display
+
+    /// Gets the URL string.
+    pub fn as_str(&self) -> &str {
+        self.url.as_str()
+    }
+}
+
+impl AsRef<str> for WebUrl {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl Display for WebUrl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.url)
+    }
+}
