@@ -191,3 +191,39 @@ impl Display for WebUrl {
         write!(f, "{}", self.url)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use address::{DomainRef, IPv4Address};
+
+    use crate::WebUrl;
+
+    #[test]
+    fn properties() {
+        let url: WebUrl = WebUrl::from_str("scheme://localhost:80/path?query#fragment").unwrap();
+        assert_eq!(url.scheme().as_str(), "scheme");
+        assert_eq!(url.host().to_string(), DomainRef::LOCALHOST.to_string());
+        assert_eq!(url.port().unwrap(), 80);
+        assert_eq!(url.path().as_str(), "/path");
+        assert_eq!(url.query().unwrap().as_str(), "?query");
+        assert_eq!(url.fragment_with_hash().unwrap(), "#fragment");
+
+        let url: WebUrl = WebUrl::from_str("scheme://127.0.0.1/").unwrap();
+        assert_eq!(url.scheme().as_str(), "scheme");
+        assert_eq!(url.host(), IPv4Address::LOCALHOST.to_host().to_ref());
+        assert_eq!(url.port(), None);
+        assert_eq!(url.path().as_str(), "/");
+        assert_eq!(url.query(), None);
+        assert_eq!(url.fragment_with_hash(), None);
+    }
+
+    #[test]
+    fn display() {
+        let url: WebUrl = WebUrl::from_str("scheme://127.0.0.1/").unwrap();
+        assert_eq!(url.as_str(), "scheme://127.0.0.1/");
+        assert_eq!(url.as_ref(), "scheme://127.0.0.1/");
+        assert_eq!(url.to_string(), "scheme://127.0.0.1/");
+    }
+}
