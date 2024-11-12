@@ -4,7 +4,7 @@ use crate::parse::Error;
 use crate::parse::Error::InvalidPort;
 
 /// Parses the port from the prefix of `s`.
-/// 
+///
 /// The string `s` should start with a `:` if there is a port.
 ///
 /// Returns `Ok(Some(port), rest_of_s)`.
