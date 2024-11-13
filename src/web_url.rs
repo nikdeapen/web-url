@@ -57,7 +57,7 @@ impl WebUrl {
     /// Creates a new web-based URL.
     ///
     /// # Unsafe
-    /// The URL string, end indices, IP address, & port must all be valid.
+    /// The URL string, lengths, indices, IP address, & port must all be valid.
     pub unsafe fn new_unchecked(
         url: String,
         scheme_len: u32,
@@ -82,12 +82,22 @@ impl WebUrl {
 }
 
 impl WebUrl {
-    //! Properties
+    //! Scheme
 
     /// Gets the scheme.
     pub fn scheme(&self) -> Scheme {
         unsafe { Scheme::new_unchecked(self.scheme_str()) }
     }
+
+    /// Gets the scheme string. (will be a valid scheme)
+    fn scheme_str(&self) -> &str {
+        let end: usize = self.scheme_len as usize;
+        &self.url[..end]
+    }
+}
+
+impl WebUrl {
+    //! Host
 
     /// Gets the host reference.
     pub fn host(&self) -> HostRef {
@@ -98,15 +108,41 @@ impl WebUrl {
         }
     }
 
+    /// Gets the host string. (will be a valid, lowercase host; may include the [] for IPv6)
+    fn host_str(&self) -> &str {
+        let start: usize = (self.scheme_len + 3) as usize;
+        let end: usize = self.host_end as usize;
+        &self.url[start..end]
+    }
+}
+
+impl WebUrl {
+    //! Port
+
     /// Gets the optional port.
     pub fn port(&self) -> Option<u16> {
         self.port
     }
+}
+
+impl WebUrl {
+    //! Path
 
     /// Gets the path.
     pub fn path(&self) -> Path {
         unsafe { Path::new_unchecked(self.path_str()) }
     }
+
+    /// Gets the path string. This will be a valid path starting with a '/'.
+    fn path_str(&self) -> &str {
+        let start: usize = self.port_end as usize;
+        let end: usize = self.path_end as usize;
+        &self.url[start..end]
+    }
+}
+
+impl WebUrl {
+    //! Query
 
     /// Gets the optional query.
     pub fn query(&self) -> Option<Query> {
@@ -117,6 +153,17 @@ impl WebUrl {
             Some(unsafe { Query::new_unchecked(query) })
         }
     }
+
+    /// Gets the query string. This will be a valid query string starting with a '?' or empty.
+    fn query_str(&self) -> &str {
+        let start: usize = self.path_end as usize;
+        let end: usize = self.query_end as usize;
+        &self.url[start..end]
+    }
+}
+
+impl WebUrl {
+    //! Fragment
 
     /// Gets the optional fragment. (will not contain the #)
     pub fn fragment(&self) -> Option<&str> {
@@ -132,37 +179,6 @@ impl WebUrl {
             Some(fragment)
         }
     }
-}
-
-impl WebUrl {
-    //! Internal strings
-
-    /// Gets the scheme string. (will be a valid scheme)
-    fn scheme_str(&self) -> &str {
-        let end: usize = self.scheme_len as usize;
-        &self.url[..end]
-    }
-
-    /// Gets the host string. (will be a valid, lowercase host; may include the [] for IPv6)
-    fn host_str(&self) -> &str {
-        let start: usize = (self.scheme_len + 3) as usize;
-        let end: usize = self.host_end as usize;
-        &self.url[start..end]
-    }
-
-    /// Gets the path string. This will be a valid path starting with a '/'.
-    fn path_str(&self) -> &str {
-        let start: usize = self.port_end as usize;
-        let end: usize = self.path_end as usize;
-        &self.url[start..end]
-    }
-
-    /// Gets the query string. This will be a valid query string starting with a '?' or empty.
-    fn query_str(&self) -> &str {
-        let start: usize = self.path_end as usize;
-        let end: usize = self.query_end as usize;
-        &self.url[start..end]
-    }
 
     /// Gets the fragment string. This will be a valid fragment starting with a '#' or empty.
     fn fragment_str(&self) -> &str {
@@ -174,7 +190,7 @@ impl WebUrl {
 impl WebUrl {
     //! Display
 
-    /// Gets the URL string.
+    /// Gets the URL as a string.
     pub fn as_str(&self) -> &str {
         self.url.as_str()
     }

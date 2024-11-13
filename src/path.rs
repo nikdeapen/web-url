@@ -8,9 +8,10 @@ use crate::parse::Error::*;
 /// # Validation
 /// A path will never be empty and will always start with a '/'.
 ///
-/// The path string can contain any US-ASCII letter, number, or punctuation char excluding '#', and
-/// '#' since these chars denote the end of the path in the URL. Paths cannot contain non-US-ASCII
-/// code points or US-ASCII control chars.
+/// The path string can contain any US-ASCII letter, number, or punctuation char excluding '?', and
+/// '#' since these chars denote the end of the path in the URL.
+///
+/// Paths cannot contain non-US-ASCII code points or US-ASCII control chars.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Path<'a> {
     path: &'a str,
@@ -70,7 +71,7 @@ impl<'a> Path<'a> {
 impl<'a> Path<'a> {
     //! Display
 
-    /// Gets the path string.
+    /// Gets the path as a string.
     pub const fn as_str(&self) -> &str {
         self.path
     }

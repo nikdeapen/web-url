@@ -7,11 +7,12 @@ use crate::Param;
 /// A web-based URL query.
 ///
 /// # Validation
-/// A query will never be empty and will always start with a `?`.
+/// A query will never be empty and will always start with a '?'.
 ///
 /// The query string can contain any US-ASCII letter, number, or punctuation char excluding '#'
-/// since this char denotes the end of the query in the URL. Queries cannot contain non-US-ASCII
-/// code points or US-ASCII control chars.
+/// since this char denotes the end of the query in the URL.
+///
+/// Queries cannot contain non-US-ASCII code points or US-ASCII control chars.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Query<'a> {
     query: &'a str,
