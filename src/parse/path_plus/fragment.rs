@@ -1,9 +1,9 @@
 use crate::parse::Error;
 use crate::parse::Error::InvalidFragment;
 
-/// Parses the optional fragment.
+/// Parses the optional `fragment`.
 ///
-/// The `fragment` should start with a `#` or be empty.
+/// The `fragment` must start with a `#` or be empty.
 ///
 /// Returns `Ok(Some(fragment))`.
 /// Returns `Ok(None)` if the `fragment` is empty.

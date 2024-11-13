@@ -1,7 +1,7 @@
 pub use host::*;
 pub use port::*;
-pub use scheme::*;
 pub use pre_path::*;
+pub use scheme::*;
 
 mod host;
 mod port;

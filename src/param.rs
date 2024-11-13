@@ -3,13 +3,14 @@ use std::fmt::{Display, Formatter};
 /// A web-based URL query parameter.
 ///
 /// # Validation
-/// Both the name and value of a query parameter may be the empty string. The value string may be
-/// absent altogether which signifies a missing `=` in the parameter string.
+/// Both the name and value of a query parameter may be the empty string. The value string may also
+/// be absent altogether which signifies a missing '=' in the query parameter string.
 ///
 /// Query parameter names & values can contain any US-ASCII letters, numbers, or punctuation chars
 /// excluding '&' and '#' since these chars denote the end of the parameter or query in the URL.
-/// Names cannot contain the `=` char since this denotes the end of the parameter name. Parameters
-/// cannot contain non-US-ASCII code points or US-ASCII control chars.
+/// Names cannot contain the '=' char since this denotes the end of the query parameter name.
+///
+/// Parameters cannot contain non-US-ASCII code points or US-ASCII control chars.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Param<'a> {
     name: &'a str,
@@ -30,9 +31,9 @@ impl<'a> Param<'a> {
         Self { name, value }
     }
 
-    /// Creates a new query parameter from the `param``.
+    /// Creates a new query parameter from the `param`.
     ///
-    /// The `param` will be split on the first `=` char. If not present the value will be `None`.
+    /// The `param` will be split on the first '=' char. If not present the value will be `None`.
     ///
     /// # Unsafe
     /// The `param` must be valid.
