@@ -10,7 +10,7 @@ impl WebUrl {
         if let Some(ip) = self.ip {
             HostRef::Address(ip)
         } else {
-            HostRef::Name(unsafe { DomainRef::new_unchecked(self.host_str()) })
+            HostRef::Name(unsafe { DomainRef::new(self.host_str()) })
         }
     }
 
