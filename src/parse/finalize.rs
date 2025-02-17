@@ -14,9 +14,9 @@ pub unsafe fn finalize_web_url(
     url: String,
     pre_path: PrePath,
     path_plus: PathPlus,
-) -> Result<WebUrl, Error> {
+) -> Result<WebUrl, (Error, String)> {
     if url.len() > (u32::MAX as usize) {
-        return Err(UrlTooLong);
+        return Err((UrlTooLong, url));
     }
 
     let mut url: String = url;
