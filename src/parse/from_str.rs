@@ -19,11 +19,11 @@ impl FromStr for WebUrl {
             url.push_str("/");
 
             let path_plus: PathPlus = parse_path_plus("/")?;
-            unsafe { finalize_web_url(url, pre_path, path_plus) }
+            unsafe { finalize_web_url(url, pre_path, path_plus).map_err(|(e, _)| e) }
         } else {
             let url: String = s.to_string();
             let path_plus: PathPlus = parse_path_plus(path_plus)?;
-            unsafe { finalize_web_url(url, pre_path, path_plus) }
+            unsafe { finalize_web_url(url, pre_path, path_plus).map_err(|(e, _)| e) }
         }
     }
 }
