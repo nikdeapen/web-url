@@ -1,5 +1,6 @@
 use crate::parse::Error;
 use crate::parse::Error::InvalidFragment;
+use crate::Fragment;
 
 /// Parses the optional `fragment`.
 ///
@@ -7,18 +8,16 @@ use crate::parse::Error::InvalidFragment;
 ///
 /// Returns `Ok(Some(fragment))`.
 /// Returns `Ok(None)` if the `fragment` is empty.
+/// Returns `Err(InvalidFragment)` if the fragment is invalid.
 pub fn parse_fragment(fragment: &str) -> Result<Option<&str>, Error> {
     if fragment.is_empty() {
         Ok(None)
-    } else if fragment.as_bytes()[0] == b'#'
-        && (&fragment[1..])
-            .as_bytes()
-            .iter()
-            .all(|c| c.is_ascii_alphanumeric() || c.is_ascii_punctuation())
-    {
-        Ok(Some(fragment))
     } else {
-        Err(InvalidFragment)
+        if Fragment::is_valid(fragment) {
+            Ok(Some(fragment))
+        } else {
+            Err(InvalidFragment)
+        }
     }
 }
 

@@ -11,8 +11,6 @@ use crate::Param;
 ///
 /// The query string can contain any US-ASCII letter, number, or punctuation char excluding '#'
 /// since this char denotes the end of the query in the URL.
-///
-/// Queries cannot contain non-US-ASCII code points or US-ASCII control chars.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Query<'a> {
     query: &'a str,
@@ -25,7 +23,7 @@ impl<'a> Query<'a> {
     ///
     /// # Unsafe
     /// The `query` must be valid.
-    pub unsafe fn new_unchecked(query: &'a str) -> Self {
+    pub unsafe fn new(query: &'a str) -> Self {
         debug_assert!(Self::is_valid(query));
 
         Self { query }
@@ -104,11 +102,11 @@ impl<'a> Iterator for ParamIterator<'a> {
         } else {
             self.remaining = &self.remaining[1..];
             if let Some(amp) = self.remaining.as_bytes().iter().position(|c| *c == b'&') {
-                let result: Param = unsafe { Param::from_str_unchecked(&self.remaining[..amp]) };
+                let result: Param = unsafe { Param::from_str(&self.remaining[..amp]) };
                 self.remaining = &self.remaining[amp..];
                 Some(result)
             } else {
-                let result: Param = unsafe { Param::from_str_unchecked(&self.remaining) };
+                let result: Param = unsafe { Param::from_str(&self.remaining) };
                 self.remaining = "";
                 Some(result)
             }
@@ -121,8 +119,8 @@ mod tests {
     use crate::{Param, Query};
 
     #[test]
-    fn new_unchecked() {
-        let query: Query = unsafe { Query::new_unchecked("?the&query=params") };
+    fn new() {
+        let query: Query = unsafe { Query::new("?the&query=params") };
         assert_eq!(query.query, "?the&query=params");
     }
 
@@ -143,7 +141,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let query: Query = unsafe { Query::new_unchecked("?the&query=params") };
+        let query: Query = unsafe { Query::new("?the&query=params") };
         assert_eq!(query.as_str(), "?the&query=params");
         assert_eq!(query.as_ref(), "?the&query=params");
         assert_eq!(query.to_string(), "?the&query=params");
@@ -151,25 +149,25 @@ mod tests {
 
     #[test]
     fn iter_params() {
-        let query: Query = unsafe { Query::new_unchecked("?") };
+        let query: Query = unsafe { Query::new("?") };
         let result: Vec<Param> = query.iter().collect();
-        assert_eq!(result, vec![unsafe { Param::new_unchecked("", None) }]);
+        assert_eq!(result, vec![unsafe { Param::new("", None) }]);
 
-        let query: Query = unsafe { Query::new_unchecked("?&") };
+        let query: Query = unsafe { Query::new("?&") };
         let result: Vec<Param> = query.iter().collect();
         assert_eq!(
             result,
-            vec![unsafe { Param::new_unchecked("", None) }, unsafe {
-                Param::new_unchecked("", None)
+            vec![unsafe { Param::new("", None) }, unsafe {
+                Param::new("", None)
             }]
         );
 
-        let query: Query = unsafe { Query::new_unchecked("?the&query=params") };
+        let query: Query = unsafe { Query::new("?the&query=params") };
         let result: Vec<Param> = query.iter().collect();
         assert_eq!(
             result,
-            vec![unsafe { Param::new_unchecked("the", None) }, unsafe {
-                Param::new_unchecked("query", Some("params"))
+            vec![unsafe { Param::new("the", None) }, unsafe {
+                Param::new("query", Some("params"))
             }]
         );
     }

@@ -30,7 +30,7 @@ pub unsafe fn finalize_web_url(
     let path_end: u32 = port_end + (path_plus.path_len as u32);
     let query_end: u32 = path_end + (path_plus.query_len as u32);
 
-    Ok(WebUrl::new_unchecked(
+    Ok(WebUrl::new(
         url, scheme_len, host_end, ip, port_end, port, path_end, query_end,
     ))
 }

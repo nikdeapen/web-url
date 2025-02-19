@@ -1,20 +1,15 @@
-use crate::WebUrl;
+use crate::{Fragment, WebUrl};
 
 impl WebUrl {
     //! Fragment
 
-    /// Gets the optional fragment. (will not contain the #)
-    pub fn fragment(&self) -> Option<&str> {
-        self.fragment_with_hash().map(|f| &f[1..])
-    }
-
-    /// Gets the optional fragment with the '#' prefix.
-    pub fn fragment_with_hash(&self) -> Option<&str> {
+    /// Gets the optional fragment.
+    pub fn fragment(&self) -> Option<Fragment> {
         let fragment: &str = self.fragment_str();
         if fragment.is_empty() {
             None
         } else {
-            Some(fragment)
+            Some(unsafe { Fragment::new(fragment) })
         }
     }
 

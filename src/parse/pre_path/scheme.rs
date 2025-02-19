@@ -7,6 +7,7 @@ use crate::Scheme;
 /// The scheme will be valid but may have uppercase chars.
 ///
 /// Returns `Ok(scheme_len, rest_of_s)`. The `rest_of_s` starts after the `://`.
+/// Returns `Err(InvalidScheme)` if the scheme or `://` postfix is invalid.
 pub fn parse_scheme_len(s: &str) -> Result<(usize, &str), Error> {
     if let Some(colon) = s.as_bytes().iter().position(|c| *c == b':') {
         if Scheme::is_valid(&s[..colon], true) {

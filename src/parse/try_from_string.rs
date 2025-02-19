@@ -1,8 +1,8 @@
-use crate::parse::{parse_path_plus, parse_pre_path, PathPlus, PrePath};
+use crate::parse::{parse_path_plus, parse_pre_path, Error, PathPlus, PrePath};
 use crate::WebUrl;
 
 impl TryFrom<String> for WebUrl {
-    type Error = (crate::parse::Error, String);
+    type Error = (Error, String);
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
         let pre_path: PrePath = match parse_pre_path(s.as_str()) {

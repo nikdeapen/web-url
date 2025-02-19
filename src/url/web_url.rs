@@ -27,7 +27,7 @@ impl WebUrl {
     ///
     /// # Unsafe
     /// The parameters must be valid.
-    pub unsafe fn new_unchecked<S>(
+    pub unsafe fn new<S>(
         url: S,
         scheme_len: u32,
         host_end: u32,

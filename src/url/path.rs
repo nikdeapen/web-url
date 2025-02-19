@@ -5,12 +5,12 @@ impl WebUrl {
 
     /// Gets the path.
     pub fn path(&self) -> Path {
-        unsafe { Path::new_unchecked(self.path_str()) }
+        unsafe { Path::new(self.path_str()) }
     }
 
     /// Gets the path string.
     ///
-    /// This will be a valid path starting with a `/`.
+    /// This will be a valid path starting with a '/'.
     fn path_str(&self) -> &str {
         let start: usize = self.port_end as usize;
         let end: usize = self.path_end as usize;
