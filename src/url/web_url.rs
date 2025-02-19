@@ -52,3 +52,12 @@ impl WebUrl {
         }
     }
 }
+
+impl WebUrl {
+    //! Properties
+
+    /// Gets the length.
+    pub fn len(&self) -> usize {
+        self.url.len()
+    }
+}
