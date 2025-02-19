@@ -44,6 +44,7 @@ impl PrePath {
 /// The scheme & host will be validated but may be uppercase.
 ///
 /// Returns `Ok(pre_path)`.
+/// Returns `Err(_)` if any part of the pre-path is invalid.
 pub fn parse_pre_path(url: &str) -> Result<PrePath, Error> {
     let (scheme_len, after_scheme) = parse_scheme_len(url)?;
     let (host_str, after_host) = parse_host(after_scheme);

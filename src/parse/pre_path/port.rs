@@ -9,6 +9,7 @@ use crate::parse::Error::InvalidPort;
 ///
 /// Returns `Ok(Some(port), rest_of_s)`.
 /// Returns `Ok(None, rest_of_s)` if `s` does not start with a `:`.
+/// REturns `Err(InvalidPort)` if the port is invalid.
 pub fn parse_port(s: &str) -> Result<(Option<u16>, &str), Error> {
     if !s.is_empty() && s.as_bytes()[0] == b':' {
         let s: &str = &s[1..];

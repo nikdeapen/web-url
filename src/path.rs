@@ -10,8 +10,6 @@ use crate::parse::Error::*;
 ///
 /// The path string can contain any US-ASCII letter, number, or punctuation char excluding '?', and
 /// '#' since these chars denote the end of the path in the URL.
-///
-/// Paths cannot contain non-US-ASCII code points or US-ASCII control chars.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Path<'a> {
     path: &'a str,
@@ -30,7 +28,7 @@ impl<'a> Path<'a> {
     ///
     /// # Unsafe
     /// The `path` must be valid.
-    pub unsafe fn new_unchecked(path: &'a str) -> Self {
+    pub unsafe fn new(path: &'a str) -> Self {
         debug_assert!(Self::is_valid(path));
 
         Self { path }
@@ -71,7 +69,7 @@ impl<'a> Path<'a> {
 impl<'a> Path<'a> {
     //! Display
 
-    /// Gets the path as a string.
+    /// Gets the path string.
     pub const fn as_str(&self) -> &str {
         self.path
     }
@@ -130,8 +128,8 @@ mod tests {
     use crate::Path;
 
     #[test]
-    fn new_unchecked() {
-        let path: Path = unsafe { Path::new_unchecked("/the/path") };
+    fn new() {
+        let path: Path = unsafe { Path::new("/the/path") };
         assert_eq!(path.path, "/the/path");
     }
 
@@ -154,7 +152,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let path: Path = unsafe { Path::new_unchecked("/the/path") };
+        let path: Path = unsafe { Path::new("/the/path") };
         assert_eq!(path.as_str(), "/the/path");
         assert_eq!(path.as_ref(), "/the/path");
         assert_eq!(path.to_string(), "/the/path");
@@ -162,17 +160,17 @@ mod tests {
 
     #[test]
     fn iter_segments() {
-        let path: Path = unsafe { Path::new_unchecked("/") };
+        let path: Path = unsafe { Path::new("/") };
         let result: Vec<&str> = path.iter_segments().collect();
         let expected: Vec<&str> = vec![""];
         assert_eq!(result, expected);
 
-        let path: Path = unsafe { Path::new_unchecked("/the/path") };
+        let path: Path = unsafe { Path::new("/the/path") };
         let result: Vec<&str> = path.iter_segments().collect();
         let expected: Vec<&str> = vec!["the", "path"];
         assert_eq!(result, expected);
 
-        let path: Path = unsafe { Path::new_unchecked("/the/path/") };
+        let path: Path = unsafe { Path::new("/the/path/") };
         let result: Vec<&str> = path.iter_segments().collect();
         let expected: Vec<&str> = vec!["the", "path", ""];
         assert_eq!(result, expected)

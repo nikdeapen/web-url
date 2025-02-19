@@ -16,7 +16,7 @@ impl<'a> Scheme<'a> {
     ///
     /// # Unsafe
     /// The `scheme` must be valid.
-    pub unsafe fn new_unchecked(scheme: &'a str) -> Self {
+    pub unsafe fn new(scheme: &'a str) -> Self {
         debug_assert!(Self::is_valid(scheme, false));
 
         Self { scheme }
@@ -77,8 +77,8 @@ mod tests {
     use crate::Scheme;
 
     #[test]
-    fn new_unchecked() {
-        let scheme: Scheme = unsafe { Scheme::new_unchecked("scheme") };
+    fn new() {
+        let scheme: Scheme = unsafe { Scheme::new("scheme") };
         assert_eq!(scheme.scheme, "scheme");
     }
 
@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let scheme: Scheme = unsafe { Scheme::new_unchecked("scheme") };
+        let scheme: Scheme = unsafe { Scheme::new("scheme") };
         assert_eq!(scheme.as_str(), "scheme");
         assert_eq!(scheme.as_ref(), "scheme");
         assert_eq!(scheme.to_string(), "scheme");

@@ -5,7 +5,7 @@ impl WebUrl {
 
     /// Gets the scheme.
     pub fn scheme(&self) -> Scheme {
-        unsafe { Scheme::new_unchecked(self.scheme_str()) }
+        unsafe { Scheme::new(self.scheme_str()) }
     }
 
     /// Gets the scheme string.

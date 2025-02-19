@@ -4,6 +4,7 @@ use crate::Path;
 /// Parses the path from the prefix of `s`.
 ///
 /// Returns `Ok(path, rest_of_s)`.
+/// Returns `Err(InvalidPath)` if the path is invalid.
 pub fn parse_path(s: &str) -> Result<(Path, &str), Error> {
     if let Some(qh) = s.as_bytes().iter().position(|c| *c == b'?' || *c == b'#') {
         let path: Path = Path::try_from(&s[..qh])?;
@@ -32,7 +33,7 @@ mod tests {
         ];
         for (s, expected) in test_cases {
             let expected: Option<(Path, &str)> =
-                expected.map(|(p, s)| (unsafe { Path::new_unchecked(p) }, s));
+                expected.map(|(p, s)| (unsafe { Path::new(p) }, s));
             let result: Option<(Path, &str)> = parse_path(*s).ok();
             assert_eq!(result, expected, "s={}", *s);
         }

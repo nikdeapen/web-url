@@ -36,6 +36,7 @@ pub fn parse_host(s: &str) -> (&str, &str) {
 ///
 /// Returns `Ok(Some(ip_address))` if the `host` is an IP address.
 /// Returns `Ok(None)` if the `host` is a domain name.
+/// Returns `Err(InvalidHost)` if the `host` is invalid.
 pub fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddress>, Error> {
     if host.is_empty() {
         Err(InvalidHost)
@@ -74,6 +75,8 @@ mod tests {
             ("host:port/rest", ("host", ":port/rest")),
             ("[host:port/rest", ("[host", ":port/rest")),
             ("[host:port]/rest", ("[host:port]", "/rest")),
+            ("[host:port]", ("[host:port]", "")),
+            ("[host:port]80", ("[host", ":port]80")),
             ("host:", ("host", ":")),
         ];
         for (s, expected) in test_cases {

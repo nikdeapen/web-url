@@ -5,7 +5,7 @@ use crate::WebUrl;
 impl WebUrl {
     //! Display
 
-    /// Gets the URL as a string.
+    /// Gets the URL string.
     pub fn as_str(&self) -> &str {
         self.url.as_str()
     }
