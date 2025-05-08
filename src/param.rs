@@ -20,11 +20,11 @@ impl<'a> Param<'a> {
 
     /// Creates a new query parameter.
     ///
-    /// # Unsafe
+    /// # Safety
     /// The `name` and `value` must be valid.
     pub unsafe fn new(name: &'a str, value: Option<&'a str>) -> Self {
         debug_assert!(Self::is_valid_name(name));
-        debug_assert!(value.iter().all(|v| Self::is_valid_value(*v)));
+        debug_assert!(value.iter().all(|v| Self::is_valid_value(v)));
 
         Self { name, value }
     }
@@ -33,7 +33,7 @@ impl<'a> Param<'a> {
     ///
     /// The `param` will be split on the first '=' char. If not present the value will be `None`.
     ///
-    /// # Unsafe
+    /// # Safety
     /// The `param` must be valid.
     pub unsafe fn from_str(param: &'a str) -> Self {
         if let Some(eq) = param.as_bytes().iter().position(|c| *c == b'=') {

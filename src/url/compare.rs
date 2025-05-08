@@ -11,7 +11,7 @@ impl Ord for WebUrl {
 
 impl PartialOrd for WebUrl {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.url.partial_cmp(&other.url)
+        Some(self.cmp(other))
     }
 }
 

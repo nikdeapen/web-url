@@ -13,10 +13,10 @@ impl FromStr for WebUrl {
         let pre_path: PrePath = parse_pre_path(s)?;
         let path_plus: &str = &s[pre_path.len()..];
 
-        if path_plus.len() == 0 {
+        if path_plus.is_empty() {
             let mut url: String = String::with_capacity(pre_path.len() + 1);
             url.push_str(s);
-            url.push_str("/");
+            url.push('/');
 
             let path_plus: PathPlus = parse_path_plus("/")?;
             unsafe { finalize_web_url(url, pre_path, path_plus).map_err(|(e, _)| e) }

@@ -25,7 +25,7 @@ impl<'a> Fragment<'a> {
 
     /// Creates a new fragment.
     ///
-    /// # Unsafe
+    /// # Safety
     /// The `fragment` must be valid.
     pub unsafe fn new(fragment: &'a str) -> Self {
         debug_assert!(Self::is_valid(fragment));
@@ -58,8 +58,7 @@ impl<'a> Fragment<'a> {
     pub fn is_valid(fragment: &str) -> bool {
         !fragment.is_empty()
             && fragment.as_bytes()[0] == b'#'
-            && (&fragment[1..])
-                .as_bytes()
+            && fragment.as_bytes()[1..]
                 .iter()
                 .all(|c| Self::is_valid_char(*c))
     }
@@ -115,8 +114,8 @@ mod tests {
             ("# x", false),
         ];
         for (fragment, expected) in test_cases {
-            let result: bool = Fragment::is_valid(*fragment);
-            assert_eq!(result, *expected, "fragment={}", *fragment);
+            let result: bool = Fragment::is_valid(fragment);
+            assert_eq!(result, *expected, "fragment={}", fragment);
         }
     }
 

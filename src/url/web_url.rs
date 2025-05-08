@@ -25,8 +25,9 @@ impl WebUrl {
 
     /// Creates a new web-based URL.
     ///
-    /// # Unsafe
+    /// # Safety
     /// The parameters must be valid.
+    #[allow(clippy::too_many_arguments)]
     pub unsafe fn new<S>(
         url: S,
         scheme_len: u32,
@@ -59,5 +60,10 @@ impl WebUrl {
     /// Gets the length.
     pub fn len(&self) -> usize {
         self.url.len()
+    }
+
+    /// Checks if the url is empty.
+    pub fn is_empty(&self) -> bool {
+        false
     }
 }

@@ -26,7 +26,7 @@ impl<'a> Path<'a> {
 
     /// Creates a new path.
     ///
-    /// # Unsafe
+    /// # Safety
     /// The `path` must be valid.
     pub unsafe fn new(path: &'a str) -> Self {
         debug_assert!(Self::is_valid(path));
@@ -59,10 +59,7 @@ impl<'a> Path<'a> {
     pub fn is_valid(path: &str) -> bool {
         !path.is_empty()
             && path.as_bytes()[0] == b'/'
-            && (&path[1..])
-                .as_bytes()
-                .iter()
-                .all(|c| Self::is_valid_char(*c))
+            && path.as_bytes()[1..].iter().all(|c| Self::is_valid_char(*c))
     }
 }
 
@@ -145,8 +142,8 @@ mod tests {
             ("/#", false),
         ];
         for (path, expected) in test_cases {
-            let result: bool = Path::is_valid(*path);
-            assert_eq!(result, *expected, "path={}", *path);
+            let result: bool = Path::is_valid(path);
+            assert_eq!(result, *expected, "path={}", path);
         }
     }
 

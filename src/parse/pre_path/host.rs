@@ -80,8 +80,8 @@ mod tests {
             ("host:", ("host", ":")),
         ];
         for (s, expected) in test_cases {
-            let result: (&str, &str) = parse_host(*s);
-            assert_eq!(result, *expected, "s={}", *s);
+            let result: (&str, &str) = parse_host(s);
+            assert_eq!(result, *expected, "s={}", s);
         }
     }
 
@@ -99,7 +99,7 @@ mod tests {
             ("Local!Host", Err(InvalidHost)),
         ];
         for (host, expected) in test_cases {
-            let result: Result<Option<IPAddress>, Error> = parse_ip_and_validate_domain(*host);
+            let result: Result<Option<IPAddress>, Error> = parse_ip_and_validate_domain(host);
             assert_eq!(result, *expected, "host={}", *host);
         }
     }

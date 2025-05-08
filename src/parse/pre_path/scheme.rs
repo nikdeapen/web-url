@@ -43,7 +43,7 @@ mod tests {
             ("s://rest", Some((1, "rest"))),
         ];
         for (s, expected) in test_cases {
-            let result: Option<(usize, &str)> = parse_scheme_len(*s).ok();
+            let result: Option<(usize, &str)> = parse_scheme_len(s).ok();
             assert_eq!(result, *expected);
         }
     }

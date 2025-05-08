@@ -21,7 +21,7 @@ impl<'a> Query<'a> {
 
     /// Creates a new query.
     ///
-    /// # Unsafe
+    /// # Safety
     /// The `query` must be valid.
     pub unsafe fn new(query: &'a str) -> Self {
         debug_assert!(Self::is_valid(query));
@@ -49,7 +49,7 @@ impl<'a> Query<'a> {
     pub fn is_valid(query: &str) -> bool {
         !query.is_empty()
             && query.as_bytes()[0] == b'?'
-            && (&query.as_bytes()[1..])
+            && query.as_bytes()[1..]
                 .iter()
                 .all(|c| c.is_ascii_alphanumeric() || (c.is_ascii_punctuation() && *c != b'#'))
     }
@@ -106,7 +106,7 @@ impl<'a> Iterator for ParamIterator<'a> {
                 self.remaining = &self.remaining[amp..];
                 Some(result)
             } else {
-                let result: Param = unsafe { Param::from_str(&self.remaining) };
+                let result: Param = unsafe { Param::from_str(self.remaining) };
                 self.remaining = "";
                 Some(result)
             }
@@ -134,7 +134,7 @@ mod tests {
             ("?azAZ09", true),
         ];
         for (query, expected) in test_cases {
-            let result: bool = Query::is_valid(*query);
+            let result: bool = Query::is_valid(query);
             assert_eq!(result, *expected, "query={}", query);
         }
     }

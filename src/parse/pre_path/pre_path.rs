@@ -22,6 +22,11 @@ impl PrePath {
     pub fn len(&self) -> usize {
         self.scheme_len + 3 + self.host_len + self.port_len
     }
+
+    /// Checks if the pre-path string is empty.
+    pub fn is_empty(&self) -> bool {
+        false
+    }
 }
 
 impl PrePath {
@@ -29,11 +34,11 @@ impl PrePath {
 
     /// Makes the pre-path prefix of `s` lowercase.
     ///
-    /// # Unsafe
+    /// # Safety
     /// This requires the string up to `len` to be US-ASCII. This will be true if it was parsed
     /// with the `parse_pre_path` function.
     pub unsafe fn make_lowercase(&self, url: &mut str) {
-        (&mut url[..self.len()])
+        url[..self.len()]
             .as_bytes_mut()
             .iter_mut()
             .for_each(|c| *c = c.to_ascii_lowercase())
@@ -128,8 +133,8 @@ mod tests {
             ),
         ];
         for (input, expected) in test_cases {
-            let result: Result<PrePath, Error> = parse_pre_path(*input);
-            assert_eq!(result, *expected, "input={}", *input);
+            let result: Result<PrePath, Error> = parse_pre_path(input);
+            assert_eq!(result, *expected, "input={}", input);
         }
     }
 }

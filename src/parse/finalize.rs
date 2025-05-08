@@ -8,7 +8,7 @@ use crate::WebUrl;
 
 /// Finalizes the web-based URL from the pre-path and path-plus parts.
 ///
-/// # Unsafe
+/// # Safety
 /// The given URL must match the given pre-path and path-plus parts.
 pub unsafe fn finalize_web_url(
     url: String,
