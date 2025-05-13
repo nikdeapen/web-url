@@ -14,7 +14,7 @@ impl<'a> Scheme<'a> {
 
     /// Creates a new scheme.
     ///
-    /// # Unsafe
+    /// # Safety
     /// The `scheme` must be valid.
     pub unsafe fn new(scheme: &'a str) -> Self {
         debug_assert!(Self::is_valid(scheme, false));
@@ -44,8 +44,7 @@ impl<'a> Scheme<'a> {
     pub fn is_valid(scheme: &'a str, ignore_case: bool) -> bool {
         !scheme.is_empty()
             && Self::is_valid_first_char(scheme.as_bytes()[0], ignore_case)
-            && (&scheme[1..])
-                .as_bytes()
+            && scheme.as_bytes()[1..]
                 .iter()
                 .all(|c| Self::is_valid_char(*c, ignore_case))
     }
@@ -94,10 +93,10 @@ mod tests {
             ("azAZ09+-.", true, false),
         ];
         for (scheme, expected_ic_true, expected_ic_false) in test_cases {
-            let result: bool = Scheme::is_valid(*scheme, true);
+            let result: bool = Scheme::is_valid(scheme, true);
             assert_eq!(result, *expected_ic_true, "scheme={}", scheme);
 
-            let result: bool = Scheme::is_valid(*scheme, false);
+            let result: bool = Scheme::is_valid(scheme, false);
             assert_eq!(result, *expected_ic_false, "scheme={}", scheme);
         }
     }

@@ -1,3 +1,6 @@
+#![allow(clippy::needless_lifetimes)]
+#![allow(clippy::module_inception)]
+
 pub use fragment::*;
 pub use param::*;
 pub use path::*;

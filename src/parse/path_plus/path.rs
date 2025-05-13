@@ -34,8 +34,8 @@ mod tests {
         for (s, expected) in test_cases {
             let expected: Option<(Path, &str)> =
                 expected.map(|(p, s)| (unsafe { Path::new(p) }, s));
-            let result: Option<(Path, &str)> = parse_path(*s).ok();
-            assert_eq!(result, expected, "s={}", *s);
+            let result: Option<(Path, &str)> = parse_path(s).ok();
+            assert_eq!(result, expected, "s={}", s);
         }
     }
 }

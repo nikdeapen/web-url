@@ -12,7 +12,7 @@ impl TryFrom<String> for WebUrl {
 
         if pre_path.len() == s.len() {
             let mut url: String = s;
-            url.push_str("/");
+            url.push('/');
 
             let path_plus: PathPlus = match parse_path_plus("/") {
                 Ok(path_plus) => path_plus,

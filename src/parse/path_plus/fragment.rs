@@ -12,12 +12,10 @@ use crate::Fragment;
 pub fn parse_fragment(fragment: &str) -> Result<Option<&str>, Error> {
     if fragment.is_empty() {
         Ok(None)
+    } else if Fragment::is_valid(fragment) {
+        Ok(Some(fragment))
     } else {
-        if Fragment::is_valid(fragment) {
-            Ok(Some(fragment))
-        } else {
-            Err(InvalidFragment)
-        }
+        Err(InvalidFragment)
     }
 }
 
@@ -39,7 +37,7 @@ mod tests {
             ("#fragment ", Err(InvalidFragment)),
         ];
         for (fragment, expected) in test_cases {
-            let result: Result<Option<&str>, Error> = parse_fragment(*fragment);
+            let result: Result<Option<&str>, Error> = parse_fragment(fragment);
             assert_eq!(result, *expected);
         }
     }
