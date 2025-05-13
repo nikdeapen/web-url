@@ -53,7 +53,7 @@ impl<'a> Scheme<'a> {
 impl<'a> Scheme<'a> {
     //! Display
 
-    /// Gets the scheme as a string.
+    /// Gets the scheme string.
     pub const fn as_str(&self) -> &str {
         self.scheme
     }
