@@ -88,6 +88,9 @@ impl<'a> Path<'a> {
     //! Segments
 
     /// Creates a new iterator for the path segments.
+    ///
+    /// # Example
+    /// `"/a/b/c/"` -> `["a", "b", "c", ""]`
     pub const fn iter_segments(&self) -> impl Iterator<Item = &'a str> {
         SegmentIterator {
             remaining: self.path,

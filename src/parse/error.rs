@@ -20,6 +20,9 @@ pub enum Error {
     /// The query was invalid.
     InvalidQuery,
 
+    /// The query parameter was invalid.
+    InvalidParam,
+
     /// The fragment was invalid.
     InvalidFragment,
 
@@ -38,6 +41,7 @@ impl Error {
             InvalidPort => "invalid port",
             InvalidPath => "invalid path",
             InvalidQuery => "invalid query",
+            InvalidParam => "invalid query parameter",
             InvalidFragment => "invalid fragment",
             UrlTooLong => "URL too long (>= 4 GiB)",
         }

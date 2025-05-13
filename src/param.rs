@@ -1,3 +1,5 @@
+use crate::parse::Error;
+use crate::parse::Error::InvalidParam;
 use std::fmt::{Display, Formatter};
 
 /// A web-based URL query parameter.
@@ -41,6 +43,25 @@ impl<'a> Param<'a> {
             Self::new(name, Some(&eq_value[1..]))
         } else {
             Self::new(param, None)
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Param<'a> {
+    type Error = Error;
+
+    fn try_from(param: &'a str) -> Result<Self, Self::Error> {
+        if let Some(eq) = param.as_bytes().iter().position(|c| *c == b'=') {
+            let (name, eq_value) = param.split_at(eq);
+            if Self::is_valid_name(name) && Self::is_valid_value(eq_value) {
+                Ok(unsafe { Self::new(name, Some(&eq_value[1..])) })
+            } else {
+                Err(InvalidParam)
+            }
+        } else if Self::is_valid_name(param) {
+            Ok(unsafe { Self::new(param, None) })
+        } else {
+            Err(InvalidParam)
         }
     }
 }
