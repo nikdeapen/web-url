@@ -10,4 +10,4 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-address = { path = "../address" } # todo -- path dependency
+address = { git = "https://github.com/nikdeapen/address" } # todo -- git dependency
