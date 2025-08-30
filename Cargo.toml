@@ -8,3 +8,6 @@ homepage = "https://github.com/nikdeapen/web-url"
 authors = ["Nik Deapen <nik@deapen.com>"]
 edition = "2021"
 license = "MIT"
+
+[dependencies]
+address = { git = "https://github.com/nikdeapen/address" } # todo -- path dependency
