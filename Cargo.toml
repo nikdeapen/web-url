@@ -1,6 +1,6 @@
 [package]
 name = "web-url"
-version = "0.6.0"
+version = "0.7.0"
 description = "This library aids in processing web-based URLs."
 readme = "README.md"
 repository = "https://github.com/nikdeapen/web-url"
@@ -10,4 +10,4 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-address = { git = "https://github.com/nikdeapen/address" } # todo -- path dependency
+address = "0.15.0"
