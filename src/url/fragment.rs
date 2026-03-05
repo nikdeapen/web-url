@@ -54,11 +54,48 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
+    fn fragment_accessor() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com/path#section")?;
+        let fragment = url.fragment().unwrap();
+        assert_eq!(fragment.as_str(), "#section");
+        assert_eq!(fragment.fragment(), "section");
+
+        let url = WebUrl::from_str("https://example.com/path")?;
+        assert!(url.fragment().is_none());
+
+        Ok(())
+    }
+
+    #[test]
     fn set_fragment() -> Result<(), Box<dyn Error>> {
         let mut url: WebUrl = WebUrl::from_str("https://example.com")?;
 
         url.set_fragment(Fragment::try_from("#fragment")?);
         assert_eq!(url.as_str(), "https://example.com/#fragment");
+
+        Ok(())
+    }
+
+    #[test]
+    fn set_fragment_none() -> Result<(), Box<dyn Error>> {
+        let mut url = WebUrl::from_str("https://example.com/path#fragment")?;
+        assert!(url.fragment().is_some());
+
+        url.set_fragment(None);
+        assert!(url.fragment().is_none());
+        assert_eq!(url.as_str(), "https://example.com/path");
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_fragment() -> Result<(), Box<dyn Error>> {
+        let url =
+            WebUrl::from_str("https://example.com")?.with_fragment(Fragment::try_from("#frag")?);
+        assert_eq!(url.as_str(), "https://example.com/#frag");
+
+        let url = WebUrl::from_str("https://example.com/path#old")?.with_fragment(None);
+        assert_eq!(url.as_str(), "https://example.com/path");
 
         Ok(())
     }

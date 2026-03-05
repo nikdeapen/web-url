@@ -25,3 +25,52 @@ impl WebUrl {
         &self.url[start..end]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use address::{HostRef, IPv4Address, IPv6Address};
+
+    use crate::WebUrl;
+    use std::error::Error;
+    use std::str::FromStr;
+
+    #[test]
+    fn host_domain() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com")?;
+        match url.host() {
+            HostRef::Name(domain) => assert_eq!(domain.name(), "example.com"),
+            _ => panic!("expected domain"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn host_domain_uppercase() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://EXAMPLE.COM")?;
+        match url.host() {
+            HostRef::Name(domain) => assert_eq!(domain.name(), "example.com"),
+            _ => panic!("expected domain"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn host_ipv4() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://127.0.0.1")?;
+        match url.host() {
+            HostRef::Address(ip) => assert_eq!(ip, IPv4Address::LOCALHOST.to_ip()),
+            _ => panic!("expected ip address"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn host_ipv6() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://[::1]")?;
+        match url.host() {
+            HostRef::Address(ip) => assert_eq!(ip, IPv6Address::LOCALHOST.to_ip()),
+            _ => panic!("expected ip address"),
+        }
+        Ok(())
+    }
+}

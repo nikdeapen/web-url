@@ -1,5 +1,8 @@
 use std::fmt::{Display, Formatter};
 
+use crate::parse::Error;
+use crate::parse::Error::InvalidScheme;
+
 /// A web-based URL scheme.
 ///
 /// # RFC 3986
@@ -20,6 +23,18 @@ impl<'a> Scheme<'a> {
         debug_assert!(Self::is_valid(scheme, false));
 
         Self { scheme }
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Scheme<'a> {
+    type Error = Error;
+
+    fn try_from(scheme: &'a str) -> Result<Self, Self::Error> {
+        if Self::is_valid(scheme, false) {
+            Ok(Self { scheme })
+        } else {
+            Err(InvalidScheme)
+        }
     }
 }
 
@@ -73,12 +88,23 @@ impl<'a> Display for Scheme<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::parse::Error::InvalidScheme;
     use crate::Scheme;
 
     #[test]
     fn new() {
         let scheme: Scheme = unsafe { Scheme::new("scheme") };
         assert_eq!(scheme.scheme, "scheme");
+    }
+
+    #[test]
+    fn try_from_str() {
+        assert_eq!(Scheme::try_from("http").unwrap().as_str(), "http");
+        assert_eq!(Scheme::try_from("a0+-.").unwrap().as_str(), "a0+-.");
+        assert_eq!(Scheme::try_from(""), Err(InvalidScheme));
+        assert_eq!(Scheme::try_from("0abc"), Err(InvalidScheme));
+        assert_eq!(Scheme::try_from("a~"), Err(InvalidScheme));
+        assert_eq!(Scheme::try_from("ABC"), Err(InvalidScheme));
     }
 
     #[test]

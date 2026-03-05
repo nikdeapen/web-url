@@ -53,7 +53,7 @@ impl<'a> TryFrom<&'a str> for Param<'a> {
     fn try_from(param: &'a str) -> Result<Self, Self::Error> {
         if let Some(eq) = param.as_bytes().iter().position(|c| *c == b'=') {
             let (name, eq_value) = param.split_at(eq);
-            if Self::is_valid_name(name) && Self::is_valid_value(eq_value) {
+            if Self::is_valid_name(name) && Self::is_valid_value(&eq_value[1..]) {
                 Ok(unsafe { Self::new(name, Some(&eq_value[1..])) })
             } else {
                 Err(InvalidParam)
@@ -111,6 +111,7 @@ impl<'a> Display for Param<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::parse::Error::InvalidParam;
     use crate::Param;
 
     #[test]
@@ -133,6 +134,30 @@ mod tests {
         let param: Param = unsafe { Param::from_str("name=value") };
         assert_eq!(param.name, "name");
         assert_eq!(param.value, Some("value"));
+    }
+
+    #[test]
+    fn try_from_str() {
+        let param = Param::try_from("name").unwrap();
+        assert_eq!(param.name(), "name");
+        assert_eq!(param.value(), None);
+
+        let param = Param::try_from("name=value").unwrap();
+        assert_eq!(param.name(), "name");
+        assert_eq!(param.value(), Some("value"));
+
+        let param = Param::try_from("name=").unwrap();
+        assert_eq!(param.name(), "name");
+        assert_eq!(param.value(), Some(""));
+
+        let param = Param::try_from("").unwrap();
+        assert_eq!(param.name(), "");
+        assert_eq!(param.value(), None);
+
+        assert_eq!(Param::try_from("name=val&ue"), Err(InvalidParam));
+        assert_eq!(Param::try_from("na&me"), Err(InvalidParam));
+        assert_eq!(Param::try_from("na#me"), Err(InvalidParam));
+        assert_eq!(Param::try_from("name=val#ue"), Err(InvalidParam));
     }
 
     #[test]

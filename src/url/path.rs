@@ -17,3 +17,24 @@ impl WebUrl {
         &self.url[start..end]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::WebUrl;
+    use std::error::Error;
+    use std::str::FromStr;
+
+    #[test]
+    fn path_explicit() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com/the/path")?;
+        assert_eq!(url.path().as_str(), "/the/path");
+        Ok(())
+    }
+
+    #[test]
+    fn path_default() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com")?;
+        assert_eq!(url.path().as_str(), "/");
+        Ok(())
+    }
+}

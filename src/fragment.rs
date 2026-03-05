@@ -50,7 +50,7 @@ impl<'a> Fragment<'a> {
 
     /// Checks if the char `c` is valid.
     fn is_valid_char(c: u8) -> bool {
-        c.is_ascii_alphanumeric() || (c.is_ascii_punctuation())
+        c.is_ascii_alphanumeric() || c.is_ascii_punctuation()
     }
 
     /// Checks if the `fragment` is valid.
@@ -91,12 +91,38 @@ impl<'a> Display for Fragment<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::parse::Error::InvalidFragment;
     use crate::Fragment;
 
     #[test]
     fn new() {
         let fragment: Fragment = unsafe { Fragment::new("#the-fragment") };
         assert_eq!(fragment.fragment, "#the-fragment");
+    }
+
+    #[test]
+    fn default() {
+        let fragment: Fragment = Fragment::default();
+        assert_eq!(fragment.as_str(), "#");
+        assert_eq!(fragment.fragment(), "");
+    }
+
+    #[test]
+    fn try_from_str() {
+        assert_eq!(Fragment::try_from("#").unwrap().as_str(), "#");
+        assert_eq!(Fragment::try_from("#section").unwrap().as_str(), "#section");
+        assert_eq!(Fragment::try_from(""), Err(InvalidFragment));
+        assert_eq!(Fragment::try_from("no-hash"), Err(InvalidFragment));
+        assert_eq!(Fragment::try_from("# space"), Err(InvalidFragment));
+    }
+
+    #[test]
+    fn fragment_without_hash() {
+        let fragment: Fragment = unsafe { Fragment::new("#the-fragment") };
+        assert_eq!(fragment.fragment(), "the-fragment");
+
+        let fragment: Fragment = unsafe { Fragment::new("#") };
+        assert_eq!(fragment.fragment(), "");
     }
 
     #[test]

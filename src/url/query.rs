@@ -31,31 +31,27 @@ impl WebUrl {
     where
         P: Into<Param<'a>>,
     {
-        // todo -- this could be more efficient but probably doesn't matter
-
         let param: Param = param.into();
-        let start: usize = self.path_end as usize;
-        let mut end: usize = self.query_end as usize;
+        let end: usize = self.query_end as usize;
 
-        let extra: usize = 1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0);
-        self.url.reserve(extra);
+        let c: char = if self.path_end == self.query_end {
+            '?'
+        } else {
+            '&'
+        };
 
-        let c: char = if start == end { '?' } else { '&' };
-        self.url.insert(end, c);
-        end += 1;
-
-        self.url.insert_str(end, param.name());
-        end += param.name().len();
-
+        let mut s = String::with_capacity(
+            1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0),
+        );
+        s.push(c);
+        s.push_str(param.name());
         if let Some(value) = param.value() {
-            self.url.insert(end, '=');
-            end += 1;
-
-            self.url.insert_str(end, value);
-            end += value.len();
+            s.push('=');
+            s.push_str(value);
         }
 
-        self.query_end = end as u32;
+        self.url.insert_str(end, &s);
+        self.query_end = (end + s.len()) as u32;
     }
 
     /// Adds the query `param`.
@@ -75,6 +71,18 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
+    fn query_accessor() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com/path?key=value")?;
+        let query = url.query().unwrap();
+        assert_eq!(query.as_str(), "?key=value");
+
+        let url = WebUrl::from_str("https://example.com/path")?;
+        assert!(url.query().is_none());
+
+        Ok(())
+    }
+
+    #[test]
     fn add_param() -> Result<(), Box<dyn Error>> {
         let mut url: WebUrl = WebUrl::from_str("https://example.com")?;
         url.set_fragment(Fragment::try_from("#fragment")?);
@@ -84,6 +92,16 @@ mod tests {
 
         url.add_param(Param::try_from("two=3")?);
         assert_eq!("https://example.com/?one&two=3#fragment", url.as_str());
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_param() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com")?
+            .with_param(Param::try_from("a=1")?)
+            .with_param(Param::try_from("b=2")?);
+        assert_eq!(url.as_str(), "https://example.com/?a=1&b=2");
 
         Ok(())
     }
