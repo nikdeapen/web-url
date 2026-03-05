@@ -1,6 +1,6 @@
 [package]
 name = "web-url"
-version = "0.9.0"
+version = "0.10.0-rc.1"
 description = "This library aids in processing web-based URLs."
 readme = "README.md"
 repository = "https://github.com/nikdeapen/web-url"
