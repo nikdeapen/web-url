@@ -4,7 +4,7 @@ This library aids in processing web-based URLs.
 
 ## Features & Dependencies
 
-    web-url = "0.9.0"
+    web-url = "0.10.0-rc.1"
 
 This crate has no features.
 
