@@ -54,12 +54,16 @@ impl WebUrl {
     }
 }
 
-#[allow(clippy::len_without_is_empty)]
 impl WebUrl {
     //! Properties
 
     /// Gets the length.
     pub fn len(&self) -> usize {
         self.url.len()
+    }
+
+    /// Checks if the url is empty.
+    pub fn is_empty(&self) -> bool {
+        false
     }
 }
