@@ -110,10 +110,7 @@ mod tests {
     #[test]
     fn try_from_str() {
         assert_eq!(Fragment::try_from("#").unwrap().as_str(), "#");
-        assert_eq!(
-            Fragment::try_from("#section").unwrap().as_str(),
-            "#section"
-        );
+        assert_eq!(Fragment::try_from("#section").unwrap().as_str(), "#section");
         assert_eq!(Fragment::try_from(""), Err(InvalidFragment));
         assert_eq!(Fragment::try_from("no-hash"), Err(InvalidFragment));
         assert_eq!(Fragment::try_from("# space"), Err(InvalidFragment));

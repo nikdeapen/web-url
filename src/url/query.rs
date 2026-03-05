@@ -34,9 +34,15 @@ impl WebUrl {
         let param: Param = param.into();
         let end: usize = self.query_end as usize;
 
-        let c: char = if self.path_end == self.query_end { '?' } else { '&' };
+        let c: char = if self.path_end == self.query_end {
+            '?'
+        } else {
+            '&'
+        };
 
-        let mut s = String::with_capacity(1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0));
+        let mut s = String::with_capacity(
+            1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0),
+        );
         s.push(c);
         s.push_str(param.name());
         if let Some(value) = param.value() {
