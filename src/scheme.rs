@@ -88,12 +88,23 @@ impl<'a> Display for Scheme<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::parse::Error::InvalidScheme;
     use crate::Scheme;
 
     #[test]
     fn new() {
         let scheme: Scheme = unsafe { Scheme::new("scheme") };
         assert_eq!(scheme.scheme, "scheme");
+    }
+
+    #[test]
+    fn try_from_str() {
+        assert_eq!(Scheme::try_from("http").unwrap().as_str(), "http");
+        assert_eq!(Scheme::try_from("a0+-.").unwrap().as_str(), "a0+-.");
+        assert_eq!(Scheme::try_from(""), Err(InvalidScheme));
+        assert_eq!(Scheme::try_from("0abc"), Err(InvalidScheme));
+        assert_eq!(Scheme::try_from("a~"), Err(InvalidScheme));
+        assert_eq!(Scheme::try_from("ABC"), Err(InvalidScheme));
     }
 
     #[test]

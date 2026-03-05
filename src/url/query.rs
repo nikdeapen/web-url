@@ -65,6 +65,18 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
+    fn query_accessor() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com/path?key=value")?;
+        let query = url.query().unwrap();
+        assert_eq!(query.as_str(), "?key=value");
+
+        let url = WebUrl::from_str("https://example.com/path")?;
+        assert!(url.query().is_none());
+
+        Ok(())
+    }
+
+    #[test]
     fn add_param() -> Result<(), Box<dyn Error>> {
         let mut url: WebUrl = WebUrl::from_str("https://example.com")?;
         url.set_fragment(Fragment::try_from("#fragment")?);
@@ -74,6 +86,16 @@ mod tests {
 
         url.add_param(Param::try_from("two=3")?);
         assert_eq!("https://example.com/?one&two=3#fragment", url.as_str());
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_param() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://example.com")?
+            .with_param(Param::try_from("a=1")?)
+            .with_param(Param::try_from("b=2")?);
+        assert_eq!(url.as_str(), "https://example.com/?a=1&b=2");
 
         Ok(())
     }

@@ -125,12 +125,29 @@ impl<'a> Iterator for SegmentIterator<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::parse::Error::InvalidPath;
     use crate::Path;
 
     #[test]
     fn new() {
         let path: Path = unsafe { Path::new("/the/path") };
         assert_eq!(path.path, "/the/path");
+    }
+
+    #[test]
+    fn default() {
+        let path: Path = Path::default();
+        assert_eq!(path.as_str(), "/");
+    }
+
+    #[test]
+    fn try_from_str() {
+        assert_eq!(Path::try_from("/").unwrap().as_str(), "/");
+        assert_eq!(Path::try_from("/the/path").unwrap().as_str(), "/the/path");
+        assert_eq!(Path::try_from(""), Err(InvalidPath));
+        assert_eq!(Path::try_from("no-slash"), Err(InvalidPath));
+        assert_eq!(Path::try_from("/?"), Err(InvalidPath));
+        assert_eq!(Path::try_from("/#"), Err(InvalidPath));
     }
 
     #[test]

@@ -116,12 +116,25 @@ impl<'a> Iterator for ParamIterator<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::parse::Error::InvalidQuery;
     use crate::{Param, Query};
 
     #[test]
     fn new() {
         let query: Query = unsafe { Query::new("?the&query=params") };
         assert_eq!(query.query, "?the&query=params");
+    }
+
+    #[test]
+    fn try_from_str() {
+        assert_eq!(Query::try_from("?").unwrap().as_str(), "?");
+        assert_eq!(
+            Query::try_from("?key=value").unwrap().as_str(),
+            "?key=value"
+        );
+        assert_eq!(Query::try_from(""), Err(InvalidQuery));
+        assert_eq!(Query::try_from("no-question"), Err(InvalidQuery));
+        assert_eq!(Query::try_from("?#"), Err(InvalidQuery));
     }
 
     #[test]

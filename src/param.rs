@@ -111,6 +111,7 @@ impl<'a> Display for Param<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::parse::Error::InvalidParam;
     use crate::Param;
 
     #[test]
@@ -133,6 +134,30 @@ mod tests {
         let param: Param = unsafe { Param::from_str("name=value") };
         assert_eq!(param.name, "name");
         assert_eq!(param.value, Some("value"));
+    }
+
+    #[test]
+    fn try_from_str() {
+        let param = Param::try_from("name").unwrap();
+        assert_eq!(param.name(), "name");
+        assert_eq!(param.value(), None);
+
+        let param = Param::try_from("name=value").unwrap();
+        assert_eq!(param.name(), "name");
+        assert_eq!(param.value(), Some("value"));
+
+        let param = Param::try_from("name=").unwrap();
+        assert_eq!(param.name(), "name");
+        assert_eq!(param.value(), Some(""));
+
+        let param = Param::try_from("").unwrap();
+        assert_eq!(param.name(), "");
+        assert_eq!(param.value(), None);
+
+        assert_eq!(Param::try_from("name=val&ue"), Err(InvalidParam));
+        assert_eq!(Param::try_from("na&me"), Err(InvalidParam));
+        assert_eq!(Param::try_from("na#me"), Err(InvalidParam));
+        assert_eq!(Param::try_from("name=val#ue"), Err(InvalidParam));
     }
 
     #[test]
