@@ -13,17 +13,13 @@ pub struct PrePath {
     pub port_len: usize,
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl PrePath {
     //! Properties
 
     /// Gets the length of the pre-path string.
     pub fn len(&self) -> usize {
         self.scheme_len + 3 + self.host_len + self.port_len
-    }
-
-    /// Checks if the pre-path string is empty.
-    pub fn is_empty(&self) -> bool {
-        false
     }
 }
 

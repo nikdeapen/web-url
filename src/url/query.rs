@@ -31,31 +31,21 @@ impl WebUrl {
     where
         P: Into<Param<'a>>,
     {
-        // todo -- this could be more efficient but probably doesn't matter
-
         let param: Param = param.into();
-        let start: usize = self.path_end as usize;
-        let mut end: usize = self.query_end as usize;
+        let end: usize = self.query_end as usize;
 
-        let extra: usize = 1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0);
-        self.url.reserve(extra);
+        let c: char = if self.path_end == self.query_end { '?' } else { '&' };
 
-        let c: char = if start == end { '?' } else { '&' };
-        self.url.insert(end, c);
-        end += 1;
-
-        self.url.insert_str(end, param.name());
-        end += param.name().len();
-
+        let mut s = String::with_capacity(1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0));
+        s.push(c);
+        s.push_str(param.name());
         if let Some(value) = param.value() {
-            self.url.insert(end, '=');
-            end += 1;
-
-            self.url.insert_str(end, value);
-            end += value.len();
+            s.push('=');
+            s.push_str(value);
         }
 
-        self.query_end = end as u32;
+        self.url.insert_str(end, &s);
+        self.query_end = (end + s.len()) as u32;
     }
 
     /// Adds the query `param`.

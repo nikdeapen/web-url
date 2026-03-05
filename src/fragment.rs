@@ -50,7 +50,7 @@ impl<'a> Fragment<'a> {
 
     /// Checks if the char `c` is valid.
     fn is_valid_char(c: u8) -> bool {
-        c.is_ascii_alphanumeric() || (c.is_ascii_punctuation())
+        c.is_ascii_alphanumeric() || c.is_ascii_punctuation()
     }
 
     /// Checks if the `fragment` is valid.

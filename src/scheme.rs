@@ -1,5 +1,8 @@
 use std::fmt::{Display, Formatter};
 
+use crate::parse::Error;
+use crate::parse::Error::InvalidScheme;
+
 /// A web-based URL scheme.
 ///
 /// # RFC 3986
@@ -20,6 +23,18 @@ impl<'a> Scheme<'a> {
         debug_assert!(Self::is_valid(scheme, false));
 
         Self { scheme }
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Scheme<'a> {
+    type Error = Error;
+
+    fn try_from(scheme: &'a str) -> Result<Self, Self::Error> {
+        if Self::is_valid(scheme, false) {
+            Ok(Self { scheme })
+        } else {
+            Err(InvalidScheme)
+        }
     }
 }
 

@@ -53,7 +53,7 @@ impl<'a> TryFrom<&'a str> for Param<'a> {
     fn try_from(param: &'a str) -> Result<Self, Self::Error> {
         if let Some(eq) = param.as_bytes().iter().position(|c| *c == b'=') {
             let (name, eq_value) = param.split_at(eq);
-            if Self::is_valid_name(name) && Self::is_valid_value(eq_value) {
+            if Self::is_valid_name(name) && Self::is_valid_value(&eq_value[1..]) {
                 Ok(unsafe { Self::new(name, Some(&eq_value[1..])) })
             } else {
                 Err(InvalidParam)
