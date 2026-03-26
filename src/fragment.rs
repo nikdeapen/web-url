@@ -1,5 +1,5 @@
 use crate::parse::Error;
-use crate::parse::Error::*;
+use crate::parse::Error::InvalidFragment;
 use std::fmt::{Display, Formatter};
 
 /// A web-based URL fragment.
@@ -66,8 +66,8 @@ impl<'a> Fragment<'a> {
 impl<'a> Fragment<'a> {
     //! Display
 
-    /// Gets the fragment. (will not contain the '#' prefix)
-    pub fn fragment(&self) -> &str {
+    /// Gets the fragment value. (will not contain the '#' prefix)
+    pub fn value(&self) -> &str {
         &self.fragment[1..]
     }
 
@@ -104,7 +104,7 @@ mod tests {
     fn default() {
         let fragment: Fragment = Fragment::default();
         assert_eq!(fragment.as_str(), "#");
-        assert_eq!(fragment.fragment(), "");
+        assert_eq!(fragment.value(), "");
     }
 
     #[test]
@@ -117,12 +117,12 @@ mod tests {
     }
 
     #[test]
-    fn fragment_without_hash() {
+    fn value() {
         let fragment: Fragment = unsafe { Fragment::new("#the-fragment") };
-        assert_eq!(fragment.fragment(), "the-fragment");
+        assert_eq!(fragment.value(), "the-fragment");
 
         let fragment: Fragment = unsafe { Fragment::new("#") };
-        assert_eq!(fragment.fragment(), "");
+        assert_eq!(fragment.value(), "");
     }
 
     #[test]

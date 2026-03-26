@@ -16,7 +16,7 @@ impl WebUrl {
 
     /// Gets the host string.
     ///
-    /// This will be a valid.
+    /// This will be valid:
     /// - If the host is a domain it will be lowercase.
     /// - If the host is an IPv6 address it will include the '[]' brackets.
     fn host_str(&self) -> &str {

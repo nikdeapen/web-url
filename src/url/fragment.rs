@@ -58,7 +58,7 @@ mod tests {
         let url = WebUrl::from_str("https://example.com/path#section")?;
         let fragment = url.fragment().unwrap();
         assert_eq!(fragment.as_str(), "#section");
-        assert_eq!(fragment.fragment(), "section");
+        assert_eq!(fragment.value(), "section");
 
         let url = WebUrl::from_str("https://example.com/path")?;
         assert!(url.fragment().is_none());
