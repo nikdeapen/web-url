@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::parse::Error;
-use crate::parse::Error::*;
+use crate::parse::Error::InvalidPath;
 
 /// A web-based URL path.
 ///
