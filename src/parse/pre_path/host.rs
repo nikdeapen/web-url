@@ -1,3 +1,4 @@
+use crate::parse::pre_path::is_authority_end;
 use crate::parse::Error;
 use crate::parse::Error::InvalidHost;
 use address::{Domain, IPAddress, IPv4Address, IPv6Address};
@@ -9,22 +10,23 @@ use std::str::FromStr;
 ///
 /// Returns `(host_string, rest_of_s)`.
 pub fn parse_host(s: &str) -> (&str, &str) {
-    let host_and_port: &str = if let Some(slash) = s.as_bytes().iter().position(|c| *c == b'/') {
-        &s[..slash]
-    } else {
-        s
-    };
+    let host_and_port: &str =
+        if let Some(end) = s.as_bytes().iter().position(|c| is_authority_end(*c)) {
+            &s[..end]
+        } else {
+            s
+        };
     if host_and_port.is_empty() {
         ("", s)
     } else {
         let bracketed: bool = host_and_port.as_bytes()[0] == b'['
             && host_and_port.as_bytes()[host_and_port.len() - 1] == b']';
         if bracketed {
-            (host_and_port, &s[host_and_port.len()..])
+            s.split_at(host_and_port.len())
         } else if let Some(last_colon) = host_and_port.as_bytes().iter().rposition(|c| *c == b':') {
             s.split_at(last_colon)
         } else {
-            (host_and_port, &s[host_and_port.len()..])
+            s.split_at(host_and_port.len())
         }
     }
 }
@@ -64,7 +66,7 @@ mod tests {
     use crate::parse::Error::InvalidHost;
 
     #[test]
-    fn fn_extract_host() {
+    fn fn_parse_host() {
         let test_cases: &[(&str, (&str, &str))] = &[
             ("", ("", "")),
             ("host", ("host", "")),
@@ -76,6 +78,17 @@ mod tests {
             ("[host:port]", ("[host:port]", "")),
             ("[host:port]80", ("[host", ":port]80")),
             ("host:", ("host", ":")),
+            ("host?query", ("host", "?query")),
+            ("host#frag", ("host", "#frag")),
+            ("host?", ("host", "?")),
+            ("host#", ("host", "#")),
+            ("host:80?query", ("host", ":80?query")),
+            ("host:80#frag", ("host", ":80#frag")),
+            ("[::1]?query", ("[::1]", "?query")),
+            ("[::1]#frag", ("[::1]", "#frag")),
+            ("[::1]:80?query", ("[::1]", ":80?query")),
+            ("?query", ("", "?query")),
+            ("#frag", ("", "#frag")),
         ];
         for (s, expected) in test_cases {
             let result: (&str, &str) = parse_host(s);
@@ -84,7 +97,7 @@ mod tests {
     }
 
     #[test]
-    fn fn_parse_ip() {
+    fn fn_parse_ip_and_validate_domain() {
         let test_cases: &[(&str, Result<Option<IPAddress>, Error>)] = &[
             ("", Err(InvalidHost)),
             ("[::1", Err(InvalidHost)),
@@ -95,6 +108,8 @@ mod tests {
             ("localhost", Ok(None)),
             ("LocalHost", Ok(None)),
             ("Local!Host", Err(InvalidHost)),
+            // The `xn--` ACE prefix has consecutive hyphens, which requires `address` >= 0.19.
+            ("xn--bcher-kva.example", Ok(None)),
         ];
         for (host, expected) in test_cases {
             let result: Result<Option<IPAddress>, Error> = parse_ip_and_validate_domain(host);

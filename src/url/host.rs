@@ -10,7 +10,9 @@ impl WebUrl {
         if let Some(ip) = self.ip {
             HostRef::Address(ip)
         } else {
-            HostRef::Name(unsafe { DomainRef::new(self.host_str()) })
+            // SAFETY: `DomainRef::new_unchecked` requires a valid domain name. The host was
+            // validated by `parse_ip_and_validate_domain` & lowercased before the URL was built.
+            HostRef::Name(unsafe { DomainRef::new_unchecked(self.host_str()) })
         }
     }
 
@@ -19,7 +21,7 @@ impl WebUrl {
     /// This will be valid:
     /// - If the host is a domain it will be lowercase.
     /// - If the host is an IPv6 address it will include the '[]' brackets.
-    fn host_str(&self) -> &str {
+    pub fn host_str(&self) -> &str {
         let start: usize = (self.scheme_len + 3) as usize;
         let end: usize = self.host_end as usize;
         &self.url[start..end]
@@ -55,6 +57,17 @@ mod tests {
     }
 
     #[test]
+    fn host_domain_idn() -> Result<(), Box<dyn Error>> {
+        // The `xn--` ACE prefix has consecutive hyphens, which requires `address` >= 0.19.
+        let url = WebUrl::from_str("https://xn--bcher-kva.example")?;
+        match url.host() {
+            HostRef::Name(domain) => assert_eq!(domain.name(), "xn--bcher-kva.example"),
+            _ => panic!("expected domain"),
+        }
+        Ok(())
+    }
+
+    #[test]
     fn host_ipv4() -> Result<(), Box<dyn Error>> {
         let url = WebUrl::from_str("https://127.0.0.1")?;
         match url.host() {
@@ -71,6 +84,17 @@ mod tests {
             HostRef::Address(ip) => assert_eq!(ip, IPv6Address::LOCALHOST.to_ip()),
             _ => panic!("expected ip address"),
         }
+        Ok(())
+    }
+
+    #[test]
+    fn host_str() -> Result<(), Box<dyn Error>> {
+        let url = WebUrl::from_str("https://EXAMPLE.com")?;
+        assert_eq!(url.host_str(), "example.com");
+
+        let url = WebUrl::from_str("https://[::1]:80")?;
+        assert_eq!(url.host_str(), "[::1]");
+
         Ok(())
     }
 }

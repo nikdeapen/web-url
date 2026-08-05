@@ -8,7 +8,7 @@ use crate::parse::Error::InvalidPath;
 /// # Validation
 /// A path will never be empty and will always start with a '/'.
 ///
-/// The path string can contain any US-ASCII letter, number, or punctuation char excluding '?', and
+/// The path string can contain any US-ASCII letter, number, or punctuation char excluding '?' and
 /// '#' since these chars denote the end of the path in the URL.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Path<'a> {
@@ -25,10 +25,19 @@ impl<'a> Path<'a> {
     //! Construction
 
     /// Creates a new path.
+    pub fn new(path: &'a str) -> Result<Self, Error> {
+        if Self::is_valid(path) {
+            Ok(Self { path })
+        } else {
+            Err(InvalidPath)
+        }
+    }
+
+    /// Creates a new path without validating it.
     ///
     /// # Safety
     /// The `path` must be valid.
-    pub unsafe fn new(path: &'a str) -> Self {
+    pub unsafe fn new_unchecked(path: &'a str) -> Self {
         debug_assert!(Self::is_valid(path));
 
         Self { path }
@@ -39,11 +48,7 @@ impl<'a> TryFrom<&'a str> for Path<'a> {
     type Error = Error;
 
     fn try_from(path: &'a str) -> Result<Self, Self::Error> {
-        if Self::is_valid(path) {
-            Ok(Self { path })
-        } else {
-            Err(InvalidPath)
-        }
+        Self::new(path)
     }
 }
 
@@ -67,7 +72,7 @@ impl<'a> Path<'a> {
     //! Display
 
     /// Gets the path string.
-    pub const fn as_str(&self) -> &str {
+    pub const fn as_str(self) -> &'a str {
         self.path
     }
 }
@@ -91,14 +96,25 @@ impl<'a> Path<'a> {
     ///
     /// # Example
     /// `"/a/b/c/"` -> `["a", "b", "c", ""]`
-    pub const fn iter_segments(&self) -> impl Iterator<Item = &'a str> {
+    pub const fn iter_segments(self) -> SegmentIterator<'a> {
         SegmentIterator {
             remaining: self.path,
         }
     }
 }
 
-struct SegmentIterator<'a> {
+impl<'a> IntoIterator for Path<'a> {
+    type Item = &'a str;
+    type IntoIter = SegmentIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_segments()
+    }
+}
+
+/// Responsible for iterating over path segments.
+#[derive(Copy, Clone, Debug)]
+pub struct SegmentIterator<'a> {
     remaining: &'a str,
 }
 
@@ -130,8 +146,10 @@ mod tests {
 
     #[test]
     fn new() {
-        let path: Path = unsafe { Path::new("/the/path") };
+        let path: Path = Path::new("/the/path").unwrap();
         assert_eq!(path.path, "/the/path");
+
+        assert_eq!(Path::new("no-slash"), Err(InvalidPath));
     }
 
     #[test]
@@ -169,7 +187,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let path: Path = unsafe { Path::new("/the/path") };
+        let path: Path = Path::new("/the/path").unwrap();
         assert_eq!(path.as_str(), "/the/path");
         assert_eq!(path.as_ref(), "/the/path");
         assert_eq!(path.to_string(), "/the/path");
@@ -177,19 +195,29 @@ mod tests {
 
     #[test]
     fn iter_segments() {
-        let path: Path = unsafe { Path::new("/") };
+        let path: Path = Path::new("/").unwrap();
         let result: Vec<&str> = path.iter_segments().collect();
         let expected: Vec<&str> = vec![""];
         assert_eq!(result, expected);
 
-        let path: Path = unsafe { Path::new("/the/path") };
+        let path: Path = Path::new("/the/path").unwrap();
         let result: Vec<&str> = path.iter_segments().collect();
         let expected: Vec<&str> = vec!["the", "path"];
         assert_eq!(result, expected);
 
-        let path: Path = unsafe { Path::new("/the/path/") };
+        let path: Path = Path::new("/the/path/").unwrap();
         let result: Vec<&str> = path.iter_segments().collect();
         let expected: Vec<&str> = vec!["the", "path", ""];
         assert_eq!(result, expected)
+    }
+
+    #[test]
+    fn into_iter() {
+        let path: Path = Path::new("/the/path").unwrap();
+        let mut result: Vec<&str> = Vec::new();
+        for segment in path {
+            result.push(segment);
+        }
+        assert_eq!(result, vec!["the", "path"]);
     }
 }

@@ -30,7 +30,7 @@ mod tests {
     use crate::parse::pre_path::parse_scheme_len;
 
     #[test]
-    fn fn_get_scheme_len() {
+    fn fn_parse_scheme_len() {
         let test_cases: &[(&str, Option<(usize, &str)>)] = &[
             ("", None),
             ("s:", None),
