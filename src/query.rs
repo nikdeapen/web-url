@@ -73,7 +73,9 @@ impl<'a> Query<'a> {
     pub fn is_valid(query: &str) -> bool {
         !query.is_empty()
             && query.as_bytes()[0] == b'?'
-            && query.as_bytes()[1..].iter().all(|c| Self::is_valid_char(*c))
+            && query.as_bytes()[1..]
+                .iter()
+                .all(|c| Self::is_valid_char(*c))
     }
 }
 

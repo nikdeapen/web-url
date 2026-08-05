@@ -17,6 +17,7 @@ impl FromStr for WebUrl {
         write_normalized(s, &parts, &mut url);
 
         // SAFETY: `url` is the normalized URL written from the parts, which were parsed from `s`.
-        unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }.map_err(|(error, _)| error)
+        unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }
+            .map_err(|(error, _)| error)
     }
 }
