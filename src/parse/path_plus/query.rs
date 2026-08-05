@@ -34,19 +34,19 @@ mod tests {
         let test_cases: &[(&str, Result<(Option<Query>, &str), Error>)] = &[
             ("", Ok((None, ""))),
             ("no&start=q", Ok((None, "no&start=q"))),
-            ("?", Ok((Some(unsafe { Query::new("?") }), ""))),
+            ("?", Ok((Some(Query::new("?").unwrap()), ""))),
             (
                 "?the&url=query",
-                Ok((Some(unsafe { Query::new("?the&url=query") }), "")),
+                Ok((Some(Query::new("?the&url=query").unwrap()), "")),
             ),
             ("#fragment", Ok((None, "#fragment"))),
             (
                 "?#fragment",
-                Ok((Some(unsafe { Query::new("?") }), "#fragment")),
+                Ok((Some(Query::new("?").unwrap()), "#fragment")),
             ),
             (
                 "?the&url=query#fragment",
-                Ok((Some(unsafe { Query::new("?the&url=query") }), "#fragment")),
+                Ok((Some(Query::new("?the&url=query").unwrap()), "#fragment")),
             ),
         ];
         for (s, expected) in test_cases {

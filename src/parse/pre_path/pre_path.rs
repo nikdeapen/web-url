@@ -1,5 +1,7 @@
-use crate::parse::pre_path::parse_scheme_len;
-use crate::parse::pre_path::{parse_host, parse_ip_and_validate_domain, parse_port};
+use crate::parse::pre_path::{
+    check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port, parse_scheme_len,
+    port_decimal_len,
+};
 use crate::parse::Error;
 use address::IPAddress;
 
@@ -16,30 +18,47 @@ pub struct PrePath {
 impl PrePath {
     //! Properties
 
-    /// Gets the length of the pre-path string.
-    pub fn len(&self) -> usize {
+    /// Gets the length of the pre-path string as it appears in the parsed URL.
+    pub const fn len(self) -> usize {
         self.scheme_len + 3 + self.host_len + self.port_len
     }
 
-    /// Checks if the pre-path string is empty.
-    pub fn is_empty(&self) -> bool {
-        false
+    /// Gets the index just past the host. (the index of the ':' when there is a port)
+    ///
+    /// This is the same in the parsed URL & the normalized URL since only the port is rewritten.
+    pub const fn host_end(self) -> usize {
+        self.scheme_len + 3 + self.host_len
+    }
+
+    /// Gets the length of the port string in the normalized URL. (including the ':')
+    ///
+    /// This is 0 when there is no port. It is shorter than `port_len` when the parsed port was
+    /// empty or had leading zeros, and equal to it otherwise.
+    pub const fn canonical_port_len(self) -> usize {
+        match self.port {
+            Some(port) => 1 + port_decimal_len(port),
+            None => 0,
+        }
+    }
+
+    /// Gets the length of the pre-path string in the normalized URL.
+    pub const fn canonical_len(self) -> usize {
+        self.host_end() + self.canonical_port_len()
     }
 }
 
 impl PrePath {
     //! Operations
 
-    /// Makes the pre-path prefix of `s` lowercase.
+    /// Makes the scheme & host prefix of `url` lowercase.
     ///
-    /// # Safety
-    /// This requires the string up to `len` to be US-ASCII. This will be true if it was parsed
-    /// with the `parse_pre_path` function.
-    pub unsafe fn make_lowercase(&self, url: &mut str) {
-        url[..self.len()]
-            .as_bytes_mut()
-            .iter_mut()
-            .for_each(|c| *c = c.to_ascii_lowercase())
+    /// The port is excluded since it is all digits and unaffected by the letter case.
+    ///
+    /// # Panics
+    /// Panics if `host_end` is past the end of `url` or is not a char boundary. Neither happens
+    /// when `url` was parsed with the `parse_pre_path` function.
+    pub fn make_lowercase(self, url: &mut str) {
+        url[..self.host_end()].make_ascii_lowercase()
     }
 }
 
@@ -50,6 +69,12 @@ impl PrePath {
 /// Returns `Err(_)` if any part of the pre-path is invalid.
 pub fn parse_pre_path(url: &str) -> Result<PrePath, Error> {
     let (scheme_len, after_scheme) = parse_scheme_len(url)?;
+
+    // User info is checked before the host & port so that every form of it reports the same error.
+    // Otherwise the '@' & ':' chars fall through to the host or port parser & the reported error
+    // depends on where the colons happen to be.
+    check_no_user_info(after_scheme)?;
+
     let (host_str, after_host) = parse_host(after_scheme);
     let ip: Option<IPAddress> = parse_ip_and_validate_domain(host_str)?;
     let (port, after_port) = parse_port(after_host)?;
@@ -68,7 +93,7 @@ pub fn parse_pre_path(url: &str) -> Result<PrePath, Error> {
 mod tests {
     use crate::parse::pre_path::{parse_pre_path, PrePath};
     use crate::parse::Error;
-    use crate::parse::Error::{InvalidHost, InvalidScheme};
+    use crate::parse::Error::{InvalidHost, InvalidScheme, UserInfoNotSupported};
     use address::{IPv4Address, IPv6Address};
 
     #[test]
@@ -126,6 +151,55 @@ mod tests {
                     ip: Some(IPv6Address::LOCALHOST.to_ip()),
                     port: Some(80),
                     port_len: 3,
+                }),
+            ),
+            (
+                "scheme://host?query",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 4,
+                    ip: None,
+                    port: None,
+                    port_len: 0,
+                }),
+            ),
+            (
+                "scheme://host#frag",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 4,
+                    ip: None,
+                    port: None,
+                    port_len: 0,
+                }),
+            ),
+            (
+                "scheme://host:80?query",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 4,
+                    ip: None,
+                    port: Some(80),
+                    port_len: 3,
+                }),
+            ),
+            ("scheme://?query", Err(InvalidHost)),
+            ("scheme://#frag", Err(InvalidHost)),
+            // Every form of user info reports the same error.
+            ("scheme://user@host", Err(UserInfoNotSupported)),
+            ("scheme://user:pass@host", Err(UserInfoNotSupported)),
+            ("scheme://user:pass@host:80/p", Err(UserInfoNotSupported)),
+            ("scheme://@host", Err(UserInfoNotSupported)),
+            ("scheme://user@[::1]:80", Err(UserInfoNotSupported)),
+            // An '@' char outside the authority is not user info.
+            (
+                "scheme://host/a@b",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 4,
+                    ip: None,
+                    port: None,
+                    port_len: 0,
                 }),
             ),
         ];

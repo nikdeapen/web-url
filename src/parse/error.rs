@@ -3,10 +3,14 @@ use std::fmt::{Display, Formatter};
 use crate::parse::Error::*;
 
 /// An error parsing a web-based URL.
+#[non_exhaustive]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub enum Error {
     /// The scheme was invalid.
     InvalidScheme,
+
+    /// The URL had user info, which is not supported.
+    UserInfoNotSupported,
 
     /// The host was invalid.
     InvalidHost,
@@ -34,9 +38,10 @@ impl Error {
     //! Display
 
     /// Gets the error message.
-    pub const fn message(&self) -> &'static str {
+    pub const fn message(self) -> &'static str {
         match self {
             InvalidScheme => "invalid scheme",
+            UserInfoNotSupported => "user info is not supported",
             InvalidHost => "invalid host",
             InvalidPort => "invalid port",
             InvalidPath => "invalid path",

@@ -2,18 +2,15 @@ use crate::parse::Error;
 use crate::parse::Error::InvalidFragment;
 use crate::Fragment;
 
-/// Parses the optional `fragment`.
+/// Checks the optional `fragment`.
 ///
-/// The `fragment` must start with a `#` or be empty.
+/// The `fragment` must be a valid fragment or be empty.
 ///
-/// Returns `Ok(Some(fragment))`.
-/// Returns `Ok(None)` if the `fragment` is empty.
+/// Returns `Ok(())` if the `fragment` is valid or empty.
 /// Returns `Err(InvalidFragment)` if the fragment is invalid.
-pub fn parse_fragment(fragment: &str) -> Result<Option<&str>, Error> {
-    if fragment.is_empty() {
-        Ok(None)
-    } else if Fragment::is_valid(fragment) {
-        Ok(Some(fragment))
+pub fn check_fragment(fragment: &str) -> Result<(), Error> {
+    if fragment.is_empty() || Fragment::is_valid(fragment) {
+        Ok(())
     } else {
         Err(InvalidFragment)
     }
@@ -21,23 +18,23 @@ pub fn parse_fragment(fragment: &str) -> Result<Option<&str>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::path_plus::parse_fragment;
+    use crate::parse::path_plus::check_fragment;
     use crate::parse::Error;
     use crate::parse::Error::InvalidFragment;
 
     #[test]
-    fn fn_parse_fragment() {
-        let test_cases: &[(&str, Result<Option<&str>, Error>)] = &[
-            ("", Ok(None)),
+    fn fn_check_fragment() {
+        let test_cases: &[(&str, Result<(), Error>)] = &[
+            ("", Ok(())),
             ("fragment", Err(InvalidFragment)),
-            ("#", Ok(Some("#"))),
-            ("#fragment", Ok(Some("#fragment"))),
+            ("#", Ok(())),
+            ("#fragment", Ok(())),
             ("#\x00", Err(InvalidFragment)),
             ("#你好", Err(InvalidFragment)),
             ("#fragment ", Err(InvalidFragment)),
         ];
         for (fragment, expected) in test_cases {
-            let result: Result<Option<&str>, Error> = parse_fragment(fragment);
+            let result: Result<(), Error> = check_fragment(fragment);
             assert_eq!(result, *expected);
         }
     }

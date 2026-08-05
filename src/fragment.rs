@@ -5,9 +5,8 @@ use std::fmt::{Display, Formatter};
 /// A web-based URL fragment.
 ///
 /// # Validation
-/// A fragment will never be empty and will always start with a '#'.
-///
-/// The fragment string can contain any US-ASCII letter, number, or punctuation char.
+/// A fragment string can contain any US-ASCII letter, number, or punctuation char. The string will never be empty and
+/// will always start with a '#' even if the fragment itself is empty.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Fragment<'a> {
     fragment: &'a str,
@@ -22,11 +21,20 @@ impl Default for Fragment<'static> {
 impl<'a> Fragment<'a> {
     //! Construction
 
-    /// Creates a new fragment.
+    /// Creates a new `fragment`.
+    pub fn new(fragment: &'a str) -> Result<Self, Error> {
+        if Self::is_valid(fragment) {
+            Ok(Self { fragment })
+        } else {
+            Err(InvalidFragment)
+        }
+    }
+
+    /// Creates a new `fragment`.
     ///
     /// # Safety
     /// The `fragment` must be valid.
-    pub unsafe fn new(fragment: &'a str) -> Self {
+    pub unsafe fn new_unchecked(fragment: &'a str) -> Self {
         debug_assert!(Self::is_valid(fragment));
 
         Self { fragment }
@@ -37,11 +45,7 @@ impl<'a> TryFrom<&'a str> for Fragment<'a> {
     type Error = Error;
 
     fn try_from(fragment: &'a str) -> Result<Self, Self::Error> {
-        if Self::is_valid(fragment) {
-            Ok(Self { fragment })
-        } else {
-            Err(InvalidFragment)
-        }
+        Self::new(fragment)
     }
 }
 
@@ -64,15 +68,15 @@ impl<'a> Fragment<'a> {
 }
 
 impl<'a> Fragment<'a> {
-    //! Display
+    //! Properties
 
     /// Gets the fragment value. (will not contain the '#' prefix)
-    pub fn value(&self) -> &str {
+    pub fn value(self) -> &'a str {
         &self.fragment[1..]
     }
 
     /// Gets the fragment string. (will contain the '#' prefix)
-    pub const fn as_str(&self) -> &str {
+    pub const fn as_str(self) -> &'a str {
         self.fragment
     }
 }
@@ -96,8 +100,10 @@ mod tests {
 
     #[test]
     fn new() {
-        let fragment: Fragment = unsafe { Fragment::new("#the-fragment") };
+        let fragment: Fragment = Fragment::new("#the-fragment").unwrap();
         assert_eq!(fragment.fragment, "#the-fragment");
+
+        assert_eq!(Fragment::new("no-hash"), Err(InvalidFragment));
     }
 
     #[test]
@@ -118,10 +124,10 @@ mod tests {
 
     #[test]
     fn value() {
-        let fragment: Fragment = unsafe { Fragment::new("#the-fragment") };
+        let fragment: Fragment = Fragment::new("#the-fragment").unwrap();
         assert_eq!(fragment.value(), "the-fragment");
 
-        let fragment: Fragment = unsafe { Fragment::new("#") };
+        let fragment: Fragment = Fragment::new("#").unwrap();
         assert_eq!(fragment.value(), "");
     }
 
@@ -146,7 +152,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let fragment: Fragment = unsafe { Fragment::new("#the-fragment") };
+        let fragment: Fragment = Fragment::new("#the-fragment").unwrap();
         assert_eq!(fragment.as_str(), "#the-fragment");
         assert_eq!(fragment.as_ref(), "#the-fragment");
         assert_eq!(fragment.to_string(), "#the-fragment");

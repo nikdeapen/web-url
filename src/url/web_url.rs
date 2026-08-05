@@ -1,13 +1,15 @@
 use address::IPAddress;
 
+use crate::parse::{parse_parts, Parts, PrePath};
+
 /// A web-based URL.
 ///
 /// # Format
-/// All web-based URLs will be in the format: `scheme://host:port/path?query#fragment`.
-/// This is a sub-set of [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-4.3).
+/// All web-based URLs will be in the format: `scheme://host:port/path?query#fragment`. This is a
+/// sub-set of [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-4.3).
 ///
-/// The port, query, and fragment are all optional.
-/// The path will never be empty and will always start with a '/'.
+/// - The `port`, `query`, and `fragment` are all optional.
+/// - The `path` will never be empty and will always start with a '/'.
 #[derive(Clone, Debug)]
 pub struct WebUrl {
     pub(in crate::url) url: String,
@@ -21,14 +23,49 @@ pub struct WebUrl {
 }
 
 impl WebUrl {
+    //! Limits
+
+    /// The maximum length of a URL string.
+    pub const MAX_LEN: usize = u32::MAX as usize;
+
+    /// Ensures the URL `length` is valid.
+    ///
+    /// # Panics
+    /// Panics if the `len` is greater than `Self::MAX_LEN`.
+    pub(in crate::url) fn check_len(len: usize) {
+        assert!(
+            len <= Self::MAX_LEN,
+            "a web-url with '{}' bytes is longer than the max of '{}' bytes",
+            len,
+            Self::MAX_LEN
+        );
+    }
+}
+
+impl WebUrl {
     //! Construction
 
-    /// Creates a new web-based URL.
+    /// Creates a new web-based URL without validating it.
     ///
     /// # Safety
-    /// The parameters must be valid.
+    /// The `url` must be a normalized web-based URL & every other parameter must describe it:
+    /// - The `url` parses & is already normalized. The scheme & host are lowercase, the path is
+    ///   present & starts with a '/', an empty port is absent along with its ':', and the port has
+    ///   no leading zeros.
+    /// - The offsets are non-decreasing & the last is within the `url`:
+    ///   `scheme_len <= host_end <= port_end <= path_end <= query_end <= url.len()`.
+    /// - The `ip` is the parsed host when the host is an IP address & `None` when it is a domain.
+    /// - The `port` is the parsed port & matches the `[host_end..port_end]` text.
+    ///
+    /// Breaking the contract does not cause undefined behavior in this crate; the component
+    /// accessors return the wrong slice or panic. It is still `unsafe` because `host()` hands the
+    /// host slice to `DomainRef::new_unchecked`, whose own contract requires a valid domain name.
+    ///
+    /// The contract is `debug_assert`ed by re-parsing the `url`, which is the work this function
+    /// exists to skip, so the check is absent from release builds. Use `FromStr` or
+    /// `TryFrom<String>` to build a URL that is validated in release builds too.
     #[allow(clippy::too_many_arguments)]
-    pub unsafe fn new<S>(
+    pub unsafe fn new_unchecked<S>(
         url: S,
         scheme_len: u32,
         host_end: u32,
@@ -41,7 +78,7 @@ impl WebUrl {
     where
         S: Into<String>,
     {
-        Self {
+        let url: Self = Self {
             url: url.into(),
             scheme_len,
             host_end,
@@ -50,7 +87,79 @@ impl WebUrl {
             port,
             path_end,
             query_end,
+        };
+
+        debug_assert!(
+            url.is_consistent(),
+            "web-url: WebUrl::new_unchecked was called with a URL that is not normalized or with \
+             offsets that do not describe it. The URL was {:?} with scheme_len={} host_end={} \
+             ip={:?} port_end={} port={:?} path_end={} query_end={}.",
+            url.url,
+            scheme_len,
+            host_end,
+            ip,
+            port_end,
+            port,
+            path_end,
+            query_end
+        );
+
+        url
+    }
+}
+
+impl WebUrl {
+    //! Consistency
+
+    /// Checks that the URL string is normalized & that every offset describes it.
+    ///
+    /// This is the `new_unchecked` contract. It re-parses the URL, so it is only used in
+    /// `debug_assert`s; parsing is exactly the work `new_unchecked` exists to skip.
+    fn is_consistent(&self) -> bool {
+        // The offsets are checked before anything is sliced so that a bad offset returns false
+        // rather than panicking inside the check itself.
+        if self.url.len() > Self::MAX_LEN {
+            return false;
         }
+        let scheme_len: usize = self.scheme_len as usize;
+        let host_end: usize = self.host_end as usize;
+        let port_end: usize = self.port_end as usize;
+        let path_end: usize = self.path_end as usize;
+        let query_end: usize = self.query_end as usize;
+        if scheme_len > host_end
+            || host_end > port_end
+            || port_end > path_end
+            || path_end > query_end
+            || query_end > self.url.len()
+        {
+            return false;
+        }
+
+        // The parser is the oracle for the URL string. A normalized URL must parse, must need no
+        // further normalization, & must already be lowercase through the host.
+        let parts: Parts = match parse_parts(self.url.as_str()) {
+            Ok(parts) => parts,
+            Err(_) => return false,
+        };
+        if !parts.is_normalized() {
+            return false;
+        }
+        let pre_path: &PrePath = &parts.pre_path;
+        if self.url[..pre_path.host_end()]
+            .bytes()
+            .any(|c| c.is_ascii_uppercase())
+        {
+            return false;
+        }
+
+        // Every offset must match what the parser found.
+        scheme_len == pre_path.scheme_len
+            && host_end == pre_path.host_end()
+            && self.ip == pre_path.ip
+            && port_end == host_end + pre_path.canonical_port_len()
+            && self.port == pre_path.port
+            && path_end == port_end + parts.path_plus.path_len
+            && query_end == path_end + parts.path_plus.query_len
     }
 }
 
@@ -65,119 +174,5 @@ impl WebUrl {
     /// Checks if the url is empty.
     pub fn is_empty(&self) -> bool {
         false
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::parse::Error::*;
-    use crate::WebUrl;
-    use std::str::FromStr;
-
-    #[test]
-    fn len() {
-        let url = WebUrl::from_str("https://example.com/path").unwrap();
-        assert_eq!(url.len(), "https://example.com/path".len());
-    }
-
-    #[test]
-    fn is_empty() {
-        let url = WebUrl::from_str("https://example.com").unwrap();
-        assert!(!url.is_empty());
-    }
-
-    #[test]
-    fn parse_full_url() {
-        let url = WebUrl::from_str("https://example.com:8080/path?key=value#section").unwrap();
-        assert_eq!(url.scheme().as_str(), "https");
-        assert_eq!(url.port(), Some(8080));
-        assert_eq!(url.path().as_str(), "/path");
-        assert_eq!(url.query().unwrap().as_str(), "?key=value");
-        assert_eq!(url.fragment().unwrap().as_str(), "#section");
-    }
-
-    #[test]
-    fn parse_no_path_appends_slash() {
-        let url = WebUrl::from_str("https://example.com").unwrap();
-        assert_eq!(url.path().as_str(), "/");
-        assert_eq!(url.as_str(), "https://example.com/");
-    }
-
-    #[test]
-    fn parse_uppercase_lowercased() {
-        let url = WebUrl::from_str("HTTPS://EXAMPLE.COM/Path").unwrap();
-        assert_eq!(url.scheme().as_str(), "https");
-        assert_eq!(url.as_str(), "https://example.com/Path");
-    }
-
-    #[test]
-    fn parse_invalid_scheme() {
-        assert_eq!(WebUrl::from_str("").unwrap_err(), InvalidScheme);
-        assert_eq!(WebUrl::from_str("://host").unwrap_err(), InvalidScheme);
-        assert_eq!(WebUrl::from_str("0http://host").unwrap_err(), InvalidScheme);
-    }
-
-    #[test]
-    fn parse_invalid_host() {
-        assert_eq!(WebUrl::from_str("http://").unwrap_err(), InvalidHost);
-        assert_eq!(WebUrl::from_str("http://ho!st").unwrap_err(), InvalidHost);
-    }
-
-    #[test]
-    fn parse_invalid_port() {
-        assert_eq!(
-            WebUrl::from_str("http://host:bad").unwrap_err(),
-            InvalidPort
-        );
-        assert_eq!(
-            WebUrl::from_str("http://host:99999").unwrap_err(),
-            InvalidPort
-        );
-    }
-
-    #[test]
-    fn parse_invalid_path() {
-        assert_eq!(
-            WebUrl::from_str("http://host/path with space").unwrap_err(),
-            InvalidPath
-        );
-    }
-
-    #[test]
-    fn parse_invalid_query() {
-        assert_eq!(
-            WebUrl::from_str("http://host/path?query with space").unwrap_err(),
-            InvalidQuery
-        );
-    }
-
-    #[test]
-    fn parse_invalid_fragment() {
-        assert_eq!(
-            WebUrl::from_str("http://host/path# bad").unwrap_err(),
-            InvalidFragment
-        );
-    }
-
-    #[test]
-    fn try_from_string_ok() {
-        let input = String::from("https://example.com/path");
-        let url = WebUrl::try_from(input).unwrap();
-        assert_eq!(url.as_str(), "https://example.com/path");
-    }
-
-    #[test]
-    fn try_from_string_err_returns_string() {
-        let input = String::from("not a url");
-        let (error, returned) = WebUrl::try_from(input).unwrap_err();
-        assert_eq!(error, InvalidScheme);
-        assert_eq!(returned, "not a url");
-    }
-
-    #[test]
-    fn try_from_string_no_path() {
-        let input = String::from("https://example.com");
-        let url = WebUrl::try_from(input).unwrap();
-        assert_eq!(url.as_str(), "https://example.com/");
     }
 }

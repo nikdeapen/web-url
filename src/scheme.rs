@@ -6,7 +6,7 @@ use crate::parse::Error::InvalidScheme;
 /// A web-based URL scheme.
 ///
 /// # RFC 3986
-/// https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
+/// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.1>
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Scheme<'a> {
     scheme: &'a str,
@@ -16,10 +16,19 @@ impl<'a> Scheme<'a> {
     //! Construction
 
     /// Creates a new scheme.
+    pub fn new(scheme: &'a str) -> Result<Self, Error> {
+        if Self::is_valid(scheme, false) {
+            Ok(Self { scheme })
+        } else {
+            Err(InvalidScheme)
+        }
+    }
+
+    /// Creates a new scheme.
     ///
     /// # Safety
     /// The `scheme` must be valid.
-    pub unsafe fn new(scheme: &'a str) -> Self {
+    pub unsafe fn new_unchecked(scheme: &'a str) -> Self {
         debug_assert!(Self::is_valid(scheme, false));
 
         Self { scheme }
@@ -30,11 +39,7 @@ impl<'a> TryFrom<&'a str> for Scheme<'a> {
     type Error = Error;
 
     fn try_from(scheme: &'a str) -> Result<Self, Self::Error> {
-        if Self::is_valid(scheme, false) {
-            Ok(Self { scheme })
-        } else {
-            Err(InvalidScheme)
-        }
+        Self::new(scheme)
     }
 }
 
@@ -56,7 +61,7 @@ impl<'a> Scheme<'a> {
     }
 
     /// Checks if the `scheme` is valid.
-    pub fn is_valid(scheme: &'a str, ignore_case: bool) -> bool {
+    pub fn is_valid(scheme: &str, ignore_case: bool) -> bool {
         !scheme.is_empty()
             && Self::is_valid_first_char(scheme.as_bytes()[0], ignore_case)
             && scheme.as_bytes()[1..]
@@ -69,7 +74,7 @@ impl<'a> Scheme<'a> {
     //! Display
 
     /// Gets the scheme string.
-    pub const fn as_str(&self) -> &str {
+    pub const fn as_str(self) -> &'a str {
         self.scheme
     }
 }
@@ -93,8 +98,10 @@ mod tests {
 
     #[test]
     fn new() {
-        let scheme: Scheme = unsafe { Scheme::new("scheme") };
+        let scheme: Scheme = Scheme::new("scheme").unwrap();
         assert_eq!(scheme.scheme, "scheme");
+
+        assert_eq!(Scheme::new("0abc"), Err(InvalidScheme));
     }
 
     #[test]
@@ -129,7 +136,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let scheme: Scheme = unsafe { Scheme::new("scheme") };
+        let scheme: Scheme = Scheme::new("scheme").unwrap();
         assert_eq!(scheme.as_str(), "scheme");
         assert_eq!(scheme.as_ref(), "scheme");
         assert_eq!(scheme.to_string(), "scheme");
