@@ -1,5 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![allow(clippy::module_inception)]
+#![warn(clippy::must_use_candidate)]
+
+pub use address;
 
 pub use fragment::*;
 pub use param::*;

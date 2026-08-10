@@ -19,10 +19,7 @@ pub fn parse_path_plus(path_plus: &str) -> Result<PathPlus, Error> {
     let path_len: usize = path.as_str().len();
     let query_len: usize = query.map(|q| q.as_str().len()).unwrap_or(0);
 
-    Ok(PathPlus {
-        path_len,
-        query_len,
-    })
+    Ok(PathPlus { path_len, query_len })
 }
 
 /// Parses the `query_plus`. (the optional query & the optional fragment)
@@ -37,10 +34,7 @@ pub fn parse_query_plus(query_plus: &str) -> Result<PathPlus, Error> {
 
     let query_len: usize = query.map(|q| q.as_str().len()).unwrap_or(0);
 
-    Ok(PathPlus {
-        path_len: 1,
-        query_len,
-    })
+    Ok(PathPlus { path_len: 1, query_len })
 }
 
 #[cfg(test)]
@@ -51,10 +45,7 @@ mod tests {
 
     /// Creates the expected path-plus.
     fn path_plus(path_len: usize, query_len: usize) -> PathPlus {
-        PathPlus {
-            path_len,
-            query_len,
-        }
+        PathPlus { path_len, query_len }
     }
 
     #[test]

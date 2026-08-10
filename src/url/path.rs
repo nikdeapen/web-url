@@ -5,7 +5,6 @@ impl WebUrl {
 
     /// Gets the path.
     pub fn path(&self) -> Path<'_> {
-        // SAFETY: The path was validated, or inserted as the default '/', before the URL was built.
         unsafe { Path::new_unchecked(self.path_str()) }
     }
 

@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use crate::WebUrl;
 
@@ -6,6 +6,7 @@ impl WebUrl {
     //! Display
 
     /// Gets the URL string.
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.url.as_str()
     }
@@ -14,6 +15,12 @@ impl WebUrl {
 impl AsRef<str> for WebUrl {
     fn as_ref(&self) -> &str {
         self.as_str()
+    }
+}
+
+impl Debug for WebUrl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 

@@ -1,15 +1,18 @@
 use crate::parse::finalize::finalize_web_url;
 use crate::parse::parts::{parse_parts, write_normalized, Parts};
-use crate::parse::Error;
+use crate::parse::InvalidUrlString;
 use crate::WebUrl;
 
+/// Parses a web-based URL, reusing the `String` allocation when possible.
+///
+/// On error the string can be recovered from the `InvalidUrlString`.
 impl TryFrom<String> for WebUrl {
-    type Error = (Error, String);
+    type Error = InvalidUrlString;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
         let parts: Parts = match parse_parts(s.as_str()) {
             Ok(parts) => parts,
-            Err(error) => return Err((error, s)),
+            Err(error) => return Err(InvalidUrlString::new(error, s)),
         };
 
         // The URL is validated before it is modified so the string is returned unchanged on error.
@@ -30,8 +33,8 @@ impl TryFrom<String> for WebUrl {
             url
         };
 
-        // SAFETY: `url` is the normalized URL for the parts, which were parsed from `s`.
         unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }
+            .map_err(|(error, url)| InvalidUrlString::new(error, url))
     }
 }
 
@@ -39,6 +42,7 @@ impl TryFrom<String> for WebUrl {
 mod tests {
     use crate::parse::Error;
     use crate::parse::Error::{InvalidPort, InvalidScheme};
+    use crate::parse::InvalidUrlString;
     use crate::WebUrl;
 
     #[test]
@@ -60,15 +64,16 @@ mod tests {
             ("http://host:bad", Err(InvalidPort)),
         ];
         for (input, expected) in test_cases {
-            let result: Result<WebUrl, (Error, String)> = WebUrl::try_from(String::from(*input));
+            let result: Result<WebUrl, InvalidUrlString> = WebUrl::try_from(String::from(*input));
             match expected {
                 Ok(expected) => {
                     assert_eq!(result.unwrap().as_str(), *expected, "input={input}");
                 }
                 Err(expected) => {
-                    let (error, url) = result.unwrap_err();
-                    assert_eq!(error, *expected, "input={input}");
-                    assert_eq!(url, *input, "input={input}");
+                    let error: InvalidUrlString = result.unwrap_err();
+                    assert_eq!(error.error(), *expected, "input={input}");
+                    assert_eq!(error.url(), *input, "input={input}");
+                    assert_eq!(error.into_url(), *input, "input={input}");
                 }
             }
         }

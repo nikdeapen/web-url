@@ -1,8 +1,7 @@
-use std::fmt::Write;
-
 use crate::parse::path_plus::{parse_path_plus, parse_query_plus, PathPlus};
 use crate::parse::pre_path::{parse_pre_path, PrePath};
 use crate::parse::Error;
+use std::fmt::Write;
 
 /// The validated parts of a web-based URL.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]

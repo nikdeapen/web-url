@@ -1,23 +1,39 @@
-use std::fmt::{Display, Formatter};
-
 use crate::parse::Error;
 use crate::parse::Error::InvalidScheme;
+use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL scheme.
 ///
 /// # RFC 3986
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.1>
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+///
+/// # Validation
+/// A scheme is a US-ASCII lowercase letter followed by lowercase letters, digits, or the '+', '-', & '.' chars.
+#[must_use]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Scheme<'a> {
     scheme: &'a str,
+}
+
+impl Scheme<'static> {
+    //! Constants
+
+    /// The `http` scheme.
+    pub const HTTP: Self = Self { scheme: "http" };
+
+    /// The `https` scheme.
+    pub const HTTPS: Self = Self { scheme: "https" };
 }
 
 impl<'a> Scheme<'a> {
     //! Construction
 
     /// Creates a new scheme.
+    ///
+    /// # Note
+    /// The `scheme` must already be lowercase.
     pub fn new(scheme: &'a str) -> Result<Self, Error> {
-        if Self::is_valid(scheme, false) {
+        if Self::is_valid(scheme) {
             Ok(Self { scheme })
         } else {
             Err(InvalidScheme)
@@ -29,7 +45,7 @@ impl<'a> Scheme<'a> {
     /// # Safety
     /// The `scheme` must be valid.
     pub unsafe fn new_unchecked(scheme: &'a str) -> Self {
-        debug_assert!(Self::is_valid(scheme, false));
+        debug_assert!(Self::is_valid(scheme));
 
         Self { scheme }
     }
@@ -53,27 +69,30 @@ impl<'a> Scheme<'a> {
 
     /// Checks if the char `c` is a valid scheme char.
     fn is_valid_char(c: u8, ignore_case: bool) -> bool {
-        Self::is_valid_first_char(c, ignore_case)
-            || c.is_ascii_digit()
-            || c == b'+'
-            || c == b'-'
-            || c == b'.'
+        Self::is_valid_first_char(c, ignore_case) || c.is_ascii_digit() || c == b'+' || c == b'-' || c == b'.'
     }
 
-    /// Checks if the `scheme` is valid.
-    pub fn is_valid(scheme: &str, ignore_case: bool) -> bool {
+    /// Checks if the `scheme` is valid. Uppercase chars are only valid when `ignore_case` is set.
+    pub(crate) fn is_valid_ignore_case(scheme: &str, ignore_case: bool) -> bool {
         !scheme.is_empty()
             && Self::is_valid_first_char(scheme.as_bytes()[0], ignore_case)
             && scheme.as_bytes()[1..]
                 .iter()
                 .all(|c| Self::is_valid_char(*c, ignore_case))
     }
+
+    /// Checks if the `scheme` is valid.
+    #[must_use]
+    pub fn is_valid(scheme: &str) -> bool {
+        Self::is_valid_ignore_case(scheme, false)
+    }
 }
 
 impl<'a> Scheme<'a> {
-    //! Display
+    //! Properties
 
     /// Gets the scheme string.
+    #[must_use]
     pub const fn as_str(self) -> &'a str {
         self.scheme
     }
@@ -82,6 +101,12 @@ impl<'a> Scheme<'a> {
 impl<'a> AsRef<str> for Scheme<'a> {
     fn as_ref(&self) -> &str {
         self.scheme
+    }
+}
+
+impl<'a> Debug for Scheme<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -126,10 +151,10 @@ mod tests {
             ("azAZ09+-.", true, false),
         ];
         for (scheme, expected_ic_true, expected_ic_false) in test_cases {
-            let result: bool = Scheme::is_valid(scheme, true);
+            let result: bool = Scheme::is_valid_ignore_case(scheme, true);
             assert_eq!(result, *expected_ic_true, "scheme={}", scheme);
 
-            let result: bool = Scheme::is_valid(scheme, false);
+            let result: bool = Scheme::is_valid(scheme);
             assert_eq!(result, *expected_ic_false, "scheme={}", scheme);
         }
     }

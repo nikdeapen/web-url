@@ -1,6 +1,5 @@
-use std::fmt::{Display, Formatter};
-
 use crate::parse::Error::*;
+use std::fmt::{Display, Formatter};
 
 /// An error parsing a web-based URL.
 #[non_exhaustive]
@@ -38,6 +37,7 @@ impl Error {
     //! Display
 
     /// Gets the error message.
+    #[must_use]
     pub const fn message(self) -> &'static str {
         match self {
             InvalidScheme => "invalid scheme",

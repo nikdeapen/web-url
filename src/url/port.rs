@@ -4,6 +4,7 @@ impl WebUrl {
     //! Port
 
     /// Gets the optional port.
+    #[must_use]
     pub fn port(&self) -> Option<u16> {
         self.port
     }

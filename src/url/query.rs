@@ -4,13 +4,12 @@ impl WebUrl {
     //! Query
 
     /// Gets the optional query.
+    #[must_use]
     pub fn query(&self) -> Option<Query<'_>> {
         let query: &str = self.query_str();
         if query.is_empty() {
             None
         } else {
-            // SAFETY: The query was validated before the URL was built & `add_param` splices in
-            // only validated params.
             Some(unsafe { Query::new_unchecked(query) })
         }
     }
@@ -44,20 +43,9 @@ impl WebUrl {
     ///
     /// # Panics
     /// If the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    pub fn add_param<'a, P>(&mut self, param: P)
-    where
-        P: Into<Param<'a>>,
-    {
-        let param: Param = param.into();
-
-        let separator: char = if self.path_end == self.query_end {
-            '?'
-        } else {
-            '&'
-        };
-        let added: usize = separator.len_utf8()
-            + param.name().len()
-            + param.value().map(|v| 1 + v.len()).unwrap_or(0);
+    pub fn add_param(&mut self, param: Param) {
+        let separator: char = if self.path_end == self.query_end { '?' } else { '&' };
+        let added: usize = separator.len_utf8() + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0);
 
         // The length is checked before anything is modified so an over-long URL panics with the URL
         // intact rather than leaving the string inconsistent with the component offsets.
@@ -81,10 +69,7 @@ impl WebUrl {
     }
 
     /// Adds the query `param`.
-    pub fn with_param<'a, P>(mut self, param: P) -> Self
-    where
-        P: Into<Param<'a>>,
-    {
+    pub fn with_param(mut self, param: Param) -> Self {
         self.add_param(param);
         self
     }
@@ -102,7 +87,7 @@ mod tests {
     fn params_of(url: &WebUrl) -> Vec<(String, Option<String>)> {
         url.query()
             .map(|q| {
-                q.iter()
+                q.iter_params()
                     .map(|p| (p.name().to_string(), p.value().map(str::to_string)))
                     .collect()
             })
@@ -197,7 +182,7 @@ mod tests {
         {
             url.add_param(Param::try_from(format!("a={i}").as_str())?);
             assert_eq!(url.as_str(), *expected);
-            assert_eq!(url.query().unwrap().iter().count(), i + 1);
+            assert_eq!(url.query().unwrap().iter_params().count(), i + 1);
         }
 
         Ok(())
@@ -213,7 +198,7 @@ mod tests {
         url.add_param(Param::try_from("empty=")?);
         assert_eq!(url.as_str(), "https://host/p?flag&empty=");
 
-        let params: Vec<Param> = url.query().unwrap().iter().collect();
+        let params: Vec<Param> = url.query().unwrap().iter_params().collect();
         assert_eq!(params[0].value(), None);
         assert_eq!(params[1].value(), Some(""));
 

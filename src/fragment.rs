@@ -1,27 +1,26 @@
+use crate::parse;
 use crate::parse::Error;
 use crate::parse::Error::InvalidFragment;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL fragment.
 ///
+/// # RFC 3986
+/// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.5>
+///
 /// # Validation
-/// A fragment string can contain any US-ASCII letter, number, or punctuation char. The string will never be empty and
-/// will always start with a '#' even if the fragment itself is empty.
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+/// A fragment string will never be empty and will always start with a '#' even if the fragment itself is empty. The
+/// fragment value can contain any US-ASCII letter, number, or punctuation char. Fragments are case-sensitive.
+#[must_use]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Fragment<'a> {
     fragment: &'a str,
-}
-
-impl Default for Fragment<'static> {
-    fn default() -> Self {
-        Self { fragment: "#" }
-    }
 }
 
 impl<'a> Fragment<'a> {
     //! Construction
 
-    /// Creates a new `fragment`.
+    /// Creates a new fragment.
     pub fn new(fragment: &'a str) -> Result<Self, Error> {
         if Self::is_valid(fragment) {
             Ok(Self { fragment })
@@ -30,7 +29,7 @@ impl<'a> Fragment<'a> {
         }
     }
 
-    /// Creates a new `fragment`.
+    /// Creates a new fragment.
     ///
     /// # Safety
     /// The `fragment` must be valid.
@@ -38,6 +37,12 @@ impl<'a> Fragment<'a> {
         debug_assert!(Self::is_valid(fragment));
 
         Self { fragment }
+    }
+}
+
+impl<'a> Default for Fragment<'a> {
+    fn default() -> Self {
+        Self { fragment: "#" }
     }
 }
 
@@ -52,18 +57,10 @@ impl<'a> TryFrom<&'a str> for Fragment<'a> {
 impl<'a> Fragment<'a> {
     //! Validation
 
-    /// Checks if the char `c` is valid.
-    fn is_valid_char(c: u8) -> bool {
-        c.is_ascii_alphanumeric() || c.is_ascii_punctuation()
-    }
-
     /// Checks if the `fragment` is valid.
+    #[must_use]
     pub fn is_valid(fragment: &str) -> bool {
-        !fragment.is_empty()
-            && fragment.as_bytes()[0] == b'#'
-            && fragment.as_bytes()[1..]
-                .iter()
-                .all(|c| Self::is_valid_char(*c))
+        parse::is_valid_segment(fragment, b'#', "")
     }
 }
 
@@ -71,11 +68,13 @@ impl<'a> Fragment<'a> {
     //! Properties
 
     /// Gets the fragment value. (will not contain the '#' prefix)
+    #[must_use]
     pub fn value(self) -> &'a str {
         &self.fragment[1..]
     }
 
     /// Gets the fragment string. (will contain the '#' prefix)
+    #[must_use]
     pub const fn as_str(self) -> &'a str {
         self.fragment
     }
@@ -84,6 +83,12 @@ impl<'a> Fragment<'a> {
 impl<'a> AsRef<str> for Fragment<'a> {
     fn as_ref(&self) -> &str {
         self.fragment
+    }
+}
+
+impl<'a> Debug for Fragment<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 

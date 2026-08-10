@@ -5,7 +5,6 @@ impl WebUrl {
 
     /// Gets the scheme.
     pub fn scheme(&self) -> Scheme<'_> {
-        // SAFETY: The scheme was validated & lowercased before the URL was built.
         unsafe { Scheme::new_unchecked(self.scheme_str()) }
     }
 

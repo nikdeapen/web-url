@@ -10,7 +10,8 @@ use crate::parse::{parse_parts, Parts, PrePath};
 ///
 /// - The `port`, `query`, and `fragment` are all optional.
 /// - The `path` will never be empty and will always start with a '/'.
-#[derive(Clone, Debug)]
+#[must_use]
+#[derive(Clone)]
 pub struct WebUrl {
     pub(in crate::url) url: String,
     pub(in crate::url) scheme_len: u32,
@@ -45,7 +46,7 @@ impl WebUrl {
 impl WebUrl {
     //! Construction
 
-    /// Creates a new web-based URL without validating it.
+    /// Creates a new web-based URL.
     ///
     /// # Safety
     /// The `url` must be a normalized web-based URL & every other parameter must describe it:
@@ -145,10 +146,7 @@ impl WebUrl {
             return false;
         }
         let pre_path: &PrePath = &parts.pre_path;
-        if self.url[..pre_path.host_end()]
-            .bytes()
-            .any(|c| c.is_ascii_uppercase())
-        {
+        if self.url[..pre_path.host_end()].bytes().any(|c| c.is_ascii_uppercase()) {
             return false;
         }
 
@@ -167,11 +165,13 @@ impl WebUrl {
     //! Properties
 
     /// Gets the length.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.url.len()
     }
 
     /// Checks if the url is empty.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         false
     }
