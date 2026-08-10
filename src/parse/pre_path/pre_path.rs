@@ -1,6 +1,5 @@
 use crate::parse::pre_path::{
-    check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port, parse_scheme_len,
-    port_decimal_len,
+    check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port, parse_scheme_len, port_decimal_len,
 };
 use crate::parse::Error;
 use address::IPAddress;

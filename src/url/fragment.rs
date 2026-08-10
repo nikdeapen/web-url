@@ -4,13 +4,12 @@ impl WebUrl {
     //! Fragment
 
     /// Gets the optional fragment.
+    #[must_use]
     pub fn fragment(&self) -> Option<Fragment<'_>> {
         let fragment: &str = self.fragment_str();
         if fragment.is_empty() {
             None
         } else {
-            // SAFETY: The fragment was validated before the URL was built or set by
-            // `set_fragment`.
             Some(unsafe { Fragment::new_unchecked(fragment) })
         }
     }
@@ -105,8 +104,7 @@ mod tests {
 
     #[test]
     fn with_fragment() -> Result<(), Box<dyn Error>> {
-        let url =
-            WebUrl::from_str("https://example.com")?.with_fragment(Fragment::try_from("#frag")?);
+        let url = WebUrl::from_str("https://example.com")?.with_fragment(Fragment::try_from("#frag")?);
         assert_eq!(url.as_str(), "https://example.com/#frag");
 
         let url = WebUrl::from_str("https://example.com/path#old")?.with_fragment(None);

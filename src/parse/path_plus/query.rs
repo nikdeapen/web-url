@@ -6,7 +6,6 @@ use crate::Query;
 /// Returns `Ok(optional_query, rest_of_s)`.
 /// Returns `Ok(None)` if `s` does not start with a `?`.
 /// Returns `Err(InvalidQuery)` if the query is invalid.
-#[allow(clippy::type_complexity)]
 pub fn parse_query(s: &str) -> Result<(Option<Query<'_>>, &str), Error> {
     if !s.is_empty() && s.as_bytes()[0] == b'?' {
         if let Some(hash) = s.as_bytes().iter().position(|c| *c == b'#') {
@@ -35,15 +34,9 @@ mod tests {
             ("", Ok((None, ""))),
             ("no&start=q", Ok((None, "no&start=q"))),
             ("?", Ok((Some(Query::new("?").unwrap()), ""))),
-            (
-                "?the&url=query",
-                Ok((Some(Query::new("?the&url=query").unwrap()), "")),
-            ),
+            ("?the&url=query", Ok((Some(Query::new("?the&url=query").unwrap()), ""))),
             ("#fragment", Ok((None, "#fragment"))),
-            (
-                "?#fragment",
-                Ok((Some(Query::new("?").unwrap()), "#fragment")),
-            ),
+            ("?#fragment", Ok((Some(Query::new("?").unwrap()), "#fragment"))),
             (
                 "?the&url=query#fragment",
                 Ok((Some(Query::new("?the&url=query").unwrap()), "#fragment")),

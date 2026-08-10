@@ -10,9 +10,9 @@ use crate::Scheme;
 /// Returns `Err(InvalidScheme)` if the scheme or `://` postfix is invalid.
 pub fn parse_scheme_len(s: &str) -> Result<(usize, &str), Error> {
     if let Some(colon) = s.as_bytes().iter().position(|c| *c == b':') {
-        if Scheme::is_valid(&s[..colon], true) {
+        if Scheme::is_valid_ignore_case(&s[..colon], true) {
             let s: &str = &s[colon + 1..];
-            if s.len() < 2 || s.as_bytes()[0] != b'/' || s.as_bytes()[1] != b'/' {
+            if !s.starts_with("//") {
                 Err(InvalidScheme)
             } else {
                 Ok((colon, &s[2..]))
@@ -44,7 +44,7 @@ mod tests {
         ];
         for (s, expected) in test_cases {
             let result: Option<(usize, &str)> = parse_scheme_len(s).ok();
-            assert_eq!(result, *expected);
+            assert_eq!(result, *expected, "s={}", s);
         }
     }
 }

@@ -1,17 +1,19 @@
+use crate::parse;
 use crate::parse::Error;
 use crate::parse::Error::InvalidParam;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL query parameter.
 ///
 /// # Validation
-/// Both the name and value of a query parameter may be the empty string. The value string may also
-/// be absent altogether, which signifies a missing '=' in the query parameter string.
+/// Both the name and value of a query parameter may be the empty string. The value string may also be absent
+/// altogether, which signifies a missing '=' in the query parameter string.
 ///
-/// Query parameter names & values can contain any US-ASCII letters, numbers, or punctuation chars
-/// excluding '&' and '#' since these chars denote the end of the parameter or query in the URL.
-/// Names cannot contain the '=' char since this denotes the end of the query parameter name.
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+/// Query parameter names & values can contain any US-ASCII letters, numbers, or punctuation chars excluding '&' and '#'
+/// since these chars denote the end of the parameter or query in the URL. Names cannot contain the '=' char since this
+/// denotes the end of the query parameter name.
+#[must_use]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Param<'a> {
     name: &'a str,
     value: Option<&'a str>,
@@ -29,7 +31,7 @@ impl<'a> Param<'a> {
         }
     }
 
-    /// Creates a new query parameter without validating it.
+    /// Creates a new query parameter.
     ///
     /// # Safety
     /// The `name` and `value` must be valid.
@@ -40,19 +42,23 @@ impl<'a> Param<'a> {
         Self { name, value }
     }
 
-    /// Creates a new query parameter from the `param` without validating it.
+    /// Splits the `param` into a name & optional value on the first '=' char.
+    fn split(param: &str) -> (&str, Option<&str>) {
+        match param.split_once('=') {
+            Some((name, value)) => (name, Some(value)),
+            None => (param, None),
+        }
+    }
+
+    /// Creates a new query parameter from the `param`.
     ///
     /// The `param` will be split on the first '=' char. If not present the value will be `None`.
     ///
     /// # Safety
     /// The `param` must be valid.
     pub unsafe fn from_str_unchecked(param: &'a str) -> Self {
-        if let Some(eq) = param.as_bytes().iter().position(|c| *c == b'=') {
-            let (name, eq_value) = param.split_at(eq);
-            unsafe { Self::new_unchecked(name, Some(&eq_value[1..])) }
-        } else {
-            unsafe { Self::new_unchecked(param, None) }
-        }
+        let (name, value) = Self::split(param);
+        unsafe { Self::new_unchecked(name, value) }
     }
 }
 
@@ -60,43 +66,43 @@ impl<'a> TryFrom<&'a str> for Param<'a> {
     type Error = Error;
 
     fn try_from(param: &'a str) -> Result<Self, Self::Error> {
-        if let Some(eq) = param.as_bytes().iter().position(|c| *c == b'=') {
-            let (name, eq_value) = param.split_at(eq);
-            Self::new(name, Some(&eq_value[1..]))
-        } else {
-            Self::new(param, None)
-        }
+        let (name, value) = Self::split(param);
+        Self::new(name, value)
     }
 }
 
 impl<'a> Param<'a> {
     //! Validation
 
+    /// Checks if the char `c` is a valid name char.
+    fn is_valid_name_char(c: u8) -> bool {
+        parse::is_valid_char(c, "&#=")
+    }
+
+    /// Checks if the char `c` is a valid value char.
+    fn is_valid_value_char(c: u8) -> bool {
+        parse::is_valid_char(c, "&#")
+    }
+
     /// Checks if the `param` is valid.
     ///
     /// The `param` is split on the first '=' char, as in `from_str_unchecked`.
+    #[must_use]
     pub fn is_valid(param: &str) -> bool {
-        if let Some(eq) = param.as_bytes().iter().position(|c| *c == b'=') {
-            let (name, eq_value) = param.split_at(eq);
-            Self::is_valid_name(name) && Self::is_valid_value(&eq_value[1..])
-        } else {
-            Self::is_valid_name(param)
-        }
+        let (name, value) = Self::split(param);
+        Self::is_valid_name(name) && value.iter().all(|v| Self::is_valid_value(v))
     }
 
     /// Checks if the `name` is valid.
+    #[must_use]
     pub fn is_valid_name(name: &str) -> bool {
-        name.as_bytes().iter().all(|c| {
-            c.is_ascii_alphanumeric()
-                || (c.is_ascii_punctuation() && *c != b'&' && *c != b'#' && *c != b'=')
-        })
+        name.as_bytes().iter().all(|c| Self::is_valid_name_char(*c))
     }
 
     /// Checks if the `value` is valid.
+    #[must_use]
     pub fn is_valid_value(value: &str) -> bool {
-        value.as_bytes().iter().all(|c| {
-            c.is_ascii_alphanumeric() || (c.is_ascii_punctuation() && *c != b'&' && *c != b'#')
-        })
+        value.as_bytes().iter().all(|c| Self::is_valid_value_char(*c))
     }
 }
 
@@ -104,13 +110,21 @@ impl<'a> Param<'a> {
     //! Properties
 
     /// Gets the name.
+    #[must_use]
     pub const fn name(self) -> &'a str {
         self.name
     }
 
     /// Gets the optional value.
+    #[must_use]
     pub const fn value(self) -> Option<&'a str> {
         self.value
+    }
+}
+
+impl<'a> Debug for Param<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 

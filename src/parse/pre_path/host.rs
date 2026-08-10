@@ -10,17 +10,16 @@ use std::str::FromStr;
 ///
 /// Returns `(host_string, rest_of_s)`.
 pub fn parse_host(s: &str) -> (&str, &str) {
-    let host_and_port: &str =
-        if let Some(end) = s.as_bytes().iter().position(|c| is_authority_end(*c)) {
-            &s[..end]
-        } else {
-            s
-        };
+    let host_and_port: &str = if let Some(end) = s.as_bytes().iter().position(|c| is_authority_end(*c)) {
+        &s[..end]
+    } else {
+        s
+    };
     if host_and_port.is_empty() {
         ("", s)
     } else {
-        let bracketed: bool = host_and_port.as_bytes()[0] == b'['
-            && host_and_port.as_bytes()[host_and_port.len() - 1] == b']';
+        let bracketed: bool =
+            host_and_port.as_bytes()[0] == b'[' && host_and_port.as_bytes()[host_and_port.len() - 1] == b']';
         if bracketed {
             s.split_at(host_and_port.len())
         } else if let Some(last_colon) = host_and_port.as_bytes().iter().rposition(|c| *c == b':') {
@@ -59,11 +58,10 @@ pub fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddress>, Err
 
 #[cfg(test)]
 mod tests {
-    use address::{IPAddress, IPv4Address, IPv6Address};
-
     use crate::parse::pre_path::{parse_host, parse_ip_and_validate_domain};
     use crate::parse::Error;
     use crate::parse::Error::InvalidHost;
+    use address::{IPAddress, IPv4Address, IPv6Address};
 
     #[test]
     fn fn_parse_host() {

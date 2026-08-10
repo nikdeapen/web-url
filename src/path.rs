@@ -1,24 +1,25 @@
-use std::fmt::{Display, Formatter};
-
+use crate::parse;
 use crate::parse::Error;
 use crate::parse::Error::InvalidPath;
+use std::fmt::{Debug, Display, Formatter};
+use std::iter::FusedIterator;
 
 /// A web-based URL path.
 ///
-/// # Validation
-/// A path will never be empty and will always start with a '/'.
+/// # RFC 3986
+/// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.3>
 ///
-/// The path string can contain any US-ASCII letter, number, or punctuation char excluding '?' and
-/// '#' since these chars denote the end of the path in the URL.
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+/// # Validation
+/// A path string will never be empty and will always start with a '/'. The path string can contain any US-ASCII
+/// letter, number, or punctuation char excluding '?' and '#' since these chars denote the end of the path in the URL.
+///
+/// # Segments
+/// The '/' chars are separators, so the regions between them are the segments and an empty region is an empty
+/// segment. The path `"/"` is a single empty segment and the path `"//"` is two of them.
+#[must_use]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Path<'a> {
     path: &'a str,
-}
-
-impl Default for Path<'static> {
-    fn default() -> Self {
-        Self { path: "/" }
-    }
 }
 
 impl<'a> Path<'a> {
@@ -33,7 +34,7 @@ impl<'a> Path<'a> {
         }
     }
 
-    /// Creates a new path without validating it.
+    /// Creates a new path.
     ///
     /// # Safety
     /// The `path` must be valid.
@@ -41,6 +42,12 @@ impl<'a> Path<'a> {
         debug_assert!(Self::is_valid(path));
 
         Self { path }
+    }
+}
+
+impl<'a> Default for Path<'a> {
+    fn default() -> Self {
+        Self { path: "/" }
     }
 }
 
@@ -55,23 +62,18 @@ impl<'a> TryFrom<&'a str> for Path<'a> {
 impl<'a> Path<'a> {
     //! Validation
 
-    /// Checks if the char `c` is valid.
-    fn is_valid_char(c: u8) -> bool {
-        c.is_ascii_alphanumeric() || (c.is_ascii_punctuation() && c != b'?' && c != b'#')
-    }
-
     /// Checks if the `path` is valid.
+    #[must_use]
     pub fn is_valid(path: &str) -> bool {
-        !path.is_empty()
-            && path.as_bytes()[0] == b'/'
-            && path.as_bytes()[1..].iter().all(|c| Self::is_valid_char(*c))
+        parse::is_valid_segment(path, b'/', "?#")
     }
 }
 
 impl<'a> Path<'a> {
-    //! Display
+    //! Properties
 
-    /// Gets the path string.
+    /// Gets the path string. (will contain the '/' prefix)
+    #[must_use]
     pub const fn as_str(self) -> &'a str {
         self.path
     }
@@ -80,6 +82,12 @@ impl<'a> Path<'a> {
 impl<'a> AsRef<str> for Path<'a> {
     fn as_ref(&self) -> &str {
         self.path
+    }
+}
+
+impl<'a> Debug for Path<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
@@ -97,9 +105,7 @@ impl<'a> Path<'a> {
     /// # Example
     /// `"/a/b/c/"` -> `["a", "b", "c", ""]`
     pub const fn iter_segments(self) -> SegmentIterator<'a> {
-        SegmentIterator {
-            remaining: self.path,
-        }
+        SegmentIterator { remaining: self.path }
     }
 }
 
@@ -113,6 +119,7 @@ impl<'a> IntoIterator for Path<'a> {
 }
 
 /// Responsible for iterating over path segments.
+#[must_use]
 #[derive(Copy, Clone, Debug)]
 pub struct SegmentIterator<'a> {
     remaining: &'a str,
@@ -137,7 +144,17 @@ impl<'a> Iterator for SegmentIterator<'a> {
             }
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.remaining.is_empty() {
+            (0, Some(0))
+        } else {
+            (1, Some(self.remaining.len()))
+        }
+    }
 }
+
+impl<'a> FusedIterator for SegmentIterator<'a> {}
 
 #[cfg(test)]
 mod tests {

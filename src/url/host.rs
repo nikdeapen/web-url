@@ -10,8 +10,6 @@ impl WebUrl {
         if let Some(ip) = self.ip {
             HostRef::Address(ip)
         } else {
-            // SAFETY: `DomainRef::new_unchecked` requires a valid domain name. The host was
-            // validated by `parse_ip_and_validate_domain` & lowercased before the URL was built.
             HostRef::Name(unsafe { DomainRef::new_unchecked(self.host_str()) })
         }
     }
@@ -21,6 +19,7 @@ impl WebUrl {
     /// This will be valid:
     /// - If the host is a domain it will be lowercase.
     /// - If the host is an IPv6 address it will include the '[]' brackets.
+    #[must_use]
     pub fn host_str(&self) -> &str {
         let start: usize = (self.scheme_len + 3) as usize;
         let end: usize = self.host_end as usize;

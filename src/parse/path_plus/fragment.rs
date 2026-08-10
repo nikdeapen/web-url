@@ -35,7 +35,7 @@ mod tests {
         ];
         for (fragment, expected) in test_cases {
             let result: Result<(), Error> = check_fragment(fragment);
-            assert_eq!(result, *expected);
+            assert_eq!(result, *expected, "fragment={}", fragment);
         }
     }
 }
