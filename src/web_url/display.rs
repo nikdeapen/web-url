@@ -1,6 +1,5 @@
-use std::fmt::{Debug, Display, Formatter};
-
 use crate::WebUrl;
+use std::fmt::{Debug, Display, Formatter};
 
 impl WebUrl {
     //! Display

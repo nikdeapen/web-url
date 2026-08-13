@@ -1,5 +1,5 @@
-use crate::parse::Error;
-use crate::parse::Error::InvalidScheme;
+use crate::Error;
+use crate::Error::InvalidScheme;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL scheme.
@@ -118,7 +118,7 @@ impl<'a> Display for Scheme<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::Error::InvalidScheme;
+    use crate::Error::InvalidScheme;
     use crate::Scheme;
 
     #[test]

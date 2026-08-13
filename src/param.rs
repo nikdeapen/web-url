@@ -1,9 +1,14 @@
 use crate::parse;
-use crate::parse::Error;
-use crate::parse::Error::InvalidParam;
+use crate::Error;
+use crate::Error::InvalidParam;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL query parameter.
+///
+/// # WHATWG URL
+/// <https://url.spec.whatwg.org/#application/x-www-form-urlencoded>
+///
+/// The `name=value` convention comes from `application/x-www-form-urlencoded`, not RFC 3986.
 ///
 /// # Validation
 /// Both the name and value of a query parameter may be the empty string. The value string may also be absent
@@ -24,7 +29,7 @@ impl<'a> Param<'a> {
 
     /// Creates a new query parameter.
     pub fn new(name: &'a str, value: Option<&'a str>) -> Result<Self, Error> {
-        if Self::is_valid_name(name) && value.iter().all(|v| Self::is_valid_value(v)) {
+        if Self::is_valid_parts(name, value) {
             Ok(Self { name, value })
         } else {
             Err(InvalidParam)
@@ -36,8 +41,7 @@ impl<'a> Param<'a> {
     /// # Safety
     /// The `name` and `value` must be valid.
     pub unsafe fn new_unchecked(name: &'a str, value: Option<&'a str>) -> Self {
-        debug_assert!(Self::is_valid_name(name));
-        debug_assert!(value.iter().all(|v| Self::is_valid_value(v)));
+        debug_assert!(Self::is_valid_parts(name, value));
 
         Self { name, value }
     }
@@ -84,13 +88,18 @@ impl<'a> Param<'a> {
         parse::is_valid_char(c, "&#")
     }
 
+    /// Checks if the `name` & optional `value` are valid.
+    fn is_valid_parts(name: &str, value: Option<&str>) -> bool {
+        Self::is_valid_name(name) && value.iter().all(|v| Self::is_valid_value(v))
+    }
+
     /// Checks if the `param` is valid.
     ///
     /// The `param` is split on the first '=' char, as in `from_str_unchecked`.
     #[must_use]
     pub fn is_valid(param: &str) -> bool {
         let (name, value) = Self::split(param);
-        Self::is_valid_name(name) && value.iter().all(|v| Self::is_valid_value(v))
+        Self::is_valid_parts(name, value)
     }
 
     /// Checks if the `name` is valid.
@@ -140,7 +149,7 @@ impl<'a> Display for Param<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::Error::InvalidParam;
+    use crate::Error::InvalidParam;
     use crate::Param;
 
     #[test]
@@ -178,27 +187,27 @@ mod tests {
 
     #[test]
     fn try_from_str() {
-        let param = Param::try_from("name").unwrap();
+        let param: Param = Param::try_from("name").unwrap();
         assert_eq!(param.name(), "name");
         assert_eq!(param.value(), None);
 
-        let param = Param::try_from("name=value").unwrap();
+        let param: Param = Param::try_from("name=value").unwrap();
         assert_eq!(param.name(), "name");
         assert_eq!(param.value(), Some("value"));
 
-        let param = Param::try_from("name=").unwrap();
+        let param: Param = Param::try_from("name=").unwrap();
         assert_eq!(param.name(), "name");
         assert_eq!(param.value(), Some(""));
 
-        let param = Param::try_from("").unwrap();
+        let param: Param = Param::try_from("").unwrap();
         assert_eq!(param.name(), "");
         assert_eq!(param.value(), None);
 
-        let param = Param::try_from("=value").unwrap();
+        let param: Param = Param::try_from("=value").unwrap();
         assert_eq!(param.name(), "");
         assert_eq!(param.value(), Some("value"));
 
-        let param = Param::try_from("=").unwrap();
+        let param: Param = Param::try_from("=").unwrap();
         assert_eq!(param.name(), "");
         assert_eq!(param.value(), Some(""));
 

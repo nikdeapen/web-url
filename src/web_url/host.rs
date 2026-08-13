@@ -1,6 +1,5 @@
-use address::{DomainRef, HostRef};
-
 use crate::WebUrl;
+use address::{DomainRef, HostRef};
 
 impl WebUrl {
     //! Host
@@ -29,9 +28,8 @@ impl WebUrl {
 
 #[cfg(test)]
 mod tests {
-    use address::{HostRef, IPv4Address, IPv6Address};
-
     use crate::WebUrl;
+    use address::{HostRef, IPv4Address, IPv6Address};
     use std::error::Error;
     use std::str::FromStr;
 

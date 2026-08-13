@@ -1,14 +1,12 @@
-use crate::parse::pre_path::is_authority_end;
-use crate::parse::Error;
-use crate::parse::Error::InvalidHost;
+use crate::parse::is_authority_end;
+use crate::Error;
+use crate::Error::InvalidHost;
 use address::{Domain, IPAddress, IPv4Address, IPv6Address};
 use std::str::FromStr;
 
 /// Parses the host string from the prefix of `s`.
 ///
 /// The host will **not** be validated.
-///
-/// Returns `(host_string, rest_of_s)`.
 pub fn parse_host(s: &str) -> (&str, &str) {
     let host_and_port: &str = if let Some(end) = s.as_bytes().iter().position(|c| is_authority_end(*c)) {
         &s[..end]
@@ -32,10 +30,6 @@ pub fn parse_host(s: &str) -> (&str, &str) {
 
 /// Parses the optional IP address from the `host` string.
 /// If the host is not an IP address the domain will be validated (case-insensitively).
-///
-/// Returns `Ok(Some(ip_address))` if the `host` is an IP address.
-/// Returns `Ok(None)` if the `host` is a domain name.
-/// Returns `Err(InvalidHost)` if the `host` is invalid.
 pub fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddress>, Error> {
     if host.is_empty() {
         Err(InvalidHost)
@@ -58,9 +52,9 @@ pub fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddress>, Err
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::pre_path::{parse_host, parse_ip_and_validate_domain};
-    use crate::parse::Error;
-    use crate::parse::Error::InvalidHost;
+    use crate::parse::{parse_host, parse_ip_and_validate_domain};
+    use crate::Error;
+    use crate::Error::InvalidHost;
     use address::{IPAddress, IPv4Address, IPv6Address};
 
     #[test]

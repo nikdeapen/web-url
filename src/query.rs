@@ -1,6 +1,6 @@
 use crate::parse;
-use crate::parse::Error;
-use crate::parse::Error::InvalidQuery;
+use crate::Error;
+use crate::Error::InvalidQuery;
 use crate::Param;
 use std::fmt::{Debug, Display, Formatter};
 use std::iter::FusedIterator;
@@ -77,6 +77,12 @@ impl<'a> Query<'a> {
 impl<'a> Query<'a> {
     //! Properties
 
+    /// Gets the query value. (will not contain the '?' prefix)
+    #[must_use]
+    pub fn value(self) -> &'a str {
+        &self.query[1..]
+    }
+
     /// Gets the query string. (will contain the '?' prefix)
     #[must_use]
     pub const fn as_str(self) -> &'a str {
@@ -107,7 +113,9 @@ impl<'a> Query<'a> {
 
     /// Creates a new iterator for the query parameters.
     pub const fn iter_params(self) -> ParamIterator<'a> {
-        ParamIterator { remaining: self.query }
+        ParamIterator {
+            pieces: parse::PieceIterator::new(self.query, b'&'),
+        }
     }
 }
 
@@ -124,37 +132,19 @@ impl<'a> IntoIterator for Query<'a> {
 #[must_use]
 #[derive(Copy, Clone, Debug)]
 pub struct ParamIterator<'a> {
-    remaining: &'a str,
+    pieces: parse::PieceIterator<'a>,
 }
 
 impl<'a> Iterator for ParamIterator<'a> {
     type Item = Param<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.remaining.is_empty() {
-            None
-        } else {
-            self.remaining = &self.remaining[1..];
-            if let Some(amp) = self.remaining.as_bytes().iter().position(|c| *c == b'&') {
-                let result: Param = unsafe { Param::from_str_unchecked(&self.remaining[..amp]) };
-                self.remaining = &self.remaining[amp..];
-                Some(result)
-            } else {
-                let result: Param = unsafe { Param::from_str_unchecked(self.remaining) };
-                self.remaining = "";
-                Some(result)
-            }
-        }
+        let piece: &str = self.pieces.next()?;
+        Some(unsafe { Param::from_str_unchecked(piece) })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        if self.remaining.is_empty() {
-            (0, Some(0))
-        } else {
-            // There is at least the final param & at most one param per byte, since every param consumes its leading
-            // separator.
-            (1, Some(self.remaining.len()))
-        }
+        self.pieces.size_hint()
     }
 }
 
@@ -162,7 +152,7 @@ impl<'a> FusedIterator for ParamIterator<'a> {}
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::Error::InvalidQuery;
+    use crate::Error::InvalidQuery;
     use crate::{Param, Query};
 
     #[test]

@@ -1,6 +1,6 @@
 use crate::parse;
-use crate::parse::Error;
-use crate::parse::Error::InvalidFragment;
+use crate::Error;
+use crate::Error::InvalidFragment;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL fragment.
@@ -100,7 +100,7 @@ impl<'a> Display for Fragment<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::Error::InvalidFragment;
+    use crate::Error::InvalidFragment;
     use crate::Fragment;
 
     #[test]

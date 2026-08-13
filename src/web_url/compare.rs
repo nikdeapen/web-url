@@ -1,8 +1,7 @@
+use crate::WebUrl;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
-
-use crate::WebUrl;
 
 impl Ord for WebUrl {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -40,12 +39,11 @@ impl Borrow<str> for WebUrl {
 
 #[cfg(test)]
 mod tests {
+    use crate::WebUrl;
     use std::collections::hash_map::DefaultHasher;
     use std::collections::HashSet;
     use std::hash::{Hash, Hasher};
     use std::str::FromStr;
-
-    use crate::WebUrl;
 
     fn hash_of(url: &WebUrl) -> u64 {
         let mut hasher = DefaultHasher::new();

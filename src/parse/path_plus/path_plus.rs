@@ -1,5 +1,5 @@
-use crate::parse::path_plus::{check_fragment, parse_path, parse_query};
-use crate::parse::Error;
+use crate::parse::{check_fragment, parse_path, parse_query};
+use crate::Error;
 
 /// The parsing data for a web-based URL from the path to the end.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -39,9 +39,9 @@ pub fn parse_query_plus(query_plus: &str) -> Result<PathPlus, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::path_plus::{parse_path_plus, parse_query_plus, PathPlus};
-    use crate::parse::Error;
-    use crate::parse::Error::{InvalidFragment, InvalidPath, InvalidQuery};
+    use crate::parse::{parse_path_plus, parse_query_plus, PathPlus};
+    use crate::Error;
+    use crate::Error::{InvalidFragment, InvalidPath, InvalidQuery};
 
     /// Creates the expected path-plus.
     fn path_plus(path_len: usize, query_len: usize) -> PathPlus {

@@ -1,4 +1,4 @@
-use crate::parse::Error;
+use crate::Error;
 use std::fmt::{Display, Formatter};
 
 /// An error parsing a web-based URL from an owned string.
@@ -57,4 +57,8 @@ impl Display for InvalidUrlString {
     }
 }
 
-impl std::error::Error for InvalidUrlString {}
+impl std::error::Error for InvalidUrlString {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.error)
+    }
+}

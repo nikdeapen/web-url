@@ -1,6 +1,6 @@
-use crate::parse::pre_path::is_authority_end;
-use crate::parse::Error;
-use crate::parse::Error::UserInfoNotSupported;
+use crate::parse::is_authority_end;
+use crate::Error;
+use crate::Error::UserInfoNotSupported;
 
 /// Checks that the authority at the prefix of `s` has no user info.
 ///
@@ -12,9 +12,6 @@ use crate::parse::Error::UserInfoNotSupported;
 /// optional port. User info is rejected rather than silently discarded, since discarding it would
 /// drop credentials & leave the caller with an unauthenticated URL and no indication why.
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.1>
-///
-/// Returns `Ok(())` if the authority has no user info.
-/// Returns `Err(UserInfoNotSupported)` if the authority has an '@' char.
 pub fn check_no_user_info(s: &str) -> Result<(), Error> {
     let end: usize = s
         .as_bytes()
@@ -31,9 +28,9 @@ pub fn check_no_user_info(s: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::pre_path::check_no_user_info;
-    use crate::parse::Error;
-    use crate::parse::Error::UserInfoNotSupported;
+    use crate::parse::check_no_user_info;
+    use crate::Error;
+    use crate::Error::UserInfoNotSupported;
 
     #[test]
     fn fn_check_no_user_info() {

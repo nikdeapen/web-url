@@ -1,13 +1,10 @@
-use crate::parse::Error;
-use crate::parse::Error::InvalidFragment;
+use crate::Error;
+use crate::Error::InvalidFragment;
 use crate::Fragment;
 
 /// Checks the optional `fragment`.
 ///
 /// The `fragment` must be a valid fragment or be empty.
-///
-/// Returns `Ok(())` if the `fragment` is valid or empty.
-/// Returns `Err(InvalidFragment)` if the fragment is invalid.
 pub fn check_fragment(fragment: &str) -> Result<(), Error> {
     if fragment.is_empty() || Fragment::is_valid(fragment) {
         Ok(())
@@ -18,9 +15,9 @@ pub fn check_fragment(fragment: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::path_plus::check_fragment;
-    use crate::parse::Error;
-    use crate::parse::Error::InvalidFragment;
+    use crate::parse::check_fragment;
+    use crate::Error;
+    use crate::Error::InvalidFragment;
 
     #[test]
     fn fn_check_fragment() {

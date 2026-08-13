@@ -1,7 +1,7 @@
-use crate::parse::pre_path::{
+use crate::parse::{
     check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port, parse_scheme_len, port_decimal_len,
 };
-use crate::parse::Error;
+use crate::Error;
 use address::IPAddress;
 
 /// The parsing data for a web-based URL before the path.
@@ -63,9 +63,6 @@ impl PrePath {
 
 /// Parses the pre-path portion of the URL.
 /// The scheme & host will be validated but may be uppercase.
-///
-/// Returns `Ok(pre_path)`.
-/// Returns `Err(_)` if any part of the pre-path is invalid.
 pub fn parse_pre_path(url: &str) -> Result<PrePath, Error> {
     let (scheme_len, after_scheme) = parse_scheme_len(url)?;
 
@@ -90,9 +87,9 @@ pub fn parse_pre_path(url: &str) -> Result<PrePath, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::pre_path::{parse_pre_path, PrePath};
-    use crate::parse::Error;
-    use crate::parse::Error::{InvalidHost, InvalidScheme, UserInfoNotSupported};
+    use crate::parse::{parse_pre_path, PrePath};
+    use crate::Error;
+    use crate::Error::{InvalidHost, InvalidScheme, UserInfoNotSupported};
     use address::{IPv4Address, IPv6Address};
 
     #[test]

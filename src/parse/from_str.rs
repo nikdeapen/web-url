@@ -1,6 +1,5 @@
-use crate::parse::finalize::finalize_web_url;
-use crate::parse::parts::{parse_parts, write_normalized, Parts};
-use crate::parse::Error;
+use crate::parse::{finalize_web_url, parse_parts, write_normalized, Parts};
+use crate::Error;
 use crate::WebUrl;
 use std::str::FromStr;
 

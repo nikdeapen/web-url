@@ -1,7 +1,6 @@
-use crate::parse::path_plus::PathPlus;
-use crate::parse::pre_path::PrePath;
-use crate::parse::Error;
-use crate::parse::Error::UrlTooLong;
+use crate::parse::{PathPlus, PrePath};
+use crate::Error;
+use crate::Error::UrlTooLong;
 use crate::WebUrl;
 use address::IPAddress;
 

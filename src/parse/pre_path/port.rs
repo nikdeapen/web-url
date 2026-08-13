@@ -1,6 +1,6 @@
-use crate::parse::pre_path::is_authority_end;
-use crate::parse::Error;
-use crate::parse::Error::InvalidPort;
+use crate::parse::is_authority_end;
+use crate::Error;
+use crate::Error::InvalidPort;
 use std::str::FromStr;
 
 /// Parses the port from the prefix of `s`.
@@ -12,10 +12,6 @@ use std::str::FromStr;
 /// it is parsed as if there were no port at all. The ':' is still consumed, which makes an empty
 /// port detectable as `Ok(None, _)` with a non-zero consumed length.
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.3>
-///
-/// Returns `Ok(Some(port), rest_of_s)`.
-/// Returns `Ok(None, rest_of_s)` if `s` does not start with a `:` or the port is empty.
-/// Returns `Err(InvalidPort)` if the port is invalid.
 pub fn parse_port(s: &str) -> Result<(Option<u16>, &str), Error> {
     if !s.is_empty() && s.as_bytes()[0] == b':' {
         let s: &str = &s[1..];
@@ -58,9 +54,9 @@ pub const fn port_decimal_len(port: u16) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::pre_path::{parse_port, port_decimal_len};
-    use crate::parse::Error;
-    use crate::parse::Error::InvalidPort;
+    use crate::parse::{parse_port, port_decimal_len};
+    use crate::Error;
+    use crate::Error::InvalidPort;
 
     #[test]
     #[allow(clippy::type_complexity)]
