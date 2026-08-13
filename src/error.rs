@@ -1,4 +1,4 @@
-use crate::parse::Error::*;
+use crate::Error::*;
 use std::fmt::{Display, Formatter};
 
 /// An error parsing a web-based URL.

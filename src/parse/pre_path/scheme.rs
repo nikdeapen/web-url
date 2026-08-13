@@ -1,13 +1,10 @@
-use crate::parse::Error;
-use crate::parse::Error::InvalidScheme;
+use crate::Error;
+use crate::Error::InvalidScheme;
 use crate::Scheme;
 
 /// Parses the scheme length from the prefix of `s`.
 ///
-/// The scheme will be valid but may have uppercase chars.
-///
-/// Returns `Ok(scheme_len, rest_of_s)`. The `rest_of_s` starts after the `://`.
-/// Returns `Err(InvalidScheme)` if the scheme or `://` postfix is invalid.
+/// The scheme will be valid but may have uppercase chars. The returned rest starts after the `://`.
 pub fn parse_scheme_len(s: &str) -> Result<(usize, &str), Error> {
     if let Some(colon) = s.as_bytes().iter().position(|c| *c == b':') {
         if Scheme::is_valid_ignore_case(&s[..colon], true) {
@@ -27,7 +24,7 @@ pub fn parse_scheme_len(s: &str) -> Result<(usize, &str), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::pre_path::parse_scheme_len;
+    use crate::parse::parse_scheme_len;
 
     #[test]
     fn fn_parse_scheme_len() {

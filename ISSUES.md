@@ -23,16 +23,15 @@ Known issues & planned work for the `web-url` crate.
 
 - Normalize the zero groups of IPv6 hosts. `[::1]` & `[0:0:0:0:0:0:0:1]` are unequal & hash differently, so
   equality-based dedupes & allow-lists can be bypassed.
+- Remove dot-segments when normalizing paths. `/a/../b` & `/b` are unequal & path allow-lists can be bypassed
+  since `/public/../admin` starts with `/public/`.
+- Elide the `http` 80 & `https` 443 default ports when normalizing; other schemes keep their port. `http://host:80/`
+  & `http://host/` are unequal, so equality-based dedupes & allow-lists can be bypassed.
 
 ## Mutations
 
 - Add query parameter removal & replacement. `add_param` is append-only, so an added param cannot be undone.
 - Add `set_path`, `set_port`, & `set_host`. Only the fragment has a full setter.
-
-## Docs
-
-- Document that the accepted char sets are a superset of RFC 3986 while the URL format is a subset. URLs this crate
-  accepts may be rejected by strict RFC parsers.
 
 ## Testing
 

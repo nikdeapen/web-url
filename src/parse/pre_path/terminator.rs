@@ -9,7 +9,7 @@ pub fn is_authority_end(c: u8) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::pre_path::is_authority_end;
+    use crate::parse::is_authority_end;
 
     #[test]
     fn fn_is_authority_end() {

@@ -1,11 +1,7 @@
-use crate::parse::finalize::finalize_web_url;
-use crate::parse::parts::{parse_parts, write_normalized, Parts};
-use crate::parse::InvalidUrlString;
+use crate::parse::{finalize_web_url, parse_parts, write_normalized, Parts};
+use crate::InvalidUrlString;
 use crate::WebUrl;
 
-/// Parses a web-based URL, reusing the `String` allocation when possible.
-///
-/// On error the string can be recovered from the `InvalidUrlString`.
 impl TryFrom<String> for WebUrl {
     type Error = InvalidUrlString;
 
@@ -40,9 +36,9 @@ impl TryFrom<String> for WebUrl {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::Error;
-    use crate::parse::Error::{InvalidPort, InvalidScheme};
-    use crate::parse::InvalidUrlString;
+    use crate::Error;
+    use crate::Error::{InvalidPort, InvalidScheme};
+    use crate::InvalidUrlString;
     use crate::WebUrl;
 
     #[test]

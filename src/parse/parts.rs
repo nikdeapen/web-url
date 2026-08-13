@@ -1,6 +1,5 @@
-use crate::parse::path_plus::{parse_path_plus, parse_query_plus, PathPlus};
-use crate::parse::pre_path::{parse_pre_path, PrePath};
-use crate::parse::Error;
+use crate::parse::{parse_path_plus, parse_pre_path, parse_query_plus, PathPlus, PrePath};
+use crate::Error;
 use std::fmt::Write;
 
 /// The validated parts of a web-based URL.
@@ -66,9 +65,6 @@ pub fn write_normalized(s: &str, parts: &Parts, url: &mut String) {
 /// The URL is **not** required to have an explicit path. When it does not, `needs_slash` will be
 /// set on the returned parts and the caller is responsible for inserting the '/' at
 /// `slash_index()` when it builds the normalized URL string.
-///
-/// Returns `Ok(parts)`.
-/// Returns `Err(_)` if any part of the URL is invalid.
 pub fn parse_parts(s: &str) -> Result<Parts, Error> {
     let pre_path: PrePath = parse_pre_path(s)?;
 
@@ -91,9 +87,9 @@ pub fn parse_parts(s: &str) -> Result<Parts, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::parts::{parse_parts, Parts};
-    use crate::parse::Error;
-    use crate::parse::Error::{InvalidHost, InvalidPath, InvalidQuery, InvalidScheme};
+    use crate::parse::{parse_parts, Parts};
+    use crate::Error;
+    use crate::Error::{InvalidHost, InvalidPath, InvalidQuery, InvalidScheme};
 
     /// The summary of the parsed parts. `(needs_slash, slash_index, path_len, query_len)`
     type Summary = (bool, usize, usize, usize);

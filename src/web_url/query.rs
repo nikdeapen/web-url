@@ -42,7 +42,7 @@ impl WebUrl {
     /// - `"/?&"` -> `"/?&&p=1"`
     ///
     /// # Panics
-    /// If the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
+    /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn add_param(&mut self, param: Param) {
         let separator: char = if self.path_end == self.query_end { '?' } else { '&' };
         let added: usize = separator.len_utf8() + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0);
@@ -69,6 +69,9 @@ impl WebUrl {
     }
 
     /// Adds the query `param`.
+    ///
+    /// # Panics
+    /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
     pub fn with_param(mut self, param: Param) -> Self {
         self.add_param(param);
         self

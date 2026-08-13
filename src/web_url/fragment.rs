@@ -52,6 +52,9 @@ impl WebUrl {
     }
 
     /// Sets the `fragment`.
+    ///
+    /// # Panics
+    /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
     pub fn with_fragment<'a, F>(mut self, fragment: F) -> Self
     where
         F: Into<Option<Fragment<'a>>>,

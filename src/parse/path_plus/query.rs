@@ -1,11 +1,9 @@
-use crate::parse::Error;
+use crate::Error;
 use crate::Query;
 
 /// Parses the optional query from the prefix of `s`.
 ///
-/// Returns `Ok(optional_query, rest_of_s)`.
-/// Returns `Ok(None)` if `s` does not start with a `?`.
-/// Returns `Err(InvalidQuery)` if the query is invalid.
+/// The query is `None` when `s` does not start with a '?'.
 pub fn parse_query(s: &str) -> Result<(Option<Query<'_>>, &str), Error> {
     if !s.is_empty() && s.as_bytes()[0] == b'?' {
         if let Some(hash) = s.as_bytes().iter().position(|c| *c == b'#') {
@@ -23,8 +21,8 @@ pub fn parse_query(s: &str) -> Result<(Option<Query<'_>>, &str), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::path_plus::parse_query;
-    use crate::parse::Error;
+    use crate::parse::parse_query;
+    use crate::Error;
     use crate::Query;
 
     #[test]

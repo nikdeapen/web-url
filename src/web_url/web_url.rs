@@ -1,26 +1,25 @@
-use address::IPAddress;
-
 use crate::parse::{parse_parts, Parts, PrePath};
+use address::IPAddress;
 
 /// A web-based URL.
 ///
 /// # Format
 /// All web-based URLs will be in the format: `scheme://host:port/path?query#fragment`. This is a
-/// sub-set of [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-4.3).
+/// subset of [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3).
 ///
 /// - The `port`, `query`, and `fragment` are all optional.
 /// - The `path` will never be empty and will always start with a '/'.
 #[must_use]
 #[derive(Clone)]
 pub struct WebUrl {
-    pub(in crate::url) url: String,
-    pub(in crate::url) scheme_len: u32,
-    pub(in crate::url) host_end: u32,
-    pub(in crate::url) ip: Option<IPAddress>,
-    pub(in crate::url) port_end: u32,
-    pub(in crate::url) port: Option<u16>,
-    pub(in crate::url) path_end: u32,
-    pub(in crate::url) query_end: u32,
+    pub(in crate::web_url) url: String,
+    pub(in crate::web_url) scheme_len: u32,
+    pub(in crate::web_url) host_end: u32,
+    pub(in crate::web_url) ip: Option<IPAddress>,
+    pub(in crate::web_url) port_end: u32,
+    pub(in crate::web_url) port: Option<u16>,
+    pub(in crate::web_url) path_end: u32,
+    pub(in crate::web_url) query_end: u32,
 }
 
 impl WebUrl {
@@ -29,11 +28,11 @@ impl WebUrl {
     /// The maximum length of a URL string.
     pub const MAX_LEN: usize = u32::MAX as usize;
 
-    /// Ensures the URL `length` is valid.
+    /// Ensures the URL `len` is valid.
     ///
     /// # Panics
     /// Panics if the `len` is greater than `Self::MAX_LEN`.
-    pub(in crate::url) fn check_len(len: usize) {
+    pub(in crate::web_url) fn check_len(len: usize) {
         assert!(
             len <= Self::MAX_LEN,
             "a web-url with '{}' bytes is longer than the max of '{}' bytes",
@@ -170,9 +169,15 @@ impl WebUrl {
         self.url.len()
     }
 
-    /// Checks if the url is empty.
+    /// Checks if the URL is empty. (always false)
     #[must_use]
     pub fn is_empty(&self) -> bool {
         false
+    }
+
+    /// Converts the URL into its string.
+    #[must_use]
+    pub fn into_string(self) -> String {
+        self.url
     }
 }

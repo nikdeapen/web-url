@@ -1,6 +1,6 @@
 use crate::parse;
-use crate::parse::Error;
-use crate::parse::Error::InvalidPath;
+use crate::Error;
+use crate::Error::InvalidPath;
 use std::fmt::{Debug, Display, Formatter};
 use std::iter::FusedIterator;
 
@@ -105,7 +105,9 @@ impl<'a> Path<'a> {
     /// # Example
     /// `"/a/b/c/"` -> `["a", "b", "c", ""]`
     pub const fn iter_segments(self) -> SegmentIterator<'a> {
-        SegmentIterator { remaining: self.path }
+        SegmentIterator {
+            pieces: parse::PieceIterator::new(self.path, b'/'),
+        }
     }
 }
 
@@ -122,35 +124,18 @@ impl<'a> IntoIterator for Path<'a> {
 #[must_use]
 #[derive(Copy, Clone, Debug)]
 pub struct SegmentIterator<'a> {
-    remaining: &'a str,
+    pieces: parse::PieceIterator<'a>,
 }
 
 impl<'a> Iterator for SegmentIterator<'a> {
     type Item = &'a str;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.remaining.is_empty() {
-            None
-        } else {
-            self.remaining = &self.remaining[1..];
-            if let Some(slash) = self.remaining.as_bytes().iter().position(|c| *c == b'/') {
-                let segment: &str = &self.remaining[..slash];
-                self.remaining = &self.remaining[slash..];
-                Some(segment)
-            } else {
-                let segment: &str = self.remaining;
-                self.remaining = "";
-                Some(segment)
-            }
-        }
+        self.pieces.next()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        if self.remaining.is_empty() {
-            (0, Some(0))
-        } else {
-            (1, Some(self.remaining.len()))
-        }
+        self.pieces.size_hint()
     }
 }
 
@@ -158,7 +143,7 @@ impl<'a> FusedIterator for SegmentIterator<'a> {}
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::Error::InvalidPath;
+    use crate::Error::InvalidPath;
     use crate::Path;
 
     #[test]
