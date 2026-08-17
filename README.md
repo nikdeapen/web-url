@@ -75,5 +75,12 @@ The host is an `address::HostRef`, either a domain name or an IP address. The `a
 
 ## Mutations
 
-URLs can be mutated in place: `add_param` appends a query parameter & `set_fragment` sets or removes the fragment.
-The `with_param` & `with_fragment` variants chain on owned URLs.
+URLs can be mutated in place & every mutation keeps the URL normalized:
+
+- `set_host`, `set_port`, `set_path`, & `set_fragment` set their component. The port & fragment are removed by
+  setting them to `None`.
+- `add_param` appends a query parameter, `remove_params` removes every parameter with a name, & `replace_params`
+  replaces every parameter with a name with a single parameter.
+
+The `with_host`, `with_port`, `with_path`, `with_fragment`, `with_param`, `without_params`, & `with_replaced_params`
+variants chain on owned URLs.
