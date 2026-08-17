@@ -1,7 +1,5 @@
 # Issues
 
-Known issues & planned work for the `web-url` crate.
-
 ## Parsing
 
 - Add support for user-info. URLs like `http://user:pass@host/` currently fail with `UserInfoNotSupported`.
@@ -20,11 +18,6 @@ Known issues & planned work for the `web-url` crate.
   since `/public/../admin` starts with `/public/`.
 - Elide the `http` 80 & `https` 443 default ports when normalizing; other schemes keep their port. `http://host:80/`
   & `http://host/` are unequal, so equality-based dedupes & allow-lists can be bypassed.
-
-## Mutations
-
-- Add query parameter removal & replacement. `add_param` is append-only, so an added param cannot be undone.
-- Add `set_path`, `set_port`, & `set_host`. Only the fragment has a full setter.
 
 ## Testing
 

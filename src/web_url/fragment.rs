@@ -49,6 +49,8 @@ impl WebUrl {
         if let Some(fragment) = fragment {
             self.url.push_str(fragment.as_str())
         }
+
+        debug_assert!(self.is_consistent());
     }
 
     /// Sets the `fragment`.

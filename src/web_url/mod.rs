@@ -6,6 +6,7 @@ mod compare;
 mod display;
 mod fragment;
 mod host;
+mod param;
 mod path;
 mod port;
 mod query;

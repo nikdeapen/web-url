@@ -115,7 +115,7 @@ impl WebUrl {
     ///
     /// This is the `new_unchecked` contract. It re-parses the URL, so it is only used in
     /// `debug_assert`s; parsing is exactly the work `new_unchecked` exists to skip.
-    fn is_consistent(&self) -> bool {
+    pub(in crate::web_url) fn is_consistent(&self) -> bool {
         // The offsets are checked before anything is sliced so that a bad offset returns false
         // rather than panicking inside the check itself.
         if self.url.len() > Self::MAX_LEN {
