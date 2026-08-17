@@ -12,13 +12,6 @@ Known issues & planned work for the `web-url` crate.
 - Decide whether to validate percent-encoding & add encode/decode helpers. The '%' char is ordinary text, so `%zz` is
   accepted & there is no encode or decode API.
 
-## Validation
-
-- Tighten `Path` to the RFC 3986 path chars. Chars like '<', '>', '[', ']', '{', '}', '\', '^', & '"' are accepted.
-- Tighten `Query` to the RFC 3986 query chars. The same extra punctuation as `Path` is accepted.
-- Tighten `Param` names & values to the RFC 3986 query chars. The same extra punctuation as `Query` is accepted.
-- Tighten `Fragment` to the RFC 3986 fragment chars. All punctuation is accepted, including '#' itself.
-
 ## Normalization
 
 - Normalize the zero groups of IPv6 hosts. `[::1]` & `[0:0:0:0:0:0:0:1]` are unequal & hash differently, so

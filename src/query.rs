@@ -11,8 +11,9 @@ use std::iter::FusedIterator;
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.4>
 ///
 /// # Validation
-/// A query string will never be empty and will always start with a '?'. The query string can contain any US-ASCII
-/// letter, number, or punctuation char excluding '#' since this char denotes the end of the query in the URL.
+/// A query string will never be empty and will always start with a '?'. The query string can contain the RFC 3986
+/// query chars: the US-ASCII letters and numbers, the unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", and
+/// the ":@/?" chars. The '%' char is also accepted but the percent-encoding is not validated.
 ///
 /// # Parameters
 /// A query always has at least one parameter. The '?' and '&' chars are separators, so the regions between them are the
@@ -70,7 +71,7 @@ impl<'a> Query<'a> {
     /// Checks if the `query` is valid.
     #[must_use]
     pub fn is_valid(query: &str) -> bool {
-        parse::is_valid_segment(query, b'?', "#")
+        parse::is_valid_segment(query, b'?', "")
     }
 }
 
@@ -184,9 +185,12 @@ mod tests {
         let test_cases: &[(&str, bool)] = &[
             ("", false),
             ("?", true),
-            ("?#", false),
-            ("?&/=!@$%^&*()", true),
             ("?azAZ09", true),
+            ("?-._~!$&'()*+,;=:@%/?", true),
+            ("?#", false),
+            ("?<>", false),
+            ("?[]", false),
+            ("?^`{|}\\\"", false),
         ];
         for (query, expected) in test_cases {
             let result: bool = Query::is_valid(query);

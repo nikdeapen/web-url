@@ -10,8 +10,9 @@ use std::iter::FusedIterator;
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.3>
 ///
 /// # Validation
-/// A path string will never be empty and will always start with a '/'. The path string can contain any US-ASCII
-/// letter, number, or punctuation char excluding '?' and '#' since these chars denote the end of the path in the URL.
+/// A path string will never be empty and will always start with a '/'. The path string can contain the RFC 3986 path
+/// chars: the US-ASCII letters and numbers, the unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", and the
+/// ":@/" chars. The '%' char is also accepted but the percent-encoding is not validated.
 ///
 /// # Segments
 /// The '/' chars are separators, so the regions between them are the segments and an empty region is an empty
@@ -65,7 +66,7 @@ impl<'a> Path<'a> {
     /// Checks if the `path` is valid.
     #[must_use]
     pub fn is_valid(path: &str) -> bool {
-        parse::is_valid_segment(path, b'/', "?#")
+        parse::is_valid_segment(path, b'/', "?")
     }
 }
 
@@ -178,8 +179,12 @@ mod tests {
             ("///", true),
             ("/azAZ09", true),
             ("/!/&/=/~/", true),
+            ("/-._~!$&'()*+,;=:@%", true),
             ("/?", false),
             ("/#", false),
+            ("/<>", false),
+            ("/[]", false),
+            ("/^`{|}\\\"", false),
         ];
         for (path, expected) in test_cases {
             let result: bool = Path::is_valid(path);

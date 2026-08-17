@@ -14,9 +14,10 @@ use std::fmt::{Debug, Display, Formatter};
 /// Both the name and value of a query parameter may be the empty string. The value string may also be absent
 /// altogether, which signifies a missing '=' in the query parameter string.
 ///
-/// Query parameter names & values can contain any US-ASCII letters, numbers, or punctuation chars excluding '&' and '#'
-/// since these chars denote the end of the parameter or query in the URL. Names cannot contain the '=' char since this
-/// denotes the end of the query parameter name.
+/// Query parameter names & values can contain the RFC 3986 query chars: the US-ASCII letters and numbers, the
+/// unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", and the ":@/?" chars. The '%' char is also accepted but
+/// the percent-encoding is not validated. The '&' char is excluded since it denotes the end of the parameter in the
+/// URL. Names cannot contain the '=' char since this denotes the end of the query parameter name.
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Param<'a> {
@@ -80,12 +81,12 @@ impl<'a> Param<'a> {
 
     /// Checks if the char `c` is a valid name char.
     fn is_valid_name_char(c: u8) -> bool {
-        parse::is_valid_char(c, "&#=")
+        parse::is_valid_char(c, "&=")
     }
 
     /// Checks if the char `c` is a valid value char.
     fn is_valid_value_char(c: u8) -> bool {
-        parse::is_valid_char(c, "&#")
+        parse::is_valid_char(c, "&")
     }
 
     /// Checks if the `name` & optional `value` are valid.
@@ -226,10 +227,13 @@ mod tests {
             ("=value", true),
             ("=", true),
             ("name=val=ue", true),
+            ("-._~!$'()*+,;:@%/?=-._~!$'()*+,;=:@%/?", true),
             ("na&me", false),
             ("na#me", false),
             ("name=val&ue", false),
             ("name=val#ue", false),
+            ("na<me", false),
+            ("name=val[ue", false),
         ];
         for (param, expected) in test_cases {
             let result: bool = Param::is_valid(param);
