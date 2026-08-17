@@ -10,7 +10,9 @@ use std::fmt::{Debug, Display, Formatter};
 ///
 /// # Validation
 /// A fragment string will never be empty and will always start with a '#' even if the fragment itself is empty. The
-/// fragment value can contain any US-ASCII letter, number, or punctuation char. Fragments are case-sensitive.
+/// fragment value can contain the RFC 3986 fragment chars: the US-ASCII letters and numbers, the unreserved chars
+/// "-._~", the sub-delim chars "!$&'()*+,;=", and the ":@/?" chars. The '%' char is also accepted but the
+/// percent-encoding is not validated. Fragments are case-sensitive.
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Fragment<'a> {
@@ -141,13 +143,15 @@ mod tests {
         let test_cases: &[(&str, bool)] = &[
             ("", false),
             ("#", true),
-            ("###", true),
             ("#azAZ09", true),
             ("#!/&/=/~/", true),
-            ("#?", true),
-            ("#!", true),
+            ("#-._~!$&'()*+,;=:@%/?", true),
+            ("###", false),
             ("# ", false),
             ("# x", false),
+            ("#<>", false),
+            ("#[]", false),
+            ("#^`{|}\\\"", false),
         ];
         for (fragment, expected) in test_cases {
             let result: bool = Fragment::is_valid(fragment);

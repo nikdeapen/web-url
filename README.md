@@ -47,8 +47,8 @@ scheme://host:port/path?query#fragment
 The format is a subset of the [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3) URI syntax: the
 authority is required, user info is rejected, & the path is never empty. The port, query, & fragment are optional.
 
-The accepted chars are a superset of RFC 3986: the path, query, & fragment accept any US-ASCII letter, number, or
-punctuation char outside their delimiters, so URLs this crate accepts may be rejected by strict RFC parsers.
+The accepted chars follow RFC 3986: the path accepts the `pchar` chars plus '/', & the query & fragment also accept
+'?'. The '%' char is accepted but the percent-encoding is not validated.
 
 ## Normalization
 
