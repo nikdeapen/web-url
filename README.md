@@ -54,8 +54,8 @@ The accepted chars follow RFC 3986: the path accepts the `pchar` chars plus '/',
 
 Parsed URLs are always normalized: the scheme & host are lowercased, an IP address host is rewritten in the canonical
 `address` form (`[0:0:0:0:0:0:0:1]` -> `[::1]`), an empty port is dropped along with its ':', a port with leading
-zeros is rewritten, & a URL parsed without a path gets the path '/'. The path, query, & fragment are preserved
-exactly.
+zeros is rewritten, a URL parsed without a path gets the path '/', & the path dot-segments are removed
+(`/a/../b` -> `/b`). The query & fragment are preserved exactly.
 
 Parsing with `TryFrom<String>` reuses the allocation when the URL is already normalized & recovers the original
 string on error.

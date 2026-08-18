@@ -1,3 +1,4 @@
+use crate::parse;
 use crate::{Path, WebUrl};
 
 impl WebUrl {
@@ -10,7 +11,7 @@ impl WebUrl {
 
     /// Gets the path string.
     ///
-    /// This will be a valid path starting with a '/'.
+    /// This will be a valid path starting with a '/' & having no dot-segments.
     fn path_str(&self) -> &str {
         let start: usize = self.port_end as usize;
         let end: usize = self.path_end as usize;
@@ -21,31 +22,35 @@ impl WebUrl {
 impl WebUrl {
     //! Path Mutation
 
-    /// Sets the `path`.
+    /// Sets the `path`. (the dot-segments are removed)
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn set_path(&mut self, path: Path) {
+        // The path is written with the dot-segments removed, which is the normalized form.
+        let mut insert: String = String::with_capacity(parse::canonical_path_len(path.as_str()));
+        parse::write_canonical_path(path.as_str(), &mut insert);
+
         let start: usize = self.port_end as usize;
         let end: usize = self.path_end as usize;
 
         // The length is checked before anything is modified so an over-long URL panics with the URL
         // intact rather than leaving the string inconsistent with the component offsets.
-        Self::check_len((self.url.len() - (end - start)) + path.as_str().len());
+        Self::check_len((self.url.len() - (end - start)) + insert.len());
 
         // The query & fragment follow the path & are unchanged, so the query length is saved to
         // rebuild the offsets that the splice shifts.
         let query_len: u32 = self.query_end - self.path_end;
 
-        self.url.replace_range(start..end, path.as_str());
+        self.url.replace_range(start..end, insert.as_str());
 
-        self.path_end = (start + path.as_str().len()) as u32;
+        self.path_end = (start + insert.len()) as u32;
         self.query_end = self.path_end + query_len;
 
         debug_assert!(self.is_consistent());
     }
 
-    /// Sets the `path`.
+    /// Sets the `path`. (the dot-segments are removed)
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.

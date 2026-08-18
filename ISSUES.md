@@ -12,8 +12,6 @@
 
 ## Normalization
 
-- Remove dot-segments when normalizing paths. `/a/../b` & `/b` are unequal & path allow-lists can be bypassed
-  since `/public/../admin` starts with `/public/`.
 - Elide the `http` 80 & `https` 443 default ports when normalizing; other schemes keep their port. `http://host:80/`
   & `http://host/` are unequal, so equality-based dedupes & allow-lists can be bypassed.
 
