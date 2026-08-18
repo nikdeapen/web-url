@@ -49,9 +49,9 @@ impl WebUrl {
     ///
     /// # Safety
     /// The `url` must be a normalized web-based URL & every other parameter must describe it:
-    /// - The `url` parses & is already normalized. The scheme & host are lowercase, the path is
-    ///   present & starts with a '/', an empty port is absent along with its ':', and the port has
-    ///   no leading zeros.
+    /// - The `url` parses & is already normalized. The scheme & host are lowercase, an IP address
+    ///   host is in its canonical form, the path is present & starts with a '/', an empty port is
+    ///   absent along with its ':', and the port has no leading zeros.
     /// - The offsets are non-decreasing & the last is within the `url`:
     ///   `scheme_len <= host_end <= port_end <= path_end <= query_end <= url.len()`.
     /// - The `ip` is the parsed host when the host is an IP address & `None` when it is a domain.
@@ -151,7 +151,7 @@ impl WebUrl {
 
         // Every offset must match what the parser found.
         scheme_len == pre_path.scheme_len
-            && host_end == pre_path.host_end()
+            && host_end == pre_path.canonical_host_end()
             && self.ip == pre_path.ip
             && port_end == host_end + pre_path.canonical_port_len()
             && self.port == pre_path.port

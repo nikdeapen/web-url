@@ -1,5 +1,6 @@
 use crate::parse::{
     check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port, parse_scheme_len, port_decimal_len,
+    CanonicalHost,
 };
 use crate::Error;
 use address::IPAddress;
@@ -22,11 +23,36 @@ impl PrePath {
         self.scheme_len + 3 + self.host_len + self.port_len
     }
 
-    /// Gets the index just past the host. (the index of the ':' when there is a port)
-    ///
-    /// This is the same in the parsed URL & the normalized URL since only the port is rewritten.
+    /// Gets the index of the host. (just past the "://" that follows the scheme)
+    pub const fn host_start(self) -> usize {
+        self.scheme_len + 3
+    }
+
+    /// Gets the index just past the host in the parsed URL. (the index of the ':' when there is a
+    /// port)
     pub const fn host_end(self) -> usize {
-        self.scheme_len + 3 + self.host_len
+        self.host_start() + self.host_len
+    }
+
+    /// Gets the host string in the parsed URL `s`.
+    pub fn host_str(self, s: &str) -> &str {
+        &s[self.host_start()..self.host_end()]
+    }
+
+    /// Gets the length of the host string in the normalized URL. (including the '[]' brackets)
+    ///
+    /// An IP address is written in its canonical form, which can be shorter or longer than the
+    /// parsed host. A domain name is unaffected since only its letter case is normalized.
+    pub fn canonical_host_len(self) -> usize {
+        match self.ip {
+            Some(ip) => CanonicalHost::new(ip).as_str().len(),
+            None => self.host_len,
+        }
+    }
+
+    /// Gets the index just past the host in the normalized URL.
+    pub fn canonical_host_end(self) -> usize {
+        self.host_start() + self.canonical_host_len()
     }
 
     /// Gets the length of the port string in the normalized URL. (including the ':')
@@ -41,23 +67,34 @@ impl PrePath {
     }
 
     /// Gets the length of the pre-path string in the normalized URL.
-    pub const fn canonical_len(self) -> usize {
-        self.host_end() + self.canonical_port_len()
+    pub fn canonical_len(self) -> usize {
+        self.canonical_host_end() + self.canonical_port_len()
+    }
+
+    /// Checks if the host must be rewritten to normalize the parsed URL `s`.
+    ///
+    /// This is set when the host is an IP address that is not written in its canonical form. The
+    /// letter case is excluded since it is normalized in place & never changes the length.
+    pub fn needs_host_rewrite(self, s: &str) -> bool {
+        match self.ip {
+            Some(ip) => !CanonicalHost::new(ip).as_str().eq_ignore_ascii_case(self.host_str(s)),
+            None => false,
+        }
     }
 }
 
 impl PrePath {
     //! Operations
 
-    /// Makes the scheme & host prefix of `url` lowercase.
+    /// Makes the scheme & host prefix of the normalized `url` lowercase.
     ///
     /// The port is excluded since it is all digits and unaffected by the letter case.
     ///
     /// # Panics
-    /// Panics if `host_end` is past the end of `url` or is not a char boundary. Neither happens
-    /// when `url` was parsed with the `parse_pre_path` function.
+    /// Panics if `canonical_host_end` is past the end of `url` or is not a char boundary. Neither
+    /// happens when `url` is the normalized URL for these parts.
     pub fn make_lowercase(self, url: &mut str) {
-        url[..self.host_end()].make_ascii_lowercase()
+        url[..self.canonical_host_end()].make_ascii_lowercase()
     }
 }
 

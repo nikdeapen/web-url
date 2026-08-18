@@ -1,4 +1,4 @@
-use crate::parse::{parse_path_plus, parse_pre_path, parse_query_plus, PathPlus, PrePath};
+use crate::parse::{parse_path_plus, parse_pre_path, parse_query_plus, CanonicalHost, PathPlus, PrePath};
 use crate::Error;
 use std::fmt::Write;
 
@@ -10,6 +10,9 @@ pub struct Parts {
 
     /// Set when the URL has no explicit path and a '/' must be inserted after the authority.
     pub needs_slash: bool,
+
+    /// Set when the host is an IP address that must be rewritten in its canonical form.
+    pub needs_host_rewrite: bool,
 }
 
 impl Parts {
@@ -22,21 +25,29 @@ impl Parts {
         self.pre_path.port_len != self.pre_path.canonical_port_len()
     }
 
+    /// Checks if the host or port must be rewritten to normalize the URL.
+    ///
+    /// A rewrite changes the length of the authority, so the URL cannot be normalized in place.
+    pub const fn needs_rewrite(self) -> bool {
+        self.needs_host_rewrite || self.needs_port_rewrite()
+    }
+
     /// Checks if the parsed URL string is already normalized, ignoring the letter case.
     ///
     /// The letter case is excluded since it is normalized in place & never changes the length.
     pub const fn is_normalized(self) -> bool {
-        !self.needs_slash && !self.needs_port_rewrite()
+        !self.needs_slash && !self.needs_rewrite()
     }
 
     /// Gets the length of the normalized URL string for a parsed URL of `len` chars.
-    pub const fn normalized_len(self, len: usize) -> usize {
+    pub fn normalized_len(self, len: usize) -> usize {
         (len - self.pre_path.len()) + self.pre_path.canonical_len() + (self.needs_slash as usize)
     }
 
     /// Gets the index the '/' must be inserted at. (only meaningful when `needs_slash` is set)
     ///
-    /// This is an index into the parsed URL, so it is only valid when the port is not rewritten.
+    /// This is an index into the parsed URL, so it is only valid when neither the host nor the port
+    /// is rewritten.
     pub const fn slash_index(self) -> usize {
         self.pre_path.len()
     }
@@ -49,7 +60,12 @@ impl Parts {
 pub fn write_normalized(s: &str, parts: &Parts, url: &mut String) {
     let pre_path: &PrePath = &parts.pre_path;
 
-    url.push_str(&s[..pre_path.host_end()]);
+    url.push_str(&s[..pre_path.host_start()]);
+    if let Some(ip) = pre_path.ip {
+        url.push_str(CanonicalHost::new(ip).as_str());
+    } else {
+        url.push_str(pre_path.host_str(s));
+    }
     if let Some(port) = pre_path.port {
         url.push(':');
         let _ = write!(url, "{}", port);
@@ -67,6 +83,7 @@ pub fn write_normalized(s: &str, parts: &Parts, url: &mut String) {
 /// `slash_index()` when it builds the normalized URL string.
 pub fn parse_parts(s: &str) -> Result<Parts, Error> {
     let pre_path: PrePath = parse_pre_path(s)?;
+    let needs_host_rewrite: bool = pre_path.needs_host_rewrite(s);
 
     // The authority is terminated by a '/', '?', or '#' char, or by the end of the URL. Only the
     // '/' case has an explicit path; the others imply the path is a single '/'.
@@ -82,6 +99,7 @@ pub fn parse_parts(s: &str) -> Result<Parts, Error> {
         pre_path,
         path_plus,
         needs_slash,
+        needs_host_rewrite,
     })
 }
 

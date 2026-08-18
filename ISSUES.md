@@ -12,8 +12,6 @@
 
 ## Normalization
 
-- Normalize the zero groups of IPv6 hosts. `[::1]` & `[0:0:0:0:0:0:0:1]` are unequal & hash differently, so
-  equality-based dedupes & allow-lists can be bypassed.
 - Remove dot-segments when normalizing paths. `/a/../b` & `/b` are unequal & path allow-lists can be bypassed
   since `/public/../admin` starts with `/public/`.
 - Elide the `http` 80 & `https` 443 default ports when normalizing; other schemes keep their port. `http://host:80/`

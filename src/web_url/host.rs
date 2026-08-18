@@ -1,6 +1,6 @@
 use crate::parse;
 use crate::WebUrl;
-use address::{DomainRef, HostRef, IPAddress};
+use address::{DomainRef, HostRef};
 
 impl WebUrl {
     //! Host
@@ -18,6 +18,7 @@ impl WebUrl {
     ///
     /// This will be valid:
     /// - If the host is a domain it will be lowercase.
+    /// - If the host is an IP address it will be in its canonical form.
     /// - If the host is an IPv6 address it will include the '[]' brackets.
     #[must_use]
     pub fn host_str(&self) -> &str {
@@ -40,11 +41,11 @@ impl WebUrl {
     {
         let host: HostRef = host.into();
 
-        // An IPv6 host is written with the '[]' brackets & the host is lowercase, which is the
+        // An IP address is written in its canonical form & the host is lowercase, which is the
         // normalized form.
         let mut insert: String = match host {
-            HostRef::Address(IPAddress::V6(ip)) => format!("[{}]", ip),
-            host => host.to_string(),
+            HostRef::Name(domain) => domain.name().to_string(),
+            HostRef::Address(ip) => parse::CanonicalHost::new(ip).as_str().to_string(),
         };
         insert.make_ascii_lowercase();
 
