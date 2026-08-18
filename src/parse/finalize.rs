@@ -32,7 +32,7 @@ pub unsafe fn finalize_web_url(
     // The canonical length is used since `url` is the normalized URL, in which the port may be
     // shorter than it was in the parsed URL.
     let port_end: u32 = pre_path.canonical_len() as u32;
-    let path_end: u32 = port_end + (path_plus.path_len as u32);
+    let path_end: u32 = port_end + (path_plus.canonical_path_len as u32);
     let query_end: u32 = path_end + (path_plus.query_len as u32);
 
     Ok(unsafe { WebUrl::new_unchecked(url, scheme_len, host_end, ip, port_end, port, path_end, query_end) })

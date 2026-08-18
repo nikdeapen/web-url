@@ -1,11 +1,12 @@
-use crate::parse::{check_fragment, parse_path, parse_query};
+use crate::parse::{canonical_path_len, check_fragment, parse_path, parse_query};
 use crate::Error;
 
 /// The parsing data for a web-based URL from the path to the end.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct PathPlus {
-    pub path_len: usize,  // length of the path including the '/' (will be 1+)
-    pub query_len: usize, // length of query including the '?' (will be 0+)
+    pub path_len: usize,           // length of the path including the '/' (will be 1+)
+    pub canonical_path_len: usize, // length of the path without the dot-segments (will be 1+)
+    pub query_len: usize,          // length of query including the '?' (will be 0+)
 }
 
 /// Parses the `path_plus`. (the path, the optional query, & the optional fragment)
@@ -16,10 +17,14 @@ pub fn parse_path_plus(path_plus: &str) -> Result<PathPlus, Error> {
     let (query, after_query) = parse_query(after_path)?;
     check_fragment(after_query)?;
 
-    let path_len: usize = path.as_str().len();
+    let path: &str = path.as_str();
     let query_len: usize = query.map(|q| q.as_str().len()).unwrap_or(0);
 
-    Ok(PathPlus { path_len, query_len })
+    Ok(PathPlus {
+        path_len: path.len(),
+        canonical_path_len: canonical_path_len(path),
+        query_len,
+    })
 }
 
 /// Parses the `query_plus`. (the optional query & the optional fragment)
@@ -34,7 +39,12 @@ pub fn parse_query_plus(query_plus: &str) -> Result<PathPlus, Error> {
 
     let query_len: usize = query.map(|q| q.as_str().len()).unwrap_or(0);
 
-    Ok(PathPlus { path_len: 1, query_len })
+    // The implied path is a single '/' which is already canonical.
+    Ok(PathPlus {
+        path_len: 1,
+        canonical_path_len: 1,
+        query_len,
+    })
 }
 
 #[cfg(test)]
@@ -43,9 +53,13 @@ mod tests {
     use crate::Error;
     use crate::Error::{InvalidFragment, InvalidPath, InvalidQuery};
 
-    /// Creates the expected path-plus.
+    /// Creates the expected path-plus. (for paths with no dot-segments)
     fn path_plus(path_len: usize, query_len: usize) -> PathPlus {
-        PathPlus { path_len, query_len }
+        PathPlus {
+            path_len,
+            canonical_path_len: path_len,
+            query_len,
+        }
     }
 
     #[test]

@@ -1,4 +1,6 @@
-use crate::parse::{parse_path_plus, parse_pre_path, parse_query_plus, CanonicalHost, PathPlus, PrePath};
+use crate::parse::{
+    parse_path_plus, parse_pre_path, parse_query_plus, write_canonical_path, CanonicalHost, PathPlus, PrePath,
+};
 use crate::Error;
 use std::fmt::Write;
 
@@ -25,11 +27,19 @@ impl Parts {
         self.pre_path.port_len != self.pre_path.canonical_port_len()
     }
 
-    /// Checks if the host or port must be rewritten to normalize the URL.
+    /// Checks if the path must be rewritten to normalize the URL.
     ///
-    /// A rewrite changes the length of the authority, so the URL cannot be normalized in place.
+    /// This is set when the parsed path has dot-segments, which always shorten it.
+    pub const fn needs_path_rewrite(self) -> bool {
+        self.path_plus.path_len != self.path_plus.canonical_path_len
+    }
+
+    /// Checks if the host, port, or path must be rewritten to normalize the URL.
+    ///
+    /// A rewrite changes the length of the URL before the query, so it cannot be normalized in
+    /// place.
     pub const fn needs_rewrite(self) -> bool {
-        self.needs_host_rewrite || self.needs_port_rewrite()
+        self.needs_host_rewrite || self.needs_port_rewrite() || self.needs_path_rewrite()
     }
 
     /// Checks if the parsed URL string is already normalized, ignoring the letter case.
@@ -41,7 +51,10 @@ impl Parts {
 
     /// Gets the length of the normalized URL string for a parsed URL of `len` chars.
     pub fn normalized_len(self, len: usize) -> usize {
-        (len - self.pre_path.len()) + self.pre_path.canonical_len() + (self.needs_slash as usize)
+        // The canonical path is never longer than the parsed path since it only drops dot-segments.
+        let dropped: usize = self.path_plus.path_len - self.path_plus.canonical_path_len;
+
+        ((len - self.pre_path.len()) - dropped) + self.pre_path.canonical_len() + (self.needs_slash as usize)
     }
 
     /// Gets the index the '/' must be inserted at. (only meaningful when `needs_slash` is set)
@@ -70,10 +83,17 @@ pub fn write_normalized(s: &str, parts: &Parts, url: &mut String) {
         url.push(':');
         let _ = write!(url, "{}", port);
     }
+
+    let after_authority: &str = &s[pre_path.len()..];
     if parts.needs_slash {
+        // The URL has no explicit path, so the implied '/' precedes the query & fragment.
         url.push('/');
+        url.push_str(after_authority);
+    } else {
+        let (path, path_plus) = after_authority.split_at(parts.path_plus.path_len);
+        write_canonical_path(path, url);
+        url.push_str(path_plus);
     }
-    url.push_str(&s[pre_path.len()..]);
 }
 
 /// Parses & validates the web-based URL `s` without allocating.
