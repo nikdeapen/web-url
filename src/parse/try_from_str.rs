@@ -15,15 +15,15 @@ impl TryFrom<String> for WebUrl {
         let url: String = if parts.is_normalized() {
             // The string is already normalized so it is reused without allocating.
             s
-        } else if !parts.needs_port_rewrite() {
+        } else if !parts.needs_rewrite() {
             // Only the '/' is missing. The reservation is exact so the string grows at most once.
             let mut url: String = s;
             url.reserve_exact(1);
             url.insert(parts.slash_index(), '/');
             url
         } else {
-            // The port is shorter once normalized so the string is rebuilt with a single
-            // exactly-sized allocation.
+            // The host or port changes length once normalized so the string is rebuilt with a
+            // single exactly-sized allocation.
             let mut url: String = String::with_capacity(parts.normalized_len(s.len()));
             write_normalized(s.as_str(), &parts, &mut url);
             url
