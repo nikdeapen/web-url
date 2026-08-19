@@ -6,11 +6,11 @@ readme = "README.md"
 repository = "https://github.com/nikdeapen/web-url"
 homepage = "https://github.com/nikdeapen/web-url"
 authors = ["Nik Deapen <nik@deapen.com>"]
-edition = "2021"
+edition = "2024"
 rust-version = "1.85"
 license = "MIT"
 keywords = ["url", "web", "parse", "normalization"]
 categories = ["parser-implementations", "web-programming"]
 
 [dependencies]
-address = "0.20.0-rc.3"
+address = "0.20.0"

@@ -29,8 +29,22 @@ impl Hash for WebUrl {
     }
 }
 
-/// The `Borrow` contract holds since `Eq`, `Ord`, & `Hash` all delegate to the URL string. This
-/// enables map & set lookups by `&str`.
+impl PartialEq<&str> for WebUrl {
+    /// The comparison is exact; the `other` string is not parsed or normalized.
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<WebUrl> for &str {
+    /// The comparison is exact; the `self` string is not parsed or normalized.
+    fn eq(&self, other: &WebUrl) -> bool {
+        *self == other.as_str()
+    }
+}
+
+/// The `Borrow` contract holds since `Eq`, `Ord`, & `Hash` all delegate to the URL string. This enables map & set
+/// lookups by `&str`.
 impl Borrow<str> for WebUrl {
     fn borrow(&self) -> &str {
         self.as_str()
@@ -40,8 +54,8 @@ impl Borrow<str> for WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::WebUrl;
-    use std::collections::hash_map::DefaultHasher;
     use std::collections::HashSet;
+    use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     use std::str::FromStr;
 

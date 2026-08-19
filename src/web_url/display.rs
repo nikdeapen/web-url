@@ -25,7 +25,7 @@ impl Debug for WebUrl {
 
 impl Display for WebUrl {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.url)
+        f.pad(self.url.as_str())
     }
 }
 

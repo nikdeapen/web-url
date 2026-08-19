@@ -15,8 +15,8 @@ pub fn parse_path(s: &str) -> Result<(Path<'_>, &str), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::parse_path;
     use crate::Path;
+    use crate::parse::parse_path;
 
     #[test]
     fn fn_parse_path() {

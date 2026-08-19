@@ -4,7 +4,7 @@ use std::iter::FusedIterator;
 ///
 /// Every piece consumes its leading separator, so the string must be empty or start with a separator-like lead char.
 /// The lead char is consumed blindly, so it need not match the `separator`, as in `"?a&b"` -> `["a", "b"]`. An empty
-/// region between separators is an empty piece and the empty string has no pieces.
+/// region between separators is an empty piece & the empty string has no pieces.
 #[must_use]
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct PieceIterator<'a> {
@@ -56,3 +56,33 @@ impl<'a> Iterator for PieceIterator<'a> {
 }
 
 impl<'a> FusedIterator for PieceIterator<'a> {}
+
+#[cfg(test)]
+mod tests {
+    use crate::parse::PieceIterator;
+
+    #[test]
+    fn iterate() {
+        let test_cases: &[(&str, u8, &[&str])] = &[
+            ("", b'/', &[]),
+            ("/", b'/', &[""]),
+            ("//", b'/', &["", ""]),
+            ("/a", b'/', &["a"]),
+            ("/a/b", b'/', &["a", "b"]),
+            ("/a/b/", b'/', &["a", "b", ""]),
+            // The lead char is consumed blindly, so it need not match the separator.
+            ("?", b'&', &[""]),
+            ("?&", b'&', &["", ""]),
+            ("?a&b", b'&', &["a", "b"]),
+        ];
+        for (s, separator, expected) in test_cases {
+            let result: Vec<&str> = PieceIterator::new(s, *separator).collect();
+            assert_eq!(result.as_slice(), *expected, "s={}", s);
+
+            // The hint must bound the count; it sizes the collections built from the iterator.
+            let (min, max) = PieceIterator::new(s, *separator).size_hint();
+            assert!(min <= result.len(), "s={}", s);
+            assert!(max.unwrap() >= result.len(), "s={}", s);
+        }
+    }
+}

@@ -7,7 +7,7 @@ use crate::Scheme;
 /// The scheme will be valid but may have uppercase chars. The returned rest starts after the `://`.
 pub fn parse_scheme_len(s: &str) -> Result<(usize, &str), Error> {
     if let Some(colon) = s.as_bytes().iter().position(|c| *c == b':') {
-        if Scheme::is_valid_ignore_case(&s[..colon], true) {
+        if Scheme::is_valid_ignore_case(&s[..colon]) {
             let s: &str = &s[colon + 1..];
             if !s.starts_with("//") {
                 Err(InvalidScheme)

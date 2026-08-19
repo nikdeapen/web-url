@@ -1,16 +1,16 @@
-use crate::parse::is_authority_end;
 use crate::Error;
 use crate::Error::UserInfoNotSupported;
+use crate::parse::is_authority_end;
 
 /// Checks that the authority at the prefix of `s` has no user info.
 ///
-/// The '@' char is invalid in both a domain name & an IPv6 literal, so an '@' char in the authority
-/// always indicates user info.
+/// The '@' char is invalid in both a domain name & an IPv6 literal, so an '@' char in the authority always indicates
+/// user info.
 ///
 /// # RFC 3986
-/// The authority is `[ userinfo "@" ] host [ ":" port ]`. This library supports only the host & the
-/// optional port. User info is rejected rather than silently discarded, since discarding it would
-/// drop credentials & leave the caller with an unauthenticated URL and no indication why.
+/// The authority is `[ userinfo "@" ] host [ ":" port ]`. This library supports only the host & the optional port. User
+/// info is rejected rather than silently discarded, since discarding it would drop credentials & leave the caller with
+/// an unauthenticated URL & no indication why.
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.1>
 pub fn check_no_user_info(s: &str) -> Result<(), Error> {
     let end: usize = s
@@ -28,9 +28,9 @@ pub fn check_no_user_info(s: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::check_no_user_info;
     use crate::Error;
     use crate::Error::UserInfoNotSupported;
+    use crate::parse::check_no_user_info;
 
     #[test]
     fn fn_check_no_user_info() {

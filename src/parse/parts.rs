@@ -1,7 +1,7 @@
-use crate::parse::{
-    parse_path_plus, parse_pre_path, parse_query_plus, write_canonical_path, CanonicalHost, PathPlus, PrePath,
-};
 use crate::Error;
+use crate::parse::{
+    CanonicalHost, PathPlus, PrePath, parse_path_plus, parse_pre_path, parse_query_plus, write_canonical_path,
+};
 use std::fmt::Write;
 
 /// The validated parts of a web-based URL.
@@ -10,7 +10,7 @@ pub struct Parts {
     pub pre_path: PrePath,
     pub path_plus: PathPlus,
 
-    /// Set when the URL has no explicit path and a '/' must be inserted after the authority.
+    /// Set when the URL has no explicit path & a '/' must be inserted after the authority.
     pub needs_slash: bool,
 
     /// Set when the host is an IP address that must be rewritten in its canonical form.
@@ -36,8 +36,7 @@ impl Parts {
 
     /// Checks if the host, port, or path must be rewritten to normalize the URL.
     ///
-    /// A rewrite changes the length of the URL before the query, so it cannot be normalized in
-    /// place.
+    /// A rewrite changes the length of the URL before the query, so it cannot be normalized in place.
     pub const fn needs_rewrite(self) -> bool {
         self.needs_host_rewrite || self.needs_port_rewrite() || self.needs_path_rewrite()
     }
@@ -59,8 +58,7 @@ impl Parts {
 
     /// Gets the index the '/' must be inserted at. (only meaningful when `needs_slash` is set)
     ///
-    /// This is an index into the parsed URL, so it is only valid when neither the host nor the port
-    /// is rewritten.
+    /// This is an index into the parsed URL, so it is only valid when neither the host nor the port is rewritten.
     pub const fn slash_index(self) -> usize {
         self.pre_path.len()
     }
@@ -68,10 +66,10 @@ impl Parts {
 
 /// Writes the normalized URL for the parsed URL `s` to `url`.
 ///
-/// The `parts` must have been parsed from `s`. The letter case is **not** normalized here; that is
-/// done in place once the URL string is built.
-pub fn write_normalized(s: &str, parts: &Parts, url: &mut String) {
-    let pre_path: &PrePath = &parts.pre_path;
+/// The `parts` must have been parsed from `s`. The letter case is **not** normalized here; that is done in place once
+/// the URL string is built.
+pub fn write_normalized(s: &str, parts: Parts, url: &mut String) {
+    let pre_path: PrePath = parts.pre_path;
 
     url.push_str(&s[..pre_path.host_start()]);
     if let Some(ip) = pre_path.ip {
@@ -98,15 +96,15 @@ pub fn write_normalized(s: &str, parts: &Parts, url: &mut String) {
 
 /// Parses & validates the web-based URL `s` without allocating.
 ///
-/// The URL is **not** required to have an explicit path. When it does not, `needs_slash` will be
-/// set on the returned parts and the caller is responsible for inserting the '/' at
+/// The URL is **not** required to have an explicit path. When it does not, `needs_slash` will be set on the returned
+/// parts & the caller is responsible for inserting the '/' at
 /// `slash_index()` when it builds the normalized URL string.
 pub fn parse_parts(s: &str) -> Result<Parts, Error> {
     let pre_path: PrePath = parse_pre_path(s)?;
     let needs_host_rewrite: bool = pre_path.needs_host_rewrite(s);
 
-    // The authority is terminated by a '/', '?', or '#' char, or by the end of the URL. Only the
-    // '/' case has an explicit path; the others imply the path is a single '/'.
+    // The authority is terminated by a '/', '?', or '#' char, or by the end of the URL. Only the '/' case has an
+    // explicit path; the others imply the path is a single '/'.
     let after_authority: &str = &s[pre_path.len()..];
     let needs_slash: bool = !after_authority.starts_with('/');
     let path_plus: PathPlus = if needs_slash {
@@ -125,9 +123,9 @@ pub fn parse_parts(s: &str) -> Result<Parts, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::{parse_parts, Parts};
     use crate::Error;
     use crate::Error::{InvalidHost, InvalidPath, InvalidQuery, InvalidScheme};
+    use crate::parse::{Parts, parse_parts, write_normalized};
 
     /// The summary of the parsed parts. `(needs_slash, slash_index, path_len, query_len)`
     type Summary = (bool, usize, usize, usize);
@@ -165,6 +163,33 @@ mod tests {
         for (url, expected) in test_cases {
             let result: Result<Summary, Error> = parts_of(url);
             assert_eq!(result, *expected, "url={}", url);
+        }
+    }
+
+    #[test]
+    fn fn_write_normalized() {
+        let test_cases: &[(&str, &str)] = &[
+            ("http://host/p?q#f", "http://host/p?q#f"),
+            ("http://host", "http://host/"),
+            ("http://host?q#f", "http://host/?q#f"),
+            ("http://host:0080/p", "http://host:80/p"),
+            ("http://host:/p?q", "http://host/p?q"),
+            ("http://[0:0:0:0:0:0:0:1]:0080/a/../b?q#f", "http://[::1]:80/b?q#f"),
+            // The letter case is normalized in place once the URL string is built, not here.
+            ("HTTP://HOST/P", "HTTP://HOST/P"),
+        ];
+        for (input, expected) in test_cases {
+            let parts: Parts = parse_parts(input).unwrap();
+
+            let mut result: String = String::new();
+            write_normalized(input, parts, &mut result);
+            assert_eq!(result, *expected, "input={}", input);
+
+            // The length must match what is written exactly; it sizes the URL allocation.
+            assert_eq!(parts.normalized_len(input.len()), result.len(), "input={}", input);
+
+            // A URL written back unchanged is exactly the one that needs no rewrite.
+            assert_eq!(parts.is_normalized(), *input == result, "input={}", input);
         }
     }
 }

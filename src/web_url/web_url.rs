@@ -1,14 +1,14 @@
-use crate::parse::{parse_parts, Parts, PrePath};
+use crate::parse::{Parts, PrePath, parse_parts};
 use address::IPAddress;
 
 /// A web-based URL.
 ///
 /// # Format
-/// All web-based URLs will be in the format: `scheme://host:port/path?query#fragment`. This is a
-/// subset of [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3).
+/// All web-based URLs will be in the format: `scheme://host:port/path?query#fragment`. This is a subset of
+/// [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3).
 ///
-/// - The `port`, `query`, and `fragment` are all optional.
-/// - The `path` will never be empty and will always start with a '/'.
+/// - The `port`, `query`, & `fragment` are all optional.
+/// - The `path` will never be empty & will always start with a '/'.
 #[must_use]
 #[derive(Clone)]
 pub struct WebUrl {
@@ -49,22 +49,21 @@ impl WebUrl {
     ///
     /// # Safety
     /// The `url` must be a normalized web-based URL & every other parameter must describe it:
-    /// - The `url` parses & is already normalized. The scheme & host are lowercase, an IP address
-    ///   host is in its canonical form, the path is present, starts with a '/', & has no
-    ///   dot-segments, an empty port is absent along with its ':', and the port has no leading
-    ///   zeros.
+    /// - The `url` parses & is already normalized. The scheme & host are lowercase, an IP address host is in its
+    ///   canonical form, the path is present, starts with a '/', & has no dot-segments, an empty port is absent along
+    ///   with its ':', & the port has no leading zeros.
     /// - The offsets are non-decreasing & the last is within the `url`:
     ///   `scheme_len <= host_end <= port_end <= path_end <= query_end <= url.len()`.
     /// - The `ip` is the parsed host when the host is an IP address & `None` when it is a domain.
     /// - The `port` is the parsed port & matches the `[host_end..port_end]` text.
     ///
-    /// Breaking the contract does not cause undefined behavior in this crate; the component
-    /// accessors return the wrong slice or panic. It is still `unsafe` because `host()` hands the
-    /// host slice to `DomainRef::new_unchecked`, whose own contract requires a valid domain name.
+    /// Breaking the contract does not cause undefined behavior in this crate; the component accessors return the wrong
+    /// slice or panic. It is still `unsafe` because `host()` hands the host slice to `DomainRef::new_unchecked`, whose
+    /// own contract requires a valid domain name.
     ///
-    /// The contract is `debug_assert`ed by re-parsing the `url`, which is the work this function
-    /// exists to skip, so the check is absent from release builds. Use `FromStr` or
-    /// `TryFrom<String>` to build a URL that is validated in release builds too.
+    /// The contract is `debug_assert`ed by re-parsing the `url`, which is the work this function exists to skip, so
+    /// the check is absent from release builds. Use `FromStr` or `TryFrom<String>` to build a URL that is validated in
+    /// release builds too.
     #[allow(clippy::too_many_arguments)]
     pub unsafe fn new_unchecked<S>(
         url: S,
@@ -117,8 +116,8 @@ impl WebUrl {
     /// This is the `new_unchecked` contract. It re-parses the URL, so it is only used in
     /// `debug_assert`s; parsing is exactly the work `new_unchecked` exists to skip.
     pub(in crate::web_url) fn is_consistent(&self) -> bool {
-        // The offsets are checked before anything is sliced so that a bad offset returns false
-        // rather than panicking inside the check itself.
+        // The offsets are checked before anything is sliced so that a bad offset returns false rather than panicking
+        // inside the check itself.
         if self.url.len() > Self::MAX_LEN {
             return false;
         }
@@ -136,8 +135,8 @@ impl WebUrl {
             return false;
         }
 
-        // The parser is the oracle for the URL string. A normalized URL must parse, must need no
-        // further normalization, & must already be lowercase through the host.
+        // The parser is the oracle for the URL string. A normalized URL must parse, must need no further normalization,
+        // & must already be lowercase through the host.
         let parts: Parts = match parse_parts(self.url.as_str()) {
             Ok(parts) => parts,
             Err(_) => return false,
@@ -180,5 +179,40 @@ impl WebUrl {
     #[must_use]
     pub fn into_string(self) -> String {
         self.url
+    }
+}
+
+impl From<WebUrl> for String {
+    fn from(url: WebUrl) -> Self {
+        url.into_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::WebUrl;
+    use std::error::Error;
+    use std::str::FromStr;
+
+    #[test]
+    fn properties() -> Result<(), Box<dyn Error>> {
+        let url: WebUrl = WebUrl::from_str("https://example.com/p?q#f")?;
+        assert_eq!(url.len(), "https://example.com/p?q#f".len());
+        assert!(!url.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn deconstruction() -> Result<(), Box<dyn Error>> {
+        let url: WebUrl = WebUrl::from_str("https://example.com/p?q#f")?;
+        let url: String = url.into_string();
+        assert_eq!(url, "https://example.com/p?q#f");
+
+        // The string is already normalized, so the round trip reuses it.
+        let url: WebUrl = WebUrl::try_from(url)?;
+        assert_eq!(String::from(url), "https://example.com/p?q#f");
+
+        Ok(())
     }
 }

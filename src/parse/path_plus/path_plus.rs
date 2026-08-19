@@ -1,5 +1,5 @@
-use crate::parse::{canonical_path_len, check_fragment, parse_path, parse_query};
 use crate::Error;
+use crate::parse::{canonical_path_len, check_fragment, parse_path, parse_query};
 
 /// The parsing data for a web-based URL from the path to the end.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -11,7 +11,7 @@ pub struct PathPlus {
 
 /// Parses the `path_plus`. (the path, the optional query, & the optional fragment)
 ///
-/// The path, query, and fragment will be validated.
+/// The path, query, & fragment will be validated.
 pub fn parse_path_plus(path_plus: &str) -> Result<PathPlus, Error> {
     let (path, after_path) = parse_path(path_plus)?;
     let (query, after_query) = parse_query(after_path)?;
@@ -29,10 +29,10 @@ pub fn parse_path_plus(path_plus: &str) -> Result<PathPlus, Error> {
 
 /// Parses the `query_plus`. (the optional query & the optional fragment)
 ///
-/// This is used when the URL has no explicit path. The path is implied to be a single '/' which is
-/// reflected in the returned `path_len` even though it is not present in `query_plus`.
+/// This is used when the URL has no explicit path. The path is implied to be a single '/' which is reflected in the
+/// returned `path_len` even though it is not present in `query_plus`.
 ///
-/// The query and fragment will be validated.
+/// The query & fragment will be validated.
 pub fn parse_query_plus(query_plus: &str) -> Result<PathPlus, Error> {
     let (query, after_query) = parse_query(query_plus)?;
     check_fragment(after_query)?;
@@ -49,9 +49,9 @@ pub fn parse_query_plus(query_plus: &str) -> Result<PathPlus, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::{parse_path_plus, parse_query_plus, PathPlus};
     use crate::Error;
     use crate::Error::{InvalidFragment, InvalidPath, InvalidQuery};
+    use crate::parse::{PathPlus, parse_path_plus, parse_query_plus};
 
     /// Creates the expected path-plus. (for paths with no dot-segments)
     fn path_plus(path_len: usize, query_len: usize) -> PathPlus {

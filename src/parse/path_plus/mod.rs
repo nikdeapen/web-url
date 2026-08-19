@@ -1,8 +1,8 @@
-pub use canonical_path::*;
-pub use fragment::*;
-pub use path::*;
-pub use path_plus::*;
-pub use query::*;
+pub(crate) use canonical_path::*;
+pub(crate) use fragment::*;
+pub(crate) use path::*;
+pub(crate) use path_plus::*;
+pub(crate) use query::*;
 
 mod canonical_path;
 mod fragment;

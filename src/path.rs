@@ -1,6 +1,6 @@
-use crate::parse;
 use crate::Error;
 use crate::Error::InvalidPath;
+use crate::parse;
 use std::fmt::{Debug, Display, Formatter};
 use std::iter::FusedIterator;
 
@@ -10,13 +10,13 @@ use std::iter::FusedIterator;
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.3>
 ///
 /// # Validation
-/// A path string will never be empty and will always start with a '/'. The path string can contain the RFC 3986 path
-/// chars: the US-ASCII letters and numbers, the unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", and the
-/// ":@/" chars. The '%' char is also accepted but the percent-encoding is not validated.
+/// A path string will never be empty & will always start with a '/'. The path string can contain the RFC 3986 path
+/// chars: the US-ASCII letters & numbers, the unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", & the ":@/"
+/// chars. The '%' char is also accepted but the percent-encoding is not validated.
 ///
 /// # Segments
-/// The '/' chars are separators, so the regions between them are the segments and an empty region is an empty
-/// segment. The path `"/"` is a single empty segment and the path `"//"` is two of them.
+/// The '/' chars are separators, so the regions between them are the segments & an empty region is an empty segment.
+/// The path `"/"` is a single empty segment & the path `"//"` is two of them.
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Path<'a> {
@@ -80,6 +80,20 @@ impl<'a> Path<'a> {
     }
 }
 
+impl<'a> PartialEq<&str> for Path<'a> {
+    /// The comparison is exact; the `other` string is not validated or normalized.
+    fn eq(&self, other: &&str) -> bool {
+        self.path == *other
+    }
+}
+
+impl<'a> PartialEq<Path<'a>> for &str {
+    /// The comparison is exact; the `self` string is not validated or normalized.
+    fn eq(&self, other: &Path<'a>) -> bool {
+        *self == other.path
+    }
+}
+
 impl<'a> AsRef<str> for Path<'a> {
     fn as_ref(&self) -> &str {
         self.path
@@ -94,7 +108,7 @@ impl<'a> Debug for Path<'a> {
 
 impl<'a> Display for Path<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.path)
+        f.pad(self.path)
     }
 }
 
