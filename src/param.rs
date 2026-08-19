@@ -1,6 +1,6 @@
-use crate::parse;
 use crate::Error;
 use crate::Error::InvalidParam;
+use crate::parse;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL query parameter.
@@ -11,13 +11,13 @@ use std::fmt::{Debug, Display, Formatter};
 /// The `name=value` convention comes from `application/x-www-form-urlencoded`, not RFC 3986.
 ///
 /// # Validation
-/// Both the name and value of a query parameter may be the empty string. The value string may also be absent
-/// altogether, which signifies a missing '=' in the query parameter string.
+/// Both the name & value of a query parameter may be the empty string. The value string may also be absent altogether,
+/// which signifies a missing '=' in the query parameter string.
 ///
-/// Query parameter names & values can contain the RFC 3986 query chars: the US-ASCII letters and numbers, the
-/// unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", and the ":@/?" chars. The '%' char is also accepted but
-/// the percent-encoding is not validated. The '&' char is excluded since it denotes the end of the parameter in the
-/// URL. Names cannot contain the '=' char since this denotes the end of the query parameter name.
+/// Query parameter names & values can contain the RFC 3986 query chars: the US-ASCII letters & numbers, the unreserved
+/// chars "-._~", the sub-delim chars "!$&'()*+,;=", & the ":@/?" chars. The '%' char is also accepted but the
+/// percent-encoding is not validated. The '&' char is excluded since it denotes the end of the parameter in the URL.
+/// Names cannot contain the '=' char since this denotes the end of the query parameter name.
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Param<'a> {
@@ -40,7 +40,7 @@ impl<'a> Param<'a> {
     /// Creates a new query parameter.
     ///
     /// # Safety
-    /// The `name` and `value` must be valid.
+    /// The `name` & `value` must be valid.
     pub unsafe fn new_unchecked(name: &'a str, value: Option<&'a str>) -> Self {
         debug_assert!(Self::is_valid_parts(name, value));
 
@@ -132,6 +132,20 @@ impl<'a> Param<'a> {
     }
 }
 
+impl<'a> PartialEq<&str> for Param<'a> {
+    /// The `other` string is split as in `try_from` & compared exactly; it is not validated.
+    fn eq(&self, other: &&str) -> bool {
+        Self::split(other) == (self.name, self.value)
+    }
+}
+
+impl<'a> PartialEq<Param<'a>> for &str {
+    /// The `self` string is split as in `try_from` & compared exactly; it is not validated.
+    fn eq(&self, other: &Param<'a>) -> bool {
+        Param::split(self) == (other.name, other.value)
+    }
+}
+
 impl<'a> Debug for Param<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(self, f)
@@ -140,11 +154,20 @@ impl<'a> Debug for Param<'a> {
 
 impl<'a> Display for Param<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name)?;
-        if let Some(value) = self.value {
-            write!(f, "={}", value)?;
+        // The param is two pieces, so honoring a format spec needs them joined first. The common case has no spec & is
+        // written piece by piece so it never allocates.
+        if f.width().is_none() && f.precision().is_none() {
+            f.write_str(self.name)?;
+            if let Some(value) = self.value {
+                f.write_str("=")?;
+                f.write_str(value)?;
+            }
+            Ok(())
+        } else if let Some(value) = self.value {
+            f.pad(&format!("{}={}", self.name, value))
+        } else {
+            f.pad(self.name)
         }
-        Ok(())
     }
 }
 

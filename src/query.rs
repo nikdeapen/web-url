@@ -1,7 +1,7 @@
-use crate::parse;
 use crate::Error;
 use crate::Error::InvalidQuery;
 use crate::Param;
+use crate::parse;
 use std::fmt::{Debug, Display, Formatter};
 use std::iter::FusedIterator;
 
@@ -11,13 +11,13 @@ use std::iter::FusedIterator;
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.4>
 ///
 /// # Validation
-/// A query string will never be empty and will always start with a '?'. The query string can contain the RFC 3986
-/// query chars: the US-ASCII letters and numbers, the unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", and
-/// the ":@/?" chars. The '%' char is also accepted but the percent-encoding is not validated.
+/// A query string will never be empty & will always start with a '?'. The query string can contain the RFC 3986 query
+/// chars: the US-ASCII letters & numbers, the unreserved chars "-._~", the sub-delim chars "!$&'()*+,;=", & the ":@/?"
+/// chars. The '%' char is also accepted but the percent-encoding is not validated.
 ///
 /// # Parameters
-/// A query always has at least one parameter. The '?' and '&' chars are separators, so the regions between them are the
-/// parameters and an empty region is an empty parameter. The query `"?"` is a single empty parameter and the query
+/// A query always has at least one parameter. The '?' & '&' chars are separators, so the regions between them are the
+/// parameters & an empty region is an empty parameter. The query `"?"` is a single empty parameter & the query
 /// `"?&"` is two of them.
 ///
 /// This is why a URL with no query has no query at all rather than an empty one: the URL `"/"` has zero parameters
@@ -91,6 +91,20 @@ impl<'a> Query<'a> {
     }
 }
 
+impl<'a> PartialEq<&str> for Query<'a> {
+    /// The comparison is exact; the `other` string is not validated or normalized.
+    fn eq(&self, other: &&str) -> bool {
+        self.query == *other
+    }
+}
+
+impl<'a> PartialEq<Query<'a>> for &str {
+    /// The comparison is exact; the `self` string is not validated or normalized.
+    fn eq(&self, other: &Query<'a>) -> bool {
+        *self == other.query
+    }
+}
+
 impl<'a> AsRef<str> for Query<'a> {
     fn as_ref(&self) -> &str {
         self.query
@@ -105,7 +119,7 @@ impl<'a> Debug for Query<'a> {
 
 impl<'a> Display for Query<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.query)
+        f.pad(self.query)
     }
 }
 

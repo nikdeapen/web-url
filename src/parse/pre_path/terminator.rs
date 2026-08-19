@@ -1,4 +1,4 @@
-/// Checks if the char `c` terminates the authority. (the host and the optional port)
+/// Checks if the char `c` terminates the authority. (the host & the optional port)
 ///
 /// # RFC 3986
 /// The authority is terminated by the next '/', '?', or '#' char, or by the end of the URL.

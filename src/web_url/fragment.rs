@@ -36,13 +36,12 @@ impl WebUrl {
     {
         let fragment: Option<Fragment> = fragment.into();
 
-        // The fragment runs from `query_end` to the end of the URL, so truncating to `query_end`
-        // drops it.
+        // The fragment runs from `query_end` to the end of the URL, so truncating to `query_end` drops it.
         let base_len: usize = self.query_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact. No offset changes here since the fragment is last, but the URL must still stay
-        // short enough for its own parser to accept it.
+        // The length is checked before anything is modified so an over-long URL panics with the URL intact. No offset
+        // changes here since the fragment is last, but the URL must still stay short enough for its own parser to
+        // accept it.
         Self::check_len(base_len + fragment.map(|f| f.as_str().len()).unwrap_or(0));
 
         self.url.truncate(base_len);

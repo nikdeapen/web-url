@@ -10,7 +10,7 @@ strict validation, normalizing parsers, & borrowed component types.
 ## Usage
 
 ```toml
-web-url = "0.10.0"
+web-url = "0.11.0"
 ```
 
 ## Example
@@ -78,10 +78,10 @@ The host is an `address::HostRef`, either a domain name or an IP address. The `a
 
 URLs can be mutated in place & every mutation keeps the URL normalized:
 
-- `set_host`, `set_port`, `set_path`, & `set_fragment` set their component. The port & fragment are removed by
-  setting them to `None`.
+- `set_scheme`, `set_host`, `set_port`, `set_path`, `set_query`, & `set_fragment` set their component. The port,
+  query, & fragment are removed by setting them to `None`.
 - `add_param` appends a query parameter, `remove_params` removes every parameter with a name, & `replace_params`
   replaces every parameter with a name with a single parameter.
 
-The `with_host`, `with_port`, `with_path`, `with_fragment`, `with_param`, `without_params`, & `with_replaced_params`
-variants chain on owned URLs.
+The `with_scheme`, `with_host`, `with_port`, `with_path`, `with_query`, `with_fragment`, `with_param`,
+`without_params`, & `with_replaced_params` variants chain on owned URLs.

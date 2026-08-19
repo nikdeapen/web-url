@@ -6,7 +6,6 @@ pub use address;
 
 pub use error::*;
 pub use fragment::*;
-pub use invalid_url_string::*;
 pub use param::*;
 pub use path::*;
 pub use query::*;
@@ -15,7 +14,6 @@ pub use web_url::*;
 
 mod error;
 mod fragment;
-mod invalid_url_string;
 mod param;
 mod path;
 mod query;

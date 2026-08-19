@@ -5,21 +5,21 @@ use std::fmt::{Display, Formatter};
 ///
 /// The invalid URL string can be recovered, like `std::string::FromUtf8Error`.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-pub struct InvalidUrlString {
+pub struct InvalidURLError {
     error: Error,
     url: String,
 }
 
-impl InvalidUrlString {
+impl InvalidURLError {
     //! Construction
 
-    /// Creates a new invalid URL string error.
+    /// Creates a new invalid URL error.
     pub(crate) const fn new(error: Error, url: String) -> Self {
         Self { error, url }
     }
 }
 
-impl InvalidUrlString {
+impl InvalidURLError {
     //! Properties
 
     /// Gets the parse error.
@@ -35,7 +35,7 @@ impl InvalidUrlString {
     }
 }
 
-impl InvalidUrlString {
+impl InvalidURLError {
     //! Deconstruction
 
     /// Converts the error back into the invalid URL string.
@@ -45,20 +45,18 @@ impl InvalidUrlString {
     }
 }
 
-impl From<InvalidUrlString> for Error {
-    fn from(error: InvalidUrlString) -> Self {
+impl From<InvalidURLError> for Error {
+    fn from(error: InvalidURLError) -> Self {
         error.error
     }
 }
 
-impl Display for InvalidUrlString {
+impl Display for InvalidURLError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.pad(self.error.message())
     }
 }
 
-impl std::error::Error for InvalidUrlString {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.error)
-    }
-}
+/// The `source` is not the parse error: its message is this error's message, so a chain would just print it twice. Use
+/// `error` for the typed parse error.
+impl std::error::Error for InvalidURLError {}

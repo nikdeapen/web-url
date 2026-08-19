@@ -1,6 +1,6 @@
-use crate::parse;
 use crate::Error;
 use crate::Error::InvalidFragment;
+use crate::parse;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL fragment.
@@ -9,10 +9,10 @@ use std::fmt::{Debug, Display, Formatter};
 /// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.5>
 ///
 /// # Validation
-/// A fragment string will never be empty and will always start with a '#' even if the fragment itself is empty. The
-/// fragment value can contain the RFC 3986 fragment chars: the US-ASCII letters and numbers, the unreserved chars
-/// "-._~", the sub-delim chars "!$&'()*+,;=", and the ":@/?" chars. The '%' char is also accepted but the
-/// percent-encoding is not validated. Fragments are case-sensitive.
+/// A fragment string will never be empty & will always start with a '#' even if the fragment itself is empty. The
+/// fragment value can contain the RFC 3986 fragment chars: the US-ASCII letters & numbers, the unreserved chars "-._~",
+/// the sub-delim chars "!$&'()*+,;=", & the ":@/?" chars. The '%' char is also accepted but the percent-encoding is not
+/// validated. Fragments are case-sensitive.
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct Fragment<'a> {
@@ -82,6 +82,20 @@ impl<'a> Fragment<'a> {
     }
 }
 
+impl<'a> PartialEq<&str> for Fragment<'a> {
+    /// The comparison is exact; the `other` string is not validated or normalized.
+    fn eq(&self, other: &&str) -> bool {
+        self.fragment == *other
+    }
+}
+
+impl<'a> PartialEq<Fragment<'a>> for &str {
+    /// The comparison is exact; the `self` string is not validated or normalized.
+    fn eq(&self, other: &Fragment<'a>) -> bool {
+        *self == other.fragment
+    }
+}
+
 impl<'a> AsRef<str> for Fragment<'a> {
     fn as_ref(&self) -> &str {
         self.fragment
@@ -96,7 +110,7 @@ impl<'a> Debug for Fragment<'a> {
 
 impl<'a> Display for Fragment<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.fragment)
+        f.pad(self.fragment)
     }
 }
 

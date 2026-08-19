@@ -15,9 +15,9 @@ pub fn check_fragment(fragment: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::check_fragment;
     use crate::Error;
     use crate::Error::InvalidFragment;
+    use crate::parse::check_fragment;
 
     #[test]
     fn fn_check_fragment() {

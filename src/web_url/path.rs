@@ -34,12 +34,12 @@ impl WebUrl {
         let start: usize = self.port_end as usize;
         let end: usize = self.path_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
+        // leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - (end - start)) + insert.len());
 
-        // The query & fragment follow the path & are unchanged, so the query length is saved to
-        // rebuild the offsets that the splice shifts.
+        // The query & fragment follow the path & are unchanged, so the query length is saved to rebuild the offsets
+        // that the splice shifts.
         let query_len: u32 = self.query_end - self.path_end;
 
         self.url.replace_range(start..end, insert.as_str());
@@ -62,7 +62,7 @@ impl WebUrl {
 
 #[cfg(test)]
 mod tests {
-    use crate::WebUrl;
+    use crate::{Path, WebUrl};
     use std::error::Error;
     use std::str::FromStr;
 
@@ -77,6 +77,36 @@ mod tests {
     fn path_default() -> Result<(), Box<dyn Error>> {
         let url = WebUrl::from_str("https://example.com")?;
         assert_eq!(url.path().as_str(), "/");
+        Ok(())
+    }
+
+    #[test]
+    fn set_path() -> Result<(), Box<dyn Error>> {
+        // The path is normalized as it is set, so the dot-segments never reach the URL.
+        let test_cases: &[(&str, &str, &str)] = &[
+            ("http://host/old?q#f", "/new", "http://host/new?q#f"),
+            ("http://host/old", "/", "http://host/"),
+            ("http://host/", "/a/b", "http://host/a/b"),
+            ("http://host/", "//", "http://host//"),
+            ("http://host/", "/a/../b", "http://host/b"),
+            ("http://host/", "/a/./b/", "http://host/a/b/"),
+            ("http://host/", "/..", "http://host/"),
+            ("http://host:8080/old?q", "/new", "http://host:8080/new?q"),
+        ];
+        for (input, path, expected) in test_cases {
+            let mut url: WebUrl = WebUrl::from_str(input)?;
+            url.set_path(Path::try_from(*path)?);
+            assert_eq!(url.as_str(), *expected, "input={} path={}", input, path);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_path() -> Result<(), Box<dyn Error>> {
+        let url: WebUrl = WebUrl::from_str("https://example.com/old")?.with_path(Path::try_from("/new")?);
+        assert_eq!(url.as_str(), "https://example.com/new");
+
         Ok(())
     }
 }

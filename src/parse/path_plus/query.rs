@@ -21,9 +21,9 @@ pub fn parse_query(s: &str) -> Result<(Option<Query<'_>>, &str), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::parse_query;
     use crate::Error;
     use crate::Query;
+    use crate::parse::parse_query;
 
     #[test]
     #[allow(clippy::type_complexity)]

@@ -1,15 +1,14 @@
 use crate::{Param, WebUrl};
-use std::fmt::Write;
 
 impl WebUrl {
     //! Query Parameter Mutations
 
     /// Adds the query `param`.
     ///
-    /// This always appends exactly one parameter and never changes the parameters that are already
-    /// present. The '?' separator is used when the URL has no query yet, otherwise the '&' separator
-    /// is used. Since an empty region between separators is an empty parameter, a query that is just
-    /// a '?' already has one parameter and therefore still needs the '&' separator.
+    /// This always appends exactly one parameter & never changes the parameters that are already present. The '?'
+    /// separator is used when the URL has no query yet, otherwise the '&' separator is used. Since an empty region
+    /// between separators is an empty parameter, a query that is just a '?' already has one parameter & therefore still
+    /// needs the '&' separator.
     ///
     /// # Example
     /// Adding the param `p=1`:
@@ -21,22 +20,19 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn add_param(&mut self, param: Param) {
+        // A URL with no query has no '?' either, so the query starts with one here. Every other case appends to a
+        // query that already has at least one param.
         let separator: char = if self.path_end == self.query_end { '?' } else { '&' };
-        let added: usize = separator.len_utf8() + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0);
+        let added: usize = Self::push_param_len(param);
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
+        // leaving the string inconsistent with the component offsets.
         Self::check_len(self.url.len() + added);
 
-        // The param is assembled first so it can be spliced in with a single insertion. Inserting
-        // each piece directly would shift everything after the query once per piece.
+        // The param is assembled first so it can be spliced in with a single insertion. Inserting each piece directly
+        // would shift everything after the query once per piece.
         let mut insert: String = String::with_capacity(added);
-        insert.push(separator);
-        insert.push_str(param.name());
-        if let Some(value) = param.value() {
-            insert.push('=');
-            insert.push_str(value);
-        }
+        Self::push_param(&mut insert, separator, param);
 
         // Only the fragment follows the query, so the insertion shifts the fragment alone.
         let at: usize = self.query_end as usize;
@@ -58,8 +54,8 @@ impl WebUrl {
 
     /// Removes every query param with the `name` & gets the number of removed params.
     ///
-    /// Removing every param removes the query along with its '?', since a query that is just a '?'
-    /// is still one empty param.
+    /// Removing every param removes the query along with its '?', since a query that is just a '?' is still one empty
+    /// param.
     ///
     /// # Example
     /// Removing the params named `a`:
@@ -67,21 +63,22 @@ impl WebUrl {
     /// - `"/?a=1&b=2"` -> `"/?b=2"`
     /// - `"/?a=1&b=2&a=3"` -> `"/?b=2"`
     pub fn remove_params(&mut self, name: &str) -> usize {
+        // The query is scanned before it is rebuilt so that a URL without a matching param is left untouched & never
+        // allocates.
+        if !self.query().into_iter().flatten().any(|p| p.name() == name) {
+            return 0;
+        }
+
         let mut removed: usize = 0;
         let mut query: String = String::with_capacity(self.query_len());
         for param in self.query().into_iter().flatten() {
             if param.name() == name {
                 removed += 1;
             } else {
-                Self::push_param(&mut query, param);
+                Self::push_query_param(&mut query, param);
             }
         }
-
-        // The query is only spliced in when a param was removed so that a URL without a matching
-        // param is left untouched.
-        if removed != 0 {
-            self.set_query_str(query.as_str());
-        }
+        self.set_query_str(query.as_str());
 
         removed
     }
@@ -94,8 +91,8 @@ impl WebUrl {
 
     /// Replaces every query param named like the `param` & gets the number of replaced params.
     ///
-    /// The first param with the name keeps its position and the rest are removed. When no param has
-    /// the name the `param` is appended as with `add_param`.
+    /// The first param with the name keeps its position & the rest are removed. When no param has the name the `param`
+    /// is appended as with `add_param`.
     ///
     /// # Example
     /// Replacing with the param `a=9`:
@@ -113,10 +110,10 @@ impl WebUrl {
             if existing.name() == param.name() {
                 replaced += 1;
                 if replaced == 1 {
-                    Self::push_param(&mut query, param);
+                    Self::push_query_param(&mut query, param);
                 }
             } else {
-                Self::push_param(&mut query, existing);
+                Self::push_query_param(&mut query, existing);
             }
         }
 
@@ -138,37 +135,28 @@ impl WebUrl {
         self
     }
 
-    /// Gets the length of the query string. (including the '?' prefix)
-    fn query_len(&self) -> usize {
-        (self.query_end - self.path_end) as usize
+    /// Appends the `separator` & the `param` to the `out` string.
+    ///
+    /// This is the only place a param is spelled out, so `push_param_len` must match what it writes.
+    fn push_param(out: &mut String, separator: char, param: Param) {
+        out.push(separator);
+        out.push_str(param.name());
+        if let Some(value) = param.value() {
+            out.push('=');
+            out.push_str(value);
+        }
     }
 
-    /// Appends the `param` to the `query` string with its separator.
+    /// Gets the number of bytes `push_param` appends for the `param`. (including its separator)
+    fn push_param_len(param: Param) -> usize {
+        1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0)
+    }
+
+    /// Appends the `param` to the `query` string being rebuilt, with its separator.
     ///
     /// The '?' separator is used when the `query` is empty, otherwise the '&' separator is used.
-    fn push_param(query: &mut String, param: Param) {
-        query.push(if query.is_empty() { '?' } else { '&' });
-        let _ = write!(query, "{}", param);
-    }
-
-    /// Sets the query string, which must be a valid query or be empty.
-    ///
-    /// # Panics
-    /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    fn set_query_str(&mut self, query: &str) {
-        let start: usize = self.path_end as usize;
-        let end: usize = self.query_end as usize;
-
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
-        Self::check_len((self.url.len() - self.query_len()) + query.len());
-
-        // Only the fragment follows the query, so the splice shifts the fragment alone.
-        self.url.replace_range(start..end, query);
-
-        self.query_end = (start + query.len()) as u32;
-
-        debug_assert!(self.is_consistent());
+    fn push_query_param(query: &mut String, param: Param) {
+        Self::push_param(query, if query.is_empty() { '?' } else { '&' }, param);
     }
 }
 
@@ -207,8 +195,8 @@ mod tests {
 
     #[test]
     fn add_param_appends_exactly_one_param() -> Result<(), Box<dyn Error>> {
-        // The '?' & '&' chars are separators, so an empty region between them is an empty parameter.
-        // Adding a parameter must append exactly one & leave the existing ones untouched.
+        // The '?' & '&' chars are separators, so an empty region between them is an empty parameter. Adding a parameter
+        // must append exactly one & leave the existing ones untouched.
         let test_cases: &[(&str, &str, usize, usize)] = &[
             ("https://host/p", "https://host/p?p=1", 0, 1),
             ("https://host/p?", "https://host/p?&p=1", 1, 2),
@@ -296,6 +284,77 @@ mod tests {
             .with_param(Param::try_from("a=1")?)
             .with_param(Param::try_from("b=2")?);
         assert_eq!(url.as_str(), "https://example.com/?a=1&b=2");
+
+        Ok(())
+    }
+
+    #[test]
+    fn remove_params() -> Result<(), Box<dyn Error>> {
+        // Removing every param removes the query along with its '?'.
+        let test_cases: &[(&str, &str, usize, &str)] = &[
+            ("https://host/p?a=1", "a", 1, "https://host/p"),
+            ("https://host/p?a=1&b=2", "a", 1, "https://host/p?b=2"),
+            ("https://host/p?a=1&b=2&a=3", "a", 2, "https://host/p?b=2"),
+            ("https://host/p?a&a=", "a", 2, "https://host/p"),
+            ("https://host/p?a=1&b=2#f", "a", 1, "https://host/p?b=2#f"),
+            ("https://host/p?a=1#f", "a", 1, "https://host/p#f"),
+            // A URL with no matching param is left untouched.
+            ("https://host/p?a=1", "b", 0, "https://host/p?a=1"),
+            ("https://host/p", "a", 0, "https://host/p"),
+            // A query that is just a '?' is still one empty param.
+            ("https://host/p?", "", 1, "https://host/p"),
+            ("https://host/p?&", "", 2, "https://host/p"),
+            ("https://host/p?&a=1", "", 1, "https://host/p?a=1"),
+        ];
+        for (input, name, removed, expected) in test_cases {
+            let mut url: WebUrl = WebUrl::from_str(input)?;
+            assert_eq!(url.remove_params(name), *removed, "input={input} name={name}");
+            assert_eq!(url.as_str(), *expected, "input={input} name={name}");
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn without_params() -> Result<(), Box<dyn Error>> {
+        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")?.without_params("a");
+        assert_eq!(url.as_str(), "https://host/p?b=2");
+
+        Ok(())
+    }
+
+    #[test]
+    fn replace_params() -> Result<(), Box<dyn Error>> {
+        // The first param with the name keeps its position & the rest are removed.
+        let test_cases: &[(&str, &str, usize, &str)] = &[
+            ("https://host/p?a=1", "a=9", 1, "https://host/p?a=9"),
+            ("https://host/p?b=2&a=1", "a=9", 1, "https://host/p?b=2&a=9"),
+            ("https://host/p?a=1&b=2&a=3", "a=9", 2, "https://host/p?a=9&b=2"),
+            ("https://host/p?a=1#f", "a=9", 1, "https://host/p?a=9#f"),
+            // The replacement drops the value when it has none.
+            ("https://host/p?a=1", "a", 1, "https://host/p?a"),
+            // With no param of the name the replacement is appended, as with `add_param`.
+            ("https://host/p", "a=9", 0, "https://host/p?a=9"),
+            ("https://host/p?b=2", "a=9", 0, "https://host/p?b=2&a=9"),
+            ("https://host/p#f", "a=9", 0, "https://host/p?a=9#f"),
+            // A query that is just a '?' is still one empty param.
+            ("https://host/p?", "a=9", 0, "https://host/p?&a=9"),
+            ("https://host/p?", "", 1, "https://host/p?"),
+        ];
+        for (input, param, replaced, expected) in test_cases {
+            let mut url: WebUrl = WebUrl::from_str(input)?;
+            let param: Param = Param::try_from(*param)?;
+            assert_eq!(url.replace_params(param), *replaced, "input={input} param={param}");
+            assert_eq!(url.as_str(), *expected, "input={input} param={param}");
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn with_replaced_params() -> Result<(), Box<dyn Error>> {
+        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")?.with_replaced_params(Param::try_from("a=9")?);
+        assert_eq!(url.as_str(), "https://host/p?a=9&b=2");
 
         Ok(())
     }
