@@ -5,7 +5,7 @@ use address::IPAddress;
 ///
 /// # Format
 /// All web-based URLs will be in the format: `scheme://host:port/path?query#fragment`. This is a subset of
-/// [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3).
+/// [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3).
 ///
 /// - The `port`, `query`, & `fragment` are all optional.
 /// - The `path` will never be empty & will always start with a '/'.

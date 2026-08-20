@@ -5,19 +5,11 @@
 pub use address;
 
 pub use error::*;
-pub use fragment::*;
-pub use param::*;
-pub use path::*;
-pub use query::*;
-pub use scheme::*;
+pub use parts::*;
 pub use web_url::*;
 
 mod error;
-mod fragment;
-mod param;
-mod path;
-mod query;
-mod scheme;
+mod parts;
 mod web_url;
 
 mod parse;

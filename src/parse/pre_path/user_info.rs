@@ -11,7 +11,7 @@ use crate::parse::is_authority_end;
 /// The authority is `[ userinfo "@" ] host [ ":" port ]`. This library supports only the host & the optional port. User
 /// info is rejected rather than silently discarded, since discarding it would drop credentials & leave the caller with
 /// an unauthenticated URL & no indication why.
-/// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.1>
+/// <https://www.rfc-editor.org/rfc/rfc3986#section-3.2.1>
 pub fn check_no_user_info(s: &str) -> Result<(), Error> {
     let end: usize = s
         .as_bytes()

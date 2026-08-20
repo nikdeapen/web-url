@@ -23,7 +23,7 @@ use web_url::{Param, WebUrl};
 let url = WebUrl::from_str("HTTPS://Example.com:0443/path?key=value#section").unwrap();
 assert_eq!(url.as_str(), "https://example.com:443/path?key=value#section");
 assert_eq!(url.scheme().as_str(), "https");
-assert_eq!(url.host_str(), "example.com");
+assert_eq!(url.host().to_string(), "example.com");
 assert_eq!(url.port(), Some(443));
 assert_eq!(url.path().as_str(), "/path");
 assert_eq!(url.query().unwrap().as_str(), "?key=value");
@@ -44,18 +44,19 @@ This crate has no features. The only dependency is the [`address`](https://crate
 scheme://host:port/path?query#fragment
 ```
 
-The format is a subset of the [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3) URI syntax: the
+The format is a subset of the [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3) URI syntax: the
 authority is required, user info is rejected, & the path is never empty. The port, query, & fragment are optional.
 
 The accepted chars follow RFC 3986: the path accepts the `pchar` chars plus '/', & the query & fragment also accept
-'?'. The '%' char is accepted but the percent-encoding is not validated.
+'?'. A '%' char begins a percent-encoded octet & must be followed by two hex digits, so `%zz` is rejected.
 
 ## Normalization
 
 Parsed URLs are always normalized: the scheme & host are lowercased, an IP address host is rewritten in the canonical
 `address` form (`[0:0:0:0:0:0:0:1]` -> `[::1]`), an empty port is dropped along with its ':', a port with leading
 zeros is rewritten, a URL parsed without a path gets the path '/', & the path dot-segments are removed
-(`/a/../b` -> `/b`). The query & fragment are preserved exactly.
+(`/a/../b` -> `/b`). The query & fragment are preserved exactly. The percent-encoding is validated but not
+normalized, so `%7e` & `~` stay distinct.
 
 Parsing with `TryFrom<String>` reuses the allocation when the URL is already normalized & recovers the original
 string on error.

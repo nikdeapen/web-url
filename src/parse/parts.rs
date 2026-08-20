@@ -1,8 +1,8 @@
 use crate::Error;
 use crate::parse::{
-    CanonicalHost, PathPlus, PrePath, parse_path_plus, parse_pre_path, parse_query_plus, write_canonical_path,
+    CanonicalHost, CanonicalPort, PathPlus, PrePath, parse_path_plus, parse_pre_path, parse_query_plus,
+    write_canonical_path,
 };
-use std::fmt::Write;
 
 /// The validated parts of a web-based URL.
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
@@ -78,8 +78,7 @@ pub fn write_normalized(s: &str, parts: Parts, url: &mut String) {
         url.push_str(pre_path.host_str(s));
     }
     if let Some(port) = pre_path.port {
-        url.push(':');
-        let _ = write!(url, "{}", port);
+        url.push_str(CanonicalPort::new(port).as_str());
     }
 
     let after_authority: &str = &s[pre_path.len()..];

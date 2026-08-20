@@ -1,14 +1,14 @@
-use crate::InvalidURLError;
+use crate::InvalidUrlError;
 use crate::WebUrl;
 use crate::parse::{Parts, finalize_web_url, parse_parts, write_normalized};
 
 impl TryFrom<String> for WebUrl {
-    type Error = InvalidURLError;
+    type Error = InvalidUrlError;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
         let parts: Parts = match parse_parts(s.as_str()) {
             Ok(parts) => parts,
-            Err(error) => return Err(InvalidURLError::new(error, s)),
+            Err(error) => return Err(InvalidUrlError::new(error, s)),
         };
 
         // The URL is validated before it is modified so the string is returned unchanged on error.
@@ -30,7 +30,7 @@ impl TryFrom<String> for WebUrl {
         };
 
         unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }
-            .map_err(|(error, url)| InvalidURLError::new(error, url))
+            .map_err(|(error, url)| InvalidUrlError::new(error, url))
     }
 }
 
@@ -38,7 +38,7 @@ impl TryFrom<String> for WebUrl {
 mod tests {
     use crate::Error;
     use crate::Error::{InvalidPort, InvalidScheme};
-    use crate::InvalidURLError;
+    use crate::InvalidUrlError;
     use crate::WebUrl;
 
     #[test]
@@ -60,13 +60,13 @@ mod tests {
             ("http://host:bad", Err(InvalidPort)),
         ];
         for (input, expected) in test_cases {
-            let result: Result<WebUrl, InvalidURLError> = WebUrl::try_from(String::from(*input));
+            let result: Result<WebUrl, InvalidUrlError> = WebUrl::try_from(String::from(*input));
             match expected {
                 Ok(expected) => {
                     assert_eq!(result.unwrap().as_str(), *expected, "input={input}");
                 }
                 Err(expected) => {
-                    let error: InvalidURLError = result.unwrap_err();
+                    let error: InvalidUrlError = result.unwrap_err();
                     assert_eq!(error.error(), *expected, "input={input}");
                     assert_eq!(error.url(), *input, "input={input}");
                     assert_eq!(error.into_url(), *input, "input={input}");

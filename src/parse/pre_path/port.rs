@@ -11,7 +11,7 @@ use std::str::FromStr;
 /// The port is `*DIGIT` so it may be empty. An empty port means the default port for the scheme so it is parsed as if
 /// there were no port at all. The ':' is still consumed, which makes an empty port detectable as `Ok(None, _)` with a
 /// non-zero consumed length.
-/// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.3>
+/// <https://www.rfc-editor.org/rfc/rfc3986#section-3.2.3>
 pub fn parse_port(s: &str) -> Result<(Option<u16>, &str), Error> {
     if !s.is_empty() && s.as_bytes()[0] == b':' {
         let s: &str = &s[1..];

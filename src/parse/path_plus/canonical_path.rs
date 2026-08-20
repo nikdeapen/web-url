@@ -3,7 +3,7 @@
 /// The `path` must be valid, so it starts with a '/'.
 ///
 /// # RFC 3986
-/// <https://datatracker.ietf.org/doc/html/rfc3986#section-5.2.4>
+/// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
 pub fn canonical_path_len(path: &str) -> usize {
     // The segments are scanned in reverse so the segments a ".." removes are known without a stack: a ".." raises the
     // skip count & the next kept segment lowers it.
@@ -31,7 +31,7 @@ pub fn canonical_path_len(path: &str) -> usize {
 /// The `path` must be valid, so it starts with a '/'.
 ///
 /// # RFC 3986
-/// <https://datatracker.ietf.org/doc/html/rfc3986#section-5.2.4>
+/// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
 pub fn write_canonical_path(path: &str, url: &mut String) {
     // The segments are written as they are scanned & a ".." truncates the last written segment, so the written path is
     // the segment stack. The truncation never reaches past `start`, which is what keeps a leading ".." from escaping
