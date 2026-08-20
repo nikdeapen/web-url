@@ -2,7 +2,7 @@
 ///
 /// # RFC 3986
 /// The authority is terminated by the next '/', '?', or '#' char, or by the end of the URL.
-/// <https://datatracker.ietf.org/doc/html/rfc3986#section-3.2>
+/// <https://www.rfc-editor.org/rfc/rfc3986#section-3.2>
 pub fn is_authority_end(c: u8) -> bool {
     c == b'/' || c == b'?' || c == b'#'
 }

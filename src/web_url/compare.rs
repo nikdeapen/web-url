@@ -29,17 +29,39 @@ impl Hash for WebUrl {
     }
 }
 
+impl PartialEq<str> for WebUrl {
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<WebUrl> for str {
+    fn eq(&self, other: &WebUrl) -> bool {
+        self == other.as_str()
+    }
+}
+
 impl PartialEq<&str> for WebUrl {
-    /// The comparison is exact; the `other` string is not parsed or normalized.
     fn eq(&self, other: &&str) -> bool {
         self.as_str() == *other
     }
 }
 
 impl PartialEq<WebUrl> for &str {
-    /// The comparison is exact; the `self` string is not parsed or normalized.
     fn eq(&self, other: &WebUrl) -> bool {
         *self == other.as_str()
+    }
+}
+
+impl PartialEq<String> for WebUrl {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl PartialEq<WebUrl> for String {
+    fn eq(&self, other: &WebUrl) -> bool {
+        self.as_str() == other.as_str()
     }
 }
 

@@ -20,8 +20,7 @@ impl WebUrl {
     /// - If the host is a domain it will be lowercase.
     /// - If the host is an IP address it will be in its canonical form.
     /// - If the host is an IPv6 address it will include the '[]' brackets.
-    #[must_use]
-    pub fn host_str(&self) -> &str {
+    fn host_str(&self) -> &str {
         let start: usize = (self.scheme_len + 3) as usize;
         let end: usize = self.host_end as usize;
         &self.url[start..end]

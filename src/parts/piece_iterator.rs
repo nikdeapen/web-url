@@ -7,7 +7,7 @@ use std::iter::FusedIterator;
 /// region between separators is an empty piece & the empty string has no pieces.
 #[must_use]
 #[derive(Copy, Clone, Debug)]
-pub(crate) struct PieceIterator<'a> {
+pub struct PieceIterator<'a> {
     remaining: &'a str,
     separator: u8,
 }
@@ -48,8 +48,6 @@ impl<'a> Iterator for PieceIterator<'a> {
         if self.remaining.is_empty() {
             (0, Some(0))
         } else {
-            // There is at least the final piece & at most one piece per byte, since every piece consumes its leading
-            // separator.
             (1, Some(self.remaining.len()))
         }
     }
@@ -59,7 +57,7 @@ impl<'a> FusedIterator for PieceIterator<'a> {}
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::PieceIterator;
+    use crate::PieceIterator;
 
     #[test]
     fn iterate() {
@@ -79,7 +77,6 @@ mod tests {
             let result: Vec<&str> = PieceIterator::new(s, *separator).collect();
             assert_eq!(result.as_slice(), *expected, "s={}", s);
 
-            // The hint must bound the count; it sizes the collections built from the iterator.
             let (min, max) = PieceIterator::new(s, *separator).size_hint();
             assert!(min <= result.len(), "s={}", s);
             assert!(max.unwrap() >= result.len(), "s={}", s);
