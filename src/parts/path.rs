@@ -8,8 +8,9 @@ use std::fmt::{Debug, Display, Formatter};
 /// A web-based URL path.
 ///
 /// # RFC 3986
-/// The path can never be empty, unlike the RFC `path-abempty` production, since a URL with no explicit path gets an
-/// implied '/' path. A path may hold dot-segments; [`WebUrl::set_path`](crate::WebUrl::set_path) removes them.
+/// The path can never be empty, unlike the RFC `path-abempty` production, since a URL with no
+/// explicit path gets an implied '/' path. A path may hold dot-segments;
+/// [`WebUrl::set_path`](crate::WebUrl::set_path) removes them.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.3>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -22,8 +23,8 @@ impl<'a> Path<'a> {
 
     /// Checks if the `path` is valid.
     ///
-    /// A path string can never be empty & must start with a '/'. The valid path format is defined by
-    /// [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.3).
+    /// A path string can never be empty & must start with a '/'. The valid path format is defined
+    /// by [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.3).
     #[must_use]
     pub const fn is_valid(path: &str) -> bool {
         parse::is_valid_segment(path, b'/', "?")
@@ -82,9 +83,9 @@ impl<'a> Path<'a> {
 
     /// Creates a new iterator for the path segments.
     ///
-    /// The '/' chars are separators, so the regions between them are the segments & an empty region is an empty
-    /// segment. The path `"/"` is a single empty segment & the path `"//"` is two of them. Only a literal '/' char
-    /// separates, so a `%2F` escape stays within its segment.
+    /// The '/' chars are separators, so the regions between them are the segments & an empty region
+    /// is an empty segment. The path `"/"` is a single empty segment & the path `"//"` is two of
+    /// them. Only a literal '/' char separates, so a `%2F` escape stays within its segment.
     ///
     /// # Example
     /// `"/a/b/c/"` -> `["a", "b", "c", ""]`

@@ -23,14 +23,14 @@ pub unsafe fn finalize_web_url(
 
     let scheme_len: u32 = pre_path.scheme_len as u32;
 
-    // The canonical host end is used since `url` is the normalized URL, in which an IP address host may be shorter or
-    // longer than it was in the parsed URL.
+    // The canonical host end is used since `url` is the normalized URL, in which an IP address host
+    // may be shorter or longer than it was in the parsed URL.
     let host_end: u32 = pre_path.canonical_host_end() as u32;
     let ip: Option<IPAddress> = pre_path.ip;
     let port: Option<u16> = pre_path.port;
 
-    // The canonical length is used since `url` is the normalized URL, in which the port may be shorter than it was in
-    // the parsed URL.
+    // The canonical length is used since `url` is the normalized URL, in which the port may be
+    // shorter than it was in the parsed URL.
     let port_end: u32 = pre_path.canonical_len() as u32;
     let path_end: u32 = port_end + (path_plus.canonical_path_len as u32);
     let query_end: u32 = path_end + (path_plus.query_len as u32);

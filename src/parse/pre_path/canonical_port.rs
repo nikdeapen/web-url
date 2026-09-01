@@ -25,7 +25,8 @@ impl CanonicalPort {
             len: 1 + port_decimal_len(port),
         };
 
-        // The digits are written from the end so the count from `port_decimal_len` places them without a reversal.
+        // The digits are written from the end so the count from `port_decimal_len` places them
+        // without a reversal.
         let mut rest: u16 = port;
         let mut index: usize = canonical.len;
         while index > 1 {

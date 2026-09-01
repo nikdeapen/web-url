@@ -36,7 +36,8 @@ impl Parts {
 
     /// Checks if the host, port, or path must be rewritten to normalize the URL.
     ///
-    /// A rewrite changes the length of the URL before the query, so it cannot be normalized in place.
+    /// A rewrite changes the length of the URL before the query, so it cannot be normalized in
+    /// place.
     pub const fn needs_rewrite(self) -> bool {
         self.needs_host_rewrite || self.needs_port_rewrite() || self.needs_path_rewrite()
     }
@@ -60,7 +61,8 @@ impl Parts {
 
     /// Gets the index the '/' must be inserted at. (only meaningful when `needs_slash` is set)
     ///
-    /// This is an index into the parsed URL, so it is only valid when neither the host nor the port is rewritten.
+    /// This is an index into the parsed URL, so it is only valid when neither the host nor the port
+    /// is rewritten.
     pub const fn slash_index(self) -> usize {
         self.pre_path.len()
     }
@@ -68,8 +70,8 @@ impl Parts {
 
 /// Writes the normalized URL for the parsed URL `s` to `url`.
 ///
-/// The `parts` must have been parsed from `s`. The letter case is **not** normalized here; that is done in place once
-/// the URL string is built.
+/// The `parts` must have been parsed from `s`. The letter case is **not** normalized here; that is
+/// done in place once the URL string is built.
 pub fn write_normalized(s: &str, parts: Parts, url: &mut String) {
     let pre_path: PrePath = parts.pre_path;
 
@@ -97,15 +99,15 @@ pub fn write_normalized(s: &str, parts: Parts, url: &mut String) {
 
 /// Parses & validates the web-based URL `s` without allocating.
 ///
-/// The URL is **not** required to have an explicit path. When it does not, `needs_slash` will be set on the returned
-/// parts & the caller is responsible for inserting the '/' at
-/// `slash_index()` when it builds the normalized URL string.
+/// The URL is **not** required to have an explicit path. When it does not, `needs_slash` will be
+/// set on the returned parts & the caller is responsible for inserting the '/' at `slash_index()`
+/// when it builds the normalized URL string.
 pub fn parse_parts(s: &str) -> Result<Parts, Error> {
     let pre_path: PrePath = parse_pre_path(s)?;
     let needs_host_rewrite: bool = pre_path.needs_host_rewrite(s);
 
-    // The authority is terminated by a '/', '?', or '#' char, or by the end of the URL. Only the '/' case has an
-    // explicit path; the others imply the path is a single '/'.
+    // The authority is terminated by a '/', '?', or '#' char, or by the end of the URL. Only the
+    // '/' case has an explicit path; the others imply the path is a single '/'.
     let after_authority: &str = &s[pre_path.len()..];
     let needs_slash: bool = !after_authority.starts_with('/');
     let path_plus: PathPlus = if needs_slash {

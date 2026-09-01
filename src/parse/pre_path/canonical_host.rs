@@ -12,10 +12,11 @@ impl CanonicalHost {
 
     /// The maximum length of a canonical host string.
     ///
-    /// The longest the `address` display produces is an IPv6 address with all eight groups & the '[]' brackets:
-    /// `[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]`, which is 41 chars. The embedded-IPv4 form is only used when the
-    /// leading groups are zero, so it is shorter. The extra room covers that form at full width in case the display
-    /// ever emits it: `[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]`.
+    /// The longest the `address` display produces is an IPv6 address with all eight groups & the
+    /// '[]' brackets: `[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]`, which is 41 chars. The
+    /// embedded-IPv4 form is only used when the leading groups are zero, so it is shorter. The
+    /// extra room covers that form at full width in case the display ever emits it:
+    /// `[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]`.
     const MAX_LEN: usize = 47;
 }
 
@@ -24,8 +25,8 @@ impl CanonicalHost {
 
     /// Creates the canonical host string for the `ip`.
     ///
-    /// An IPv6 address is bracketed, as it appears in a URL. The canonical form is the `address` display, so it is
-    /// lowercase & its zero groups are elided.
+    /// An IPv6 address is bracketed, as it appears in a URL. The canonical form is the `address`
+    /// display, so it is lowercase & its zero groups are elided.
     pub fn new(ip: IPAddress) -> Self {
         let mut host: Self = Self {
             buffer: [0; Self::MAX_LEN],
@@ -36,8 +37,9 @@ impl CanonicalHost {
             IPAddress::V4(ip) => write!(host, "{}", ip),
             IPAddress::V6(ip) => write!(host, "[{}]", ip),
         };
-        // The buffer fits the longest canonical host, so this cannot fail. It is asserted in every build since a
-        // partial write would silently put a truncated host in the URL rather than fail.
+        // The buffer fits the longest canonical host, so this cannot fail. It is asserted in every
+        // build since a partial write would silently put a truncated host in the URL rather than
+        // fail.
         assert!(result.is_ok(), "the canonical host of '{}' is too long", ip);
 
         host
@@ -97,12 +99,14 @@ mod tests {
     #[test]
     fn new_longest() {
         let test_cases: &[(&str, &str)] = &[
-            // All eight groups is the longest the display produces; the embedded IPv4 is not used at full width.
+            // All eight groups is the longest the display produces; the embedded IPv4 is not used
+            // at full width.
             (
                 "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255",
                 "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]",
             ),
-            // The embedded-IPv4 form only appears when the leading groups are zero, so it is shorter.
+            // The embedded-IPv4 form only appears when the leading groups are zero, so it is
+            // shorter.
             ("::ffff:255.255.255.255", "[::ffff:255.255.255.255]"),
         ];
         for (ip, expected) in test_cases {

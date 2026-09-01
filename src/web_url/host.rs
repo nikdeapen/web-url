@@ -40,9 +40,10 @@ impl WebUrl {
     {
         let host: HostRef = host.into();
 
-        // An IP address is written in its canonical form & a domain name is already lowercase, so both arms are the
-        // normalized form as they stand. A domain name cannot also be an IP address since its final label cannot be
-        // all-numeric, so the variant alone determines the IP.
+        // An IP address is written in its canonical form & a domain name is already lowercase, so
+        // both arms are the normalized form as they stand. A domain name cannot also be an IP
+        // address since its final label cannot be all-numeric, so the variant alone determines the
+        // IP.
         let canonical: parse::CanonicalHost;
         let (insert, ip): (&str, Option<IPAddress>) = match host {
             HostRef::Domain(domain) => (domain.name(), None),
@@ -55,17 +56,18 @@ impl WebUrl {
         let start: usize = (self.scheme_len + 3) as usize;
         let end: usize = self.host_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
-        // leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL
+        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - (end - start)) + insert.len());
 
-        // The port, path, query, & fragment follow the host & are unchanged, so their lengths are saved to rebuild the
-        // offsets that the splice shifts.
+        // The port, path, query, & fragment follow the host & are unchanged, so their lengths are
+        // saved to rebuild the offsets that the splice shifts.
         let port_len: u32 = self.port_end - self.host_end;
         let path_len: u32 = self.path_end - self.port_end;
         let query_len: u32 = self.query_end - self.path_end;
 
-        // The IP is assigned after the length check so an over-long URL leaves the URL & its IP unmodified.
+        // The IP is assigned after the length check so an over-long URL leaves the URL & its IP
+        // unmodified.
         self.ip = ip;
 
         self.url.replace_range(start..end, insert);

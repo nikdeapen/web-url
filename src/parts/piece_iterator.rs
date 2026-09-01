@@ -2,9 +2,10 @@ use std::iter::FusedIterator;
 
 /// Responsible for iterating over the separated pieces of a string.
 ///
-/// Every piece consumes its leading separator, so the string must be empty or start with a separator-like lead char.
-/// The lead char is consumed blindly, so it need not match the `separator`, as in `"?a&b"` -> `["a", "b"]`. An empty
-/// region between separators is an empty piece & the empty string has no pieces.
+/// Every piece consumes its leading separator, so the string must be empty or start with a
+/// separator-like lead char. The lead char is consumed blindly, so it need not match the
+/// `separator`, as in `"?a&b"` -> `["a", "b"]`. An empty region between separators is an empty
+/// piece & the empty string has no pieces.
 #[must_use]
 #[derive(Copy, Clone, Debug)]
 pub struct PieceIterator<'a> {

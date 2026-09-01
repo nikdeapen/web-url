@@ -29,8 +29,8 @@ pub fn parse_path_plus(path_plus: &str) -> Result<PathPlus, Error> {
 
 /// Parses the `query_plus`. (the optional query & the optional fragment)
 ///
-/// This is used when the URL has no explicit path. The path is implied to be a single '/' which is reflected in the
-/// returned `path_len` even though it is not present in `query_plus`.
+/// This is used when the URL has no explicit path. The path is implied to be a single '/' which is
+/// reflected in the returned `path_len` even though it is not present in `query_plus`.
 ///
 /// The query & fragment will be validated.
 pub fn parse_query_plus(query_plus: &str) -> Result<PathPlus, Error> {

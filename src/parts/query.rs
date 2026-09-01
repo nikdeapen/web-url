@@ -23,8 +23,9 @@ impl<'a> Query<'a> {
 
     /// Checks if the `query` is valid.
     ///
-    /// A query string can never be empty & must start with a '?'. The query itself can be empty. The valid query
-    /// format is defined by [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.4).
+    /// A query string can never be empty & must start with a '?'. The query itself can be empty.
+    /// The valid query format is defined by [RFC
+    /// 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.4).
     #[must_use]
     pub const fn is_valid(query: &str) -> bool {
         parse::is_valid_segment(query, b'?', "")
@@ -89,15 +90,15 @@ impl<'a> Query<'a> {
 
     /// Creates a new iterator for the query parameters.
     ///
-    /// A query always has at least one param. The '?' & '&' chars are separators, so the regions between them are the
-    /// params & an empty region is an empty param. The query `"?"` is a single empty param & the query `"?&"` is two
-    /// of them.
+    /// A query always has at least one param. The '?' & '&' chars are separators, so the regions
+    /// between them are the params & an empty region is an empty param. The query `"?"` is a single
+    /// empty param & the query `"?&"` is two of them.
     ///
-    /// Only a literal '&' char separates, so a `%26` escape stays within its param. Every piece of a valid query is a
-    /// valid param, which is why the params are not re-validated.
+    /// Only a literal '&' char separates, so a `%26` escape stays within its param. Every piece of
+    /// a valid query is a valid param, which is why the params are not re-validated.
     ///
-    /// This is why a URL with no query has no query at all rather than an empty one: the URL `"/"` has zero params
-    /// while the URL `"/?"` has one.
+    /// This is why a URL with no query has no query at all rather than an empty one: the URL `"/"`
+    /// has zero params while the URL `"/?"` has one.
     ///
     /// # Example
     /// `"?a=1&b"` -> `[("a", Some("1")), ("b", None)]`

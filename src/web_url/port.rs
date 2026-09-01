@@ -24,8 +24,8 @@ impl WebUrl {
     {
         let port: Option<u16> = port.into();
 
-        // The port is written with its ':' prefix & without leading zeros, which is the normalized form. A URL with no
-        // port has no ':' either.
+        // The port is written with its ':' prefix & without leading zeros, which is the normalized
+        // form. A URL with no port has no ':' either.
         let canonical: parse::CanonicalPort;
         let insert: &str = match port {
             Some(port) => {
@@ -38,12 +38,12 @@ impl WebUrl {
         let start: usize = self.host_end as usize;
         let end: usize = self.port_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
-        // leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL
+        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - (end - start)) + insert.len());
 
-        // The path, query, & fragment follow the port & are unchanged, so their lengths are saved to rebuild the
-        // offsets that the splice shifts.
+        // The path, query, & fragment follow the port & are unchanged, so their lengths are saved
+        // to rebuild the offsets that the splice shifts.
         let path_len: u32 = self.path_end - self.port_end;
         let query_len: u32 = self.query_end - self.path_end;
 

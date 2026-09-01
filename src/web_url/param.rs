@@ -5,10 +5,10 @@ impl WebUrl {
 
     /// Adds the query `param`.
     ///
-    /// This always appends exactly one parameter & never changes the parameters that are already present. The '?'
-    /// separator is used when the URL has no query yet, otherwise the '&' separator is used. Since an empty region
-    /// between separators is an empty parameter, a query that is just a '?' already has one parameter & therefore still
-    /// needs the '&' separator.
+    /// This always appends exactly one parameter & never changes the parameters that are already
+    /// present. The '?' separator is used when the URL has no query yet, otherwise the '&'
+    /// separator is used. Since an empty region between separators is an empty parameter, a query
+    /// that is just a '?' already has one parameter & therefore still needs the '&' separator.
     ///
     /// # Example
     /// Adding the param `p=1`:
@@ -20,8 +20,8 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn add_param(&mut self, param: Param) {
-        // A URL with no query has no '?' either, so the query starts with one here. Every other case appends to a
-        // query that already has at least one param.
+        // A URL with no query has no '?' either, so the query starts with one here. Every other
+        // case appends to a query that already has at least one param.
         let separator: char = if self.path_end == self.query_end {
             '?'
         } else {
@@ -29,12 +29,12 @@ impl WebUrl {
         };
         let added: usize = Self::push_param_len(param);
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
-        // leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL
+        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len(self.url.len() + added);
 
-        // The param is assembled first so it can be spliced in with a single insertion. Inserting each piece directly
-        // would shift everything after the query once per piece.
+        // The param is assembled first so it can be spliced in with a single insertion. Inserting
+        // each piece directly would shift everything after the query once per piece.
         let mut insert: String = String::with_capacity(added);
         Self::push_param(&mut insert, separator, param);
 
@@ -58,8 +58,8 @@ impl WebUrl {
 
     /// Removes every query param with the `name` & gets the number of removed params.
     ///
-    /// Removing every param removes the query along with its '?', since a query that is just a '?' is still one empty
-    /// param.
+    /// Removing every param removes the query along with its '?', since a query that is just a '?'
+    /// is still one empty param.
     ///
     /// # Example
     /// Removing the params named `a`:
@@ -67,8 +67,8 @@ impl WebUrl {
     /// - `"/?a=1&b=2"` -> `"/?b=2"`
     /// - `"/?a=1&b=2&a=3"` -> `"/?b=2"`
     pub fn remove_params(&mut self, name: &str) -> usize {
-        // The query is scanned before it is rebuilt so that a URL without a matching param is left untouched & never
-        // allocates.
+        // The query is scanned before it is rebuilt so that a URL without a matching param is left
+        // untouched & never allocates.
         if !self.query().into_iter().flatten().any(|p| p.name() == name) {
             return 0;
         }
@@ -95,8 +95,8 @@ impl WebUrl {
 
     /// Replaces every query param named like the `param` & gets the number of replaced params.
     ///
-    /// The first param with the name keeps its position & the rest are removed. When no param has the name the `param`
-    /// is appended as with `add_param`.
+    /// The first param with the name keeps its position & the rest are removed. When no param has
+    /// the name the `param` is appended as with `add_param`.
     ///
     /// # Example
     /// Replacing with the param `a=9`:
@@ -141,7 +141,8 @@ impl WebUrl {
 
     /// Appends the `separator` & the `param` to the `out` string.
     ///
-    /// This is the only place a param is spelled out, so `push_param_len` must match what it writes.
+    /// This is the only place a param is spelled out, so `push_param_len` must match what it
+    /// writes.
     fn push_param(out: &mut String, separator: char, param: Param) {
         out.push(separator);
         out.push_str(param.name());
@@ -199,8 +200,9 @@ mod tests {
 
     #[test]
     fn add_param_appends_exactly_one_param() -> Result<(), Box<dyn Error>> {
-        // The '?' & '&' chars are separators, so an empty region between them is an empty parameter. Adding a parameter
-        // must append exactly one & leave the existing ones untouched.
+        // The '?' & '&' chars are separators, so an empty region between them is an empty
+        // parameter. Adding a parameter must append exactly one & leave the existing ones
+        // untouched.
         let test_cases: &[(&str, &str, usize, usize)] = &[
             ("https://host/p", "https://host/p?p=1", 0, 1),
             ("https://host/p?", "https://host/p?&p=1", 1, 2),

@@ -34,12 +34,12 @@ impl WebUrl {
         let start: usize = self.port_end as usize;
         let end: usize = self.path_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
-        // leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL
+        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - (end - start)) + insert.len());
 
-        // The query & fragment follow the path & are unchanged, so the query length is saved to rebuild the offsets
-        // that the splice shifts.
+        // The query & fragment follow the path & are unchanged, so the query length is saved to
+        // rebuild the offsets that the splice shifts.
         let query_len: u32 = self.query_end - self.path_end;
 
         self.url.replace_range(start..end, insert.as_str());

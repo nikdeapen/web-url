@@ -29,8 +29,8 @@ pub fn parse_host(s: &str) -> (&str, &str) {
     }
 }
 
-/// Parses the optional IP address from the `host` string. If the host is not an IP address the domain will be validated
-/// (case-insensitively).
+/// Parses the optional IP address from the `host` string. If the host is not an IP address the
+/// domain will be validated (case-insensitively).
 pub fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddress>, Error> {
     if host.is_empty() {
         Err(InvalidHost)
@@ -99,7 +99,8 @@ mod tests {
             ("!", Err(InvalidHost)),
             ("127.0.0.1", Ok(Some(IPv4Address::LOCALHOST.to_ip()))),
             ("localhost", Ok(None)),
-            // The final label of a domain name cannot be all-numeric, which requires `address` >= 0.21.
+            // The final label of a domain name cannot be all-numeric, which requires `address` >=
+            // 0.21.
             ("256.0.0.1", Err(InvalidHost)),
             ("999.1.1.1", Err(InvalidHost)),
             ("9999.com", Ok(None)),

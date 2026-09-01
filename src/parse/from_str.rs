@@ -9,8 +9,8 @@ impl FromStr for WebUrl {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Parts = parse_parts(s)?;
 
-        // The URL is validated before it is allocated, so invalid input never allocates & the normalized length is
-        // known exactly.
+        // The URL is validated before it is allocated, so invalid input never allocates & the
+        // normalized length is known exactly.
         let mut url: String = String::with_capacity(parts.normalized_len(s.len()));
         write_normalized(s, parts, &mut url);
 

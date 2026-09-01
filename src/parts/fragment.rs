@@ -7,7 +7,8 @@ use std::fmt::{Debug, Display, Formatter};
 /// A web-based URL fragment.
 ///
 /// # RFC 3986
-/// The fragment string includes the '#' delimiter, which the RFC excludes from the `fragment` production.
+/// The fragment string includes the '#' delimiter, which the RFC excludes from the `fragment`
+/// production.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.5>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -20,8 +21,9 @@ impl<'a> Fragment<'a> {
 
     /// Checks if the `fragment` is valid.
     ///
-    /// A fragment string can never be empty and must start with a '#'. The fragment itself can be empty. The valid
-    /// fragment format is defined by [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.5).
+    /// A fragment string can never be empty and must start with a '#'. The fragment itself can be
+    /// empty. The valid fragment format is defined by [RFC
+    /// 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.5).
     #[must_use]
     pub const fn is_valid(fragment: &str) -> bool {
         parse::is_valid_segment(fragment, b'#', "")

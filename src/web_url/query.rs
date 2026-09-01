@@ -40,8 +40,8 @@ impl WebUrl {
     where
         Q: Into<Option<Query<'a>>>,
     {
-        // The query is preserved exactly, so a query string is already the normalized form. A URL with no query has no
-        // '?' either.
+        // The query is preserved exactly, so a query string is already the normalized form. A URL
+        // with no query has no '?' either.
         let query: Option<Query> = query.into();
         self.set_query_str(query.map(Query::as_str).unwrap_or(""));
     }
@@ -66,8 +66,8 @@ impl WebUrl {
         let start: usize = self.path_end as usize;
         let end: usize = self.query_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
-        // leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL
+        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - self.query_len()) + query.len());
 
         // Only the fragment follows the query, so the splice shifts the fragment alone.

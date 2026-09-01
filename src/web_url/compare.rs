@@ -65,8 +65,8 @@ impl PartialEq<WebUrl> for String {
     }
 }
 
-/// The `Borrow` contract holds since `Eq`, `Ord`, & `Hash` all delegate to the URL string. This enables map & set
-/// lookups by `&str`.
+/// The `Borrow` contract holds since `Eq`, `Ord`, & `Hash` all delegate to the URL string. This
+/// enables map & set lookups by `&str`.
 impl Borrow<str> for WebUrl {
     fn borrow(&self) -> &str {
         self.as_str()
