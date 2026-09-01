@@ -1,30 +1,80 @@
+name: Build
 on:
   pull_request:
     branches: [ "master" ]
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 env:
   CARGO_TERM_COLOR: always
 jobs:
-  build:
-    name: Build
+  fmt:
+    name: Format
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt, clippy
-      - name: Build
-        run: cargo build --all-features --verbose
-      - name: Test
-        run: cargo test --all-features --verbose
+          components: rustfmt
       - name: Format
         run: cargo fmt --all -- --check
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: test
+      - name: Test
+        run: cargo test --locked --verbose
       - name: Lint
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --locked --all-targets -- -D warnings
       - name: Docs
-        run: cargo doc --all-features --no-deps
+        run: cargo doc --locked --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v7
+      - name: Read MSRV
+        id: msrv
+        run: echo "version=$(grep '^rust-version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: msrv
+      - name: Check
+        run: cargo check --locked
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [ fmt, test, msrv ]
+    if: always()
+    steps:
+      - name: Check Results
+        run: |
+          test "${{ needs.fmt.result }}" = "success"
+          test "${{ needs.test.result }}" = "success"
+          test "${{ needs.msrv.result }}" = "success"

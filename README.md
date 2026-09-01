@@ -1,11 +1,13 @@
 # web-url
 
+[![Build](https://github.com/nikdeapen/web-url/actions/workflows/build.yml/badge.svg)](https://github.com/nikdeapen/web-url/actions/workflows/build.yml)
 [![Crates.io](https://img.shields.io/crates/v/web-url.svg)](https://crates.io/crates/web-url)
 [![Docs.rs](https://docs.rs/web-url/badge.svg)](https://docs.rs/web-url)
 [![License](https://img.shields.io/crates/l/web-url.svg)](https://github.com/nikdeapen/web-url/blob/master/LICENSE)
 
-This library aids in processing web-based URLs — URLs in the format `scheme://host:port/path?query#fragment` — with
-strict validation, normalizing parsers, & borrowed component types.
+This library aids in processing web-based URLs — URLs in the format
+`scheme://host:port/path?query#fragment` — with strict validation, normalizing parsers, & borrowed
+component types.
 
 ## Usage
 
@@ -30,13 +32,15 @@ assert_eq!(url.query().unwrap().as_str(), "?key=value");
 assert_eq!(url.fragment().unwrap().as_str(), "#section");
 
 // URLs can be mutated in place; a URL parsed without a path gets the path '/'.
-let url = WebUrl::from_str("https://example.com").unwrap().with_param(Param::try_from("page=2").unwrap());
+let param: Param = Param::try_from("page=2").unwrap();
+let url = WebUrl::from_str("https://example.com").unwrap().with_param(param);
 assert_eq!(url.as_str(), "https://example.com/?page=2");
 ```
 
 ## Features
 
-This crate has no features. The only dependency is the [`address`](https://crates.io/crates/address) crate.
+This crate has no features. The only dependency is the [`address`](https://crates.io/crates/address)
+crate.
 
 ## The URL Format
 
@@ -44,27 +48,29 @@ This crate has no features. The only dependency is the [`address`](https://crate
 scheme://host:port/path?query#fragment
 ```
 
-The format is a subset of the [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3) URI syntax: the
-authority is required, user info is rejected, & the path is never empty. The port, query, & fragment are optional.
+The format is a subset of the [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3) URI
+syntax: the authority is required, user info is rejected, & the path is never empty. The port,
+query, & fragment are optional.
 
-The accepted chars follow RFC 3986: the path accepts the `pchar` chars plus '/', & the query & fragment also accept
-'?'. A '%' char begins a percent-encoded octet & must be followed by two hex digits, so `%zz` is rejected.
+The accepted chars follow RFC 3986: the path accepts the `pchar` chars plus '/', & the query &
+fragment also accept '?'. A '%' char begins a percent-encoded octet & must be followed by two hex
+digits, so `%zz` is rejected.
 
 ## Normalization
 
-Parsed URLs are always normalized: the scheme & host are lowercased, an IP address host is rewritten in the canonical
-`address` form (`[0:0:0:0:0:0:0:1]` -> `[::1]`), an empty port is dropped along with its ':', a port with leading
-zeros is rewritten, a URL parsed without a path gets the path '/', & the path dot-segments are removed
-(`/a/../b` -> `/b`). The query & fragment are preserved exactly. The percent-encoding is validated but not
-normalized, so `%7e` & `~` stay distinct.
+Parsed URLs are always normalized: the scheme & host are lowercased, an IP address host is rewritten
+in the canonical `address` form (`[0:0:0:0:0:0:0:1]` -> `[::1]`), an empty port is dropped along
+with its ':', a port with leading zeros is rewritten, a URL parsed without a path gets the path '/',
+& the path dot-segments are removed (`/a/../b` -> `/b`). The query & fragment are preserved exactly.
+The percent-encoding is validated but not normalized, so `%7e` & `~` stay distinct.
 
-Parsing with `TryFrom<String>` reuses the allocation when the URL is already normalized & recovers the original
-string on error.
+Parsing with `TryFrom<String>` reuses the allocation when the URL is already normalized & recovers
+the original string on error.
 
 ## Component Types
 
-The component types are borrowed, validated views. The `WebUrl` accessors return them borrowing from the URL string
-& they can also be created from their own strings.
+The component types are borrowed, validated views. The `WebUrl` accessors return them borrowing from
+the URL string & they can also be created from their own strings.
 
 - `Scheme`: A lowercase URL scheme, with `HTTP` & `HTTPS` constants.
 - `Path`: A URL path starting with '/', with an iterator for its segments.
@@ -72,17 +78,17 @@ The component types are borrowed, validated views. The `WebUrl` accessors return
 - `Param`: A query parameter with a name & an optional value.
 - `Fragment`: A URL fragment starting with '#'.
 
-The host is an `address::HostRef`, either a domain name or an IP address. The `address` crate is re-exported as
-`web_url::address`.
+The host is an `address::HostRef`, either a domain name or an IP address. The `address` crate is
+re-exported as `web_url::address`.
 
 ## Mutations
 
 URLs can be mutated in place & every mutation keeps the URL normalized:
 
-- `set_scheme`, `set_host`, `set_port`, `set_path`, `set_query`, & `set_fragment` set their component. The port,
-  query, & fragment are removed by setting them to `None`.
-- `add_param` appends a query parameter, `remove_params` removes every parameter with a name, & `replace_params`
-  replaces every parameter with a name with a single parameter.
+- `set_scheme`, `set_host`, `set_port`, `set_path`, `set_query`, & `set_fragment` set their
+  component. The port, query, & fragment are removed by setting them to `None`.
+- `add_param` appends a query parameter, `remove_params` removes every parameter with a name, &
+  `replace_params` replaces every parameter with a name with a single parameter.
 
-The `with_scheme`, `with_host`, `with_port`, `with_path`, `with_query`, `with_fragment`, `with_param`,
-`without_params`, & `with_replaced_params` variants chain on owned URLs.
+The `with_scheme`, `with_host`, `with_port`, `with_path`, `with_query`, `with_fragment`,
+`with_param`, `without_params`, & `with_replaced_params` variants chain on owned URLs.

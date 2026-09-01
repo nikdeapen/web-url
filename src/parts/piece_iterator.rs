@@ -7,7 +7,7 @@ use std::iter::FusedIterator;
 /// `separator`, as in `"?a&b"` -> `["a", "b"]`. An empty region between separators is an empty
 /// piece & the empty string has no pieces.
 #[must_use]
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct PieceIterator<'a> {
     remaining: &'a str,
     separator: u8,
