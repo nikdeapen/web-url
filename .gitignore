@@ -2,12 +2,13 @@
 .DS_Store
 
 # JetBrains
-.idea/
+.idea/*
+!.idea/dictionaries/
+!.idea/codeStyles/
 *.iml
 
 # Rust
 debug/
 target/
-Cargo.lock
 **/*.rs.bk
 *.pdb
