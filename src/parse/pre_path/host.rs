@@ -98,6 +98,10 @@ mod tests {
             ("!", Err(InvalidHost)),
             ("127.0.0.1", Ok(Some(IPv4Address::LOCALHOST.to_ip()))),
             ("localhost", Ok(None)),
+            // The final label of a domain name cannot be all-numeric, which requires `address` >= 0.21.
+            ("256.0.0.1", Err(InvalidHost)),
+            ("999.1.1.1", Err(InvalidHost)),
+            ("9999.com", Ok(None)),
             ("LocalHost", Ok(None)),
             ("Local!Host", Err(InvalidHost)),
             // The `xn--` ACE prefix has consecutive hyphens, which requires `address` >= 0.19.

@@ -12,4 +12,4 @@ keywords = ["url", "web", "parse", "normalization"]
 categories = ["parser-implementations", "web-programming"]
 
 [dependencies]
-address = "0.20.0"
+address = "0.21.0"
