@@ -40,8 +40,8 @@ impl WebUrl {
     where
         Q: Into<Option<Query<'a>>>,
     {
-        // The query is preserved exactly, so a query string is already the normalized form. A URL with no query has no
-        // '?' either.
+        // The query is preserved exactly, so a query string is already the normalized form. A URL
+        // with no query has no '?' either.
         let query: Option<Query> = query.into();
         self.set_query_str(query.map(Query::as_str).unwrap_or(""));
     }
@@ -66,8 +66,8 @@ impl WebUrl {
         let start: usize = self.path_end as usize;
         let end: usize = self.query_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
-        // leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL
+        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - self.query_len()) + query.len());
 
         // Only the fragment follows the query, so the splice shifts the fragment alone.
@@ -105,7 +105,11 @@ mod tests {
             ("http://host/p?a=1", Some("?b=2"), "http://host/p?b=2"),
             ("http://host/p?a=1", None, "http://host/p"),
             ("http://host/p", None, "http://host/p"),
-            ("http://host/p#f", Some("?a=1&b=2"), "http://host/p?a=1&b=2#f"),
+            (
+                "http://host/p#f",
+                Some("?a=1&b=2"),
+                "http://host/p?a=1&b=2#f",
+            ),
             ("http://host/p?a=1#f", Some("?"), "http://host/p?#f"),
             ("http://host/p?a=1#f", None, "http://host/p#f"),
         ];
@@ -121,7 +125,8 @@ mod tests {
 
     #[test]
     fn with_query() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://example.com/p")?.with_query(Query::try_from("?a=1")?);
+        let url: WebUrl =
+            WebUrl::from_str("https://example.com/p")?.with_query(Query::try_from("?a=1")?);
         assert_eq!(url.as_str(), "https://example.com/p?a=1");
 
         let url: WebUrl = url.with_query(None);

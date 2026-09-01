@@ -8,9 +8,9 @@ use std::str::FromStr;
 /// The string `s` should start with a `:` if there is a port.
 ///
 /// # RFC 3986
-/// The port is `*DIGIT` so it may be empty. An empty port means the default port for the scheme so it is parsed as if
-/// there were no port at all. The ':' is still consumed, which makes an empty port detectable as `Ok(None, _)` with a
-/// non-zero consumed length.
+/// The port is `*DIGIT` so it may be empty. An empty port means the default port for the scheme so
+/// it is parsed as if there were no port at all. The ':' is still consumed, which makes an empty
+/// port detectable as `Ok(None, _)` with a non-zero consumed length.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.2.3>
 pub fn parse_port(s: &str) -> Result<(Option<u16>, &str), Error> {
     if !s.is_empty() && s.as_bytes()[0] == b':' {
@@ -22,8 +22,8 @@ pub fn parse_port(s: &str) -> Result<(Option<u16>, &str), Error> {
             .unwrap_or(s.len());
         let (digits, rest) = s.split_at(end);
 
-        // The `u16::from_str` fn accepts a leading '+' char which the RFC does not allow, so the digits are validated
-        // explicitly before the port is parsed.
+        // The `u16::from_str` fn accepts a leading '+' char which the RFC does not allow, so the
+        // digits are validated explicitly before the port is parsed.
         if !digits.as_bytes().iter().all(|c| c.is_ascii_digit()) {
             Err(InvalidPort)
         } else if digits.is_empty() {
@@ -79,7 +79,8 @@ mod tests {
             (":/", Ok((None, "/"))),
             (":?q", Ok((None, "?q"))),
             (":#f", Ok((None, "#f"))),
-            // The RFC port is `*DIGIT` so a sign is not allowed even though `u16::from_str` takes a leading '+' char.
+            // The RFC port is `*DIGIT` so a sign is not allowed even though `u16::from_str` takes a
+            // leading '+' char.
             (":+80", Err(InvalidPort)),
             (":+80/", Err(InvalidPort)),
             (":-80", Err(InvalidPort)),

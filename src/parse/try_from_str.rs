@@ -22,8 +22,8 @@ impl TryFrom<String> for WebUrl {
             url.insert(parts.slash_index(), '/');
             url
         } else {
-            // The host or port changes length once normalized so the string is rebuilt with a single exactly-sized
-            // allocation.
+            // The host or port changes length once normalized so the string is rebuilt with a
+            // single exactly-sized allocation.
             let mut url: String = String::with_capacity(parts.normalized_len(s.len()));
             write_normalized(s.as_str(), parts, &mut url);
             url

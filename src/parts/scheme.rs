@@ -6,8 +6,9 @@ use std::fmt::{Debug, Display, Formatter};
 /// A web-based URL scheme.
 ///
 /// # RFC 3986
-/// The scheme is restricted to the canonical lowercase form the RFC recommends; [`Self::is_valid_ignore_case`]
-/// accepts the mixed-case forms it also allows. The scheme string does not include the ':' delimiter.
+/// The scheme is restricted to the canonical lowercase form the RFC recommends;
+/// [`Self::is_valid_ignore_case`] accepts the mixed-case forms it also allows. The scheme string
+/// does not include the ':' delimiter.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.1>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -33,7 +34,9 @@ impl<'a> Scheme<'a> {
         let bytes: &[u8] = scheme.as_bytes();
 
         // The first char must be a letter.
-        if bytes.is_empty() || !(bytes[0].is_ascii_lowercase() || (ignore_case && bytes[0].is_ascii_uppercase())) {
+        if bytes.is_empty()
+            || !(bytes[0].is_ascii_lowercase() || (ignore_case && bytes[0].is_ascii_uppercase()))
+        {
             return false;
         }
 
@@ -52,9 +55,9 @@ impl<'a> Scheme<'a> {
 
     /// Checks if the `scheme` is valid.
     ///
-    /// A scheme can never be empty & must start with a lowercase letter, followed by any number of lowercase letters,
-    /// digits, '+', '-', & '.' chars. The valid scheme format is defined by
-    /// [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.1).
+    /// A scheme can never be empty & must start with a lowercase letter, followed by any number of
+    /// lowercase letters, digits, '+', '-', & '.' chars. The valid scheme format is defined by [RFC
+    /// 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.1).
     #[must_use]
     pub const fn is_valid(scheme: &str) -> bool {
         Self::is_valid_op_ignore_case(scheme, false)
@@ -185,7 +188,8 @@ mod tests {
 
     #[test]
     fn is_valid() {
-        // The third column is `is_valid_ignore_case`, which accepts the mixed-case forms `is_valid` rejects.
+        // The third column is `is_valid_ignore_case`, which accepts the mixed-case forms `is_valid`
+        // rejects.
         let test_cases: &[(&str, bool, bool)] = &[
             ("", false, false),
             ("a", true, true),

@@ -32,9 +32,15 @@ mod tests {
             ("", Ok((None, ""))),
             ("no&start=q", Ok((None, "no&start=q"))),
             ("?", Ok((Some(Query::new("?").unwrap()), ""))),
-            ("?the&url=query", Ok((Some(Query::new("?the&url=query").unwrap()), ""))),
+            (
+                "?the&url=query",
+                Ok((Some(Query::new("?the&url=query").unwrap()), "")),
+            ),
             ("#fragment", Ok((None, "#fragment"))),
-            ("?#fragment", Ok((Some(Query::new("?").unwrap()), "#fragment"))),
+            (
+                "?#fragment",
+                Ok((Some(Query::new("?").unwrap()), "#fragment")),
+            ),
             (
                 "?the&url=query#fragment",
                 Ok((Some(Query::new("?the&url=query").unwrap()), "#fragment")),

@@ -5,7 +5,8 @@ use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL query parameter.
 ///
-/// A param is split on the first '=' char. A missing '=' char is an absent value & a trailing one is an empty value.
+/// A param is split on the first '=' char. A missing '=' char is an absent value & a trailing one
+/// is an empty value.
 ///
 /// # WHATWG
 /// The `name=value` convention comes from `application/x-www-form-urlencoded`, not RFC 3986.
@@ -42,8 +43,9 @@ impl<'a> Param<'a> {
 
     /// Checks if the `name` is valid.
     ///
-    /// A name can be empty & takes the RFC 3986 query chars, minus the '&' char which ends the param & the '=' char
-    /// which ends the name. An excluded char is only excluded literally, so its percent-encoded form is still valid.
+    /// A name can be empty & takes the RFC 3986 query chars, minus the '&' char which ends the
+    /// param & the '=' char which ends the name. An excluded char is only excluded literally, so
+    /// its percent-encoded form is still valid.
     #[must_use]
     pub const fn is_valid_name(name: &str) -> bool {
         parse::is_valid_chars(name.as_bytes(), "&=")
@@ -215,7 +217,8 @@ mod tests {
             // A '%' char begins a percent-encoded octet & must be followed by two hex digits.
             ("%20=%21", true),
             ("name=%41", true),
-            // An excluded char is only excluded literally, so its percent-encoded form is still valid.
+            // An excluded char is only excluded literally, so its percent-encoded form is still
+            // valid.
             ("%26=%3D", true),
             ("%", false),
             ("a=%2", false),

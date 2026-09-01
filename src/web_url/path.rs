@@ -34,12 +34,12 @@ impl WebUrl {
         let start: usize = self.port_end as usize;
         let end: usize = self.path_end as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
-        // leaving the string inconsistent with the component offsets.
+        // The length is checked before anything is modified so an over-long URL panics with the URL
+        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - (end - start)) + insert.len());
 
-        // The query & fragment follow the path & are unchanged, so the query length is saved to rebuild the offsets
-        // that the splice shifts.
+        // The query & fragment follow the path & are unchanged, so the query length is saved to
+        // rebuild the offsets that the splice shifts.
         let query_len: u32 = self.query_end - self.path_end;
 
         self.url.replace_range(start..end, insert.as_str());
@@ -104,7 +104,8 @@ mod tests {
 
     #[test]
     fn with_path() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://example.com/old")?.with_path(Path::try_from("/new")?);
+        let url: WebUrl =
+            WebUrl::from_str("https://example.com/old")?.with_path(Path::try_from("/new")?);
         assert_eq!(url.as_str(), "https://example.com/new");
 
         Ok(())

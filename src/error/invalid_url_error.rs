@@ -57,6 +57,6 @@ impl Display for InvalidUrlError {
     }
 }
 
-/// The `source` is not the parse error: its message is this error's message, so a chain would just print it twice. Use
-/// `error` for the typed parse error.
+/// The `source` is not the parse error: its message is this error's message, so a chain would just
+/// print it twice. Use `error` for the typed parse error.
 impl std::error::Error for InvalidUrlError {}

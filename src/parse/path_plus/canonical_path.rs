@@ -5,8 +5,8 @@
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
 pub fn canonical_path_len(path: &str) -> usize {
-    // The segments are scanned in reverse so the segments a ".." removes are known without a stack: a ".." raises the
-    // skip count & the next kept segment lowers it.
+    // The segments are scanned in reverse so the segments a ".." removes are known without a stack:
+    // a ".." raises the skip count & the next kept segment lowers it.
     let mut len: usize = 0;
     let mut skip: usize = 0;
     for segment in path[1..].rsplit('/') {
@@ -33,9 +33,9 @@ pub fn canonical_path_len(path: &str) -> usize {
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
 pub fn write_canonical_path(path: &str, url: &mut String) {
-    // The segments are written as they are scanned & a ".." truncates the last written segment, so the written path is
-    // the segment stack. The truncation never reaches past `start`, which is what keeps a leading ".." from escaping
-    // the path.
+    // The segments are written as they are scanned & a ".." truncates the last written segment, so
+    // the written path is the segment stack. The truncation never reaches past `start`, which is
+    // what keeps a leading ".." from escaping the path.
     let start: usize = url.len();
     for segment in path[1..].split('/') {
         match segment {
@@ -57,8 +57,8 @@ pub fn write_canonical_path(path: &str, url: &mut String) {
     }
 }
 
-/// Checks if the last segment of the `path` is a "." or ".." segment, which leaves the canonical path ending with a
-/// '/'.
+/// Checks if the last segment of the `path` is a "." or ".." segment, which leaves the canonical
+/// path ending with a '/'.
 fn ends_with_dot_segment(path: &str) -> bool {
     path.ends_with("/.") || path.ends_with("/..")
 }
@@ -110,14 +110,16 @@ mod tests {
             // The length must match what is written exactly; it sizes the URL allocation.
             assert_eq!(canonical_path_len(path), result.len(), "path={}", path);
 
-            // The canonical path is the canonical form, so canonicalizing it again must not change it.
+            // The canonical path is the canonical form, so canonicalizing it again must not change
+            // it.
             let mut again: String = String::new();
             write_canonical_path(result.as_str(), &mut again);
             assert_eq!(again, result, "path={}", path);
         }
     }
 
-    /// The path is appended to the URL, so a ".." must never truncate past what was already written.
+    /// The path is appended to the URL, so a ".." must never truncate past what was already
+    /// written.
     #[test]
     fn fn_write_canonical_path_appends() {
         let mut result: String = String::from("https://host");
