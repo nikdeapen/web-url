@@ -1,5 +1,5 @@
+use crate::WebUrl;
 use crate::parse;
-use crate::{Error, WebUrl};
 use address::{DomainRef, HostRef, IPAddress};
 
 impl WebUrl {
@@ -8,9 +8,9 @@ impl WebUrl {
     /// Gets the host reference.
     pub fn host(&self) -> HostRef<'_> {
         if let Some(ip) = self.ip {
-            HostRef::Address(ip)
+            HostRef::IPAddress(ip)
         } else {
-            HostRef::Name(unsafe { DomainRef::new_unchecked(self.host_str()) })
+            HostRef::Domain(unsafe { DomainRef::new_unchecked(self.host_str()) })
         }
     }
 
@@ -41,13 +41,14 @@ impl WebUrl {
         let host: HostRef = host.into();
 
         // An IP address is written in its canonical form & a domain name is already lowercase, so both arms are the
-        // normalized form as they stand.
+        // normalized form as they stand. A domain name cannot also be an IP address since its final label cannot be
+        // all-numeric, so the variant alone determines the IP.
         let canonical: parse::CanonicalHost;
-        let insert: &str = match host {
-            HostRef::Name(domain) => domain.name(),
-            HostRef::Address(ip) => {
+        let (insert, ip): (&str, Option<IPAddress>) = match host {
+            HostRef::Domain(domain) => (domain.name(), None),
+            HostRef::IPAddress(ip) => {
                 canonical = parse::CanonicalHost::new(ip);
-                canonical.as_str()
+                (canonical.as_str(), Some(ip))
             }
         };
 
@@ -64,11 +65,8 @@ impl WebUrl {
         let path_len: u32 = self.path_end - self.port_end;
         let query_len: u32 = self.query_end - self.path_end;
 
-        // The IP comes from the host string rather than the `HostRef` since a domain name that is also a valid IP
-        // address is parsed as an IP address. A `HostRef` is valid by construction, so the error is unreachable.
-        let ip: Result<Option<IPAddress>, Error> = parse::parse_ip_and_validate_domain(insert);
-        debug_assert!(ip.is_ok(), "the host '{}' is invalid", insert);
-        self.ip = ip.unwrap_or_default();
+        // The IP is assigned after the length check so an over-long URL leaves the URL & its IP unmodified.
+        self.ip = ip;
 
         self.url.replace_range(start..end, insert);
 
@@ -104,7 +102,7 @@ mod tests {
     fn host_domain() -> Result<(), Box<dyn Error>> {
         let url = WebUrl::from_str("https://example.com")?;
         match url.host() {
-            HostRef::Name(domain) => assert_eq!(domain.name(), "example.com"),
+            HostRef::Domain(domain) => assert_eq!(domain.name(), "example.com"),
             _ => panic!("expected domain"),
         }
         Ok(())
@@ -114,7 +112,7 @@ mod tests {
     fn host_domain_uppercase() -> Result<(), Box<dyn Error>> {
         let url = WebUrl::from_str("https://EXAMPLE.COM")?;
         match url.host() {
-            HostRef::Name(domain) => assert_eq!(domain.name(), "example.com"),
+            HostRef::Domain(domain) => assert_eq!(domain.name(), "example.com"),
             _ => panic!("expected domain"),
         }
         Ok(())
@@ -125,7 +123,7 @@ mod tests {
         // The `xn--` ACE prefix has consecutive hyphens, which requires `address` >= 0.19.
         let url = WebUrl::from_str("https://xn--bcher-kva.example")?;
         match url.host() {
-            HostRef::Name(domain) => assert_eq!(domain.name(), "xn--bcher-kva.example"),
+            HostRef::Domain(domain) => assert_eq!(domain.name(), "xn--bcher-kva.example"),
             _ => panic!("expected domain"),
         }
         Ok(())
@@ -135,7 +133,7 @@ mod tests {
     fn host_ipv4() -> Result<(), Box<dyn Error>> {
         let url = WebUrl::from_str("https://127.0.0.1")?;
         match url.host() {
-            HostRef::Address(ip) => assert_eq!(ip, IPv4Address::LOCALHOST.to_ip()),
+            HostRef::IPAddress(ip) => assert_eq!(ip, IPv4Address::LOCALHOST.to_ip()),
             _ => panic!("expected ip address"),
         }
         Ok(())
@@ -145,7 +143,7 @@ mod tests {
     fn host_ipv6() -> Result<(), Box<dyn Error>> {
         let url = WebUrl::from_str("https://[::1]")?;
         match url.host() {
-            HostRef::Address(ip) => assert_eq!(ip, IPv6Address::LOCALHOST.to_ip()),
+            HostRef::IPAddress(ip) => assert_eq!(ip, IPv6Address::LOCALHOST.to_ip()),
             _ => panic!("expected ip address"),
         }
         Ok(())
@@ -169,27 +167,16 @@ mod tests {
 
         url.set_host(DomainRef::EXAMPLE);
         assert_eq!(url.as_str(), "http://example.com:8080/p?q#f");
-        assert_eq!(url.host(), HostRef::Name(DomainRef::EXAMPLE));
+        assert_eq!(url.host(), HostRef::Domain(DomainRef::EXAMPLE));
 
         // An IPv6 host is bracketed & written in its canonical form.
         url.set_host(IPv6Address::LOCALHOST);
         assert_eq!(url.as_str(), "http://[::1]:8080/p?q#f");
-        assert_eq!(url.host(), HostRef::Address(IPv6Address::LOCALHOST.to_ip()));
+        assert_eq!(url.host(), HostRef::IPAddress(IPv6Address::LOCALHOST.to_ip()));
 
         url.set_host(IPv4Address::LOCALHOST);
         assert_eq!(url.as_str(), "http://127.0.0.1:8080/p?q#f");
-        assert_eq!(url.host(), HostRef::Address(IPv4Address::LOCALHOST.to_ip()));
-
-        Ok(())
-    }
-
-    /// A domain name that is also a valid IP address becomes an IP address host.
-    #[test]
-    fn set_host_numeric_domain() -> Result<(), Box<dyn Error>> {
-        let mut url: WebUrl = WebUrl::from_str("http://host/p")?;
-        url.set_host(DomainRef::try_from("1.2.3.4")?);
-        assert_eq!(url.as_str(), "http://1.2.3.4/p");
-        assert_eq!(url.host(), HostRef::Address(IPv4Address::new([1, 2, 3, 4]).to_ip()));
+        assert_eq!(url.host(), HostRef::IPAddress(IPv4Address::LOCALHOST.to_ip()));
 
         Ok(())
     }
