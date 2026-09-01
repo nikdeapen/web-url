@@ -104,7 +104,8 @@ mod tests {
 
     #[test]
     fn with_path() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://example.com/old")?.with_path(Path::try_from("/new")?);
+        let url: WebUrl =
+            WebUrl::from_str("https://example.com/old")?.with_path(Path::try_from("/new")?);
         assert_eq!(url.as_str(), "https://example.com/new");
 
         Ok(())

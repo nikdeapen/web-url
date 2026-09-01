@@ -32,7 +32,12 @@ impl<'a> Iterator for PieceIterator<'a> {
             None
         } else {
             self.remaining = &self.remaining[1..];
-            if let Some(index) = self.remaining.as_bytes().iter().position(|c| *c == self.separator) {
+            if let Some(index) = self
+                .remaining
+                .as_bytes()
+                .iter()
+                .position(|c| *c == self.separator)
+            {
                 let piece: &str = &self.remaining[..index];
                 self.remaining = &self.remaining[index..];
                 Some(piece)

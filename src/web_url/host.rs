@@ -172,11 +172,17 @@ mod tests {
         // An IPv6 host is bracketed & written in its canonical form.
         url.set_host(IPv6Address::LOCALHOST);
         assert_eq!(url.as_str(), "http://[::1]:8080/p?q#f");
-        assert_eq!(url.host(), HostRef::IPAddress(IPv6Address::LOCALHOST.to_ip()));
+        assert_eq!(
+            url.host(),
+            HostRef::IPAddress(IPv6Address::LOCALHOST.to_ip())
+        );
 
         url.set_host(IPv4Address::LOCALHOST);
         assert_eq!(url.as_str(), "http://127.0.0.1:8080/p?q#f");
-        assert_eq!(url.host(), HostRef::IPAddress(IPv4Address::LOCALHOST.to_ip()));
+        assert_eq!(
+            url.host(),
+            HostRef::IPAddress(IPv4Address::LOCALHOST.to_ip())
+        );
 
         Ok(())
     }

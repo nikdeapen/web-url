@@ -1,7 +1,7 @@
 use crate::Error;
 use crate::parse::{
-    CanonicalHost, CanonicalPort, PathPlus, PrePath, parse_path_plus, parse_pre_path, parse_query_plus,
-    write_canonical_path,
+    CanonicalHost, CanonicalPort, PathPlus, PrePath, parse_path_plus, parse_pre_path,
+    parse_query_plus, write_canonical_path,
 };
 
 /// The validated parts of a web-based URL.
@@ -53,7 +53,9 @@ impl Parts {
         // The canonical path is never longer than the parsed path since it only drops dot-segments.
         let dropped: usize = self.path_plus.path_len - self.path_plus.canonical_path_len;
 
-        ((len - self.pre_path.len()) - dropped) + self.pre_path.canonical_len() + (self.needs_slash as usize)
+        ((len - self.pre_path.len()) - dropped)
+            + self.pre_path.canonical_len()
+            + (self.needs_slash as usize)
     }
 
     /// Gets the index the '/' must be inserted at. (only meaningful when `needs_slash` is set)
@@ -173,7 +175,10 @@ mod tests {
             ("http://host?q#f", "http://host/?q#f"),
             ("http://host:0080/p", "http://host:80/p"),
             ("http://host:/p?q", "http://host/p?q"),
-            ("http://[0:0:0:0:0:0:0:1]:0080/a/../b?q#f", "http://[::1]:80/b?q#f"),
+            (
+                "http://[0:0:0:0:0:0:0:1]:0080/a/../b?q#f",
+                "http://[::1]:80/b?q#f",
+            ),
             // The letter case is normalized in place once the URL string is built, not here.
             ("HTTP://HOST/P", "HTTP://HOST/P"),
         ];
@@ -185,7 +190,12 @@ mod tests {
             assert_eq!(result, *expected, "input={}", input);
 
             // The length must match what is written exactly; it sizes the URL allocation.
-            assert_eq!(parts.normalized_len(input.len()), result.len(), "input={}", input);
+            assert_eq!(
+                parts.normalized_len(input.len()),
+                result.len(),
+                "input={}",
+                input
+            );
 
             // A URL written back unchanged is exactly the one that needs no rewrite.
             assert_eq!(parts.is_normalized(), *input == result, "input={}", input);

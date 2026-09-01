@@ -14,7 +14,8 @@ impl FromStr for WebUrl {
         let mut url: String = String::with_capacity(parts.normalized_len(s.len()));
         write_normalized(s, parts, &mut url);
 
-        unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }.map_err(|(error, _)| error)
+        unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }
+            .map_err(|(error, _)| error)
     }
 }
 
@@ -22,7 +23,8 @@ impl FromStr for WebUrl {
 mod tests {
     use crate::Error;
     use crate::Error::{
-        InvalidFragment, InvalidHost, InvalidPath, InvalidPort, InvalidQuery, InvalidScheme, UserInfoNotSupported,
+        InvalidFragment, InvalidHost, InvalidPath, InvalidPort, InvalidQuery, InvalidScheme,
+        UserInfoNotSupported,
     };
     use crate::WebUrl;
     use std::str::FromStr;

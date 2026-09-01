@@ -33,7 +33,9 @@ impl<'a> Scheme<'a> {
         let bytes: &[u8] = scheme.as_bytes();
 
         // The first char must be a letter.
-        if bytes.is_empty() || !(bytes[0].is_ascii_lowercase() || (ignore_case && bytes[0].is_ascii_uppercase())) {
+        if bytes.is_empty()
+            || !(bytes[0].is_ascii_lowercase() || (ignore_case && bytes[0].is_ascii_uppercase()))
+        {
             return false;
         }
 

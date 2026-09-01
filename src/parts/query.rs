@@ -112,7 +112,8 @@ impl<'a> IntoIterator for Query<'a> {
 
     fn into_iter(self) -> Self::IntoIter {
         // Every piece of a valid query is a valid param. (see [`Self::iter_params`])
-        PieceIterator::new(self.query, b'&').map(|piece| unsafe { Param::from_str_unchecked(piece) })
+        PieceIterator::new(self.query, b'&')
+            .map(|piece| unsafe { Param::from_str_unchecked(piece) })
     }
 }
 
@@ -223,13 +224,20 @@ mod tests {
             ("?&", &[("", None), ("", None)]),
             ("?a", &[("a", None)]),
             ("?a=", &[("a", Some(""))]),
-            ("?the&query=params", &[("the", None), ("query", Some("params"))]),
-            ("?a=1&b=2&a=3", &[("a", Some("1")), ("b", Some("2")), ("a", Some("3"))]),
+            (
+                "?the&query=params",
+                &[("the", None), ("query", Some("params"))],
+            ),
+            (
+                "?a=1&b=2&a=3",
+                &[("a", Some("1")), ("b", Some("2")), ("a", Some("3"))],
+            ),
         ];
 
         for (query, expected) in test_cases {
             let query: Query = Query::new(query).unwrap();
-            let result: Vec<ParamParts> = query.iter_params().map(|p| (p.name(), p.value())).collect();
+            let result: Vec<ParamParts> =
+                query.iter_params().map(|p| (p.name(), p.value())).collect();
             assert_eq!(result.as_slice(), *expected, "query={}", query);
         }
     }

@@ -1,7 +1,7 @@
 use crate::Error;
 use crate::parse::{
-    CanonicalHost, check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port, parse_scheme_len,
-    port_decimal_len,
+    CanonicalHost, check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port,
+    parse_scheme_len, port_decimal_len,
 };
 use address::IPAddress;
 
@@ -76,7 +76,9 @@ impl PrePath {
     /// excluded since it is normalized in place & never changes the length.
     pub fn needs_host_rewrite(self, s: &str) -> bool {
         match self.ip {
-            Some(ip) => !CanonicalHost::new(ip).as_str().eq_ignore_ascii_case(self.host_str(s)),
+            Some(ip) => !CanonicalHost::new(ip)
+                .as_str()
+                .eq_ignore_ascii_case(self.host_str(s)),
             None => false,
         }
     }

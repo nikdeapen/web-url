@@ -109,7 +109,11 @@ mod tests {
             let ip: IPv6Address = IPv6Address::from_str(ip).unwrap();
             let canonical: CanonicalHost = CanonicalHost::new(ip.to_ip());
             assert_eq!(canonical.as_str(), *expected, "ip={}", ip);
-            assert!(canonical.as_str().len() <= CanonicalHost::MAX_LEN, "ip={}", ip);
+            assert!(
+                canonical.as_str().len() <= CanonicalHost::MAX_LEN,
+                "ip={}",
+                ip
+            );
         }
     }
 }

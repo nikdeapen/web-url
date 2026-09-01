@@ -105,7 +105,11 @@ mod tests {
             ("http://host/p?a=1", Some("?b=2"), "http://host/p?b=2"),
             ("http://host/p?a=1", None, "http://host/p"),
             ("http://host/p", None, "http://host/p"),
-            ("http://host/p#f", Some("?a=1&b=2"), "http://host/p?a=1&b=2#f"),
+            (
+                "http://host/p#f",
+                Some("?a=1&b=2"),
+                "http://host/p?a=1&b=2#f",
+            ),
             ("http://host/p?a=1#f", Some("?"), "http://host/p?#f"),
             ("http://host/p?a=1#f", None, "http://host/p#f"),
         ];
@@ -121,7 +125,8 @@ mod tests {
 
     #[test]
     fn with_query() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://example.com/p")?.with_query(Query::try_from("?a=1")?);
+        let url: WebUrl =
+            WebUrl::from_str("https://example.com/p")?.with_query(Query::try_from("?a=1")?);
         assert_eq!(url.as_str(), "https://example.com/p?a=1");
 
         let url: WebUrl = url.with_query(None);

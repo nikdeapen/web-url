@@ -8,16 +8,17 @@ use std::str::FromStr;
 ///
 /// The host will **not** be validated.
 pub fn parse_host(s: &str) -> (&str, &str) {
-    let host_and_port: &str = if let Some(end) = s.as_bytes().iter().position(|c| is_authority_end(*c)) {
-        &s[..end]
-    } else {
-        s
-    };
+    let host_and_port: &str =
+        if let Some(end) = s.as_bytes().iter().position(|c| is_authority_end(*c)) {
+            &s[..end]
+        } else {
+            s
+        };
     if host_and_port.is_empty() {
         ("", s)
     } else {
-        let bracketed: bool =
-            host_and_port.as_bytes()[0] == b'[' && host_and_port.as_bytes()[host_and_port.len() - 1] == b']';
+        let bracketed: bool = host_and_port.as_bytes()[0] == b'['
+            && host_and_port.as_bytes()[host_and_port.len() - 1] == b']';
         if bracketed {
             s.split_at(host_and_port.len())
         } else if let Some(last_colon) = host_and_port.as_bytes().iter().rposition(|c| *c == b':') {

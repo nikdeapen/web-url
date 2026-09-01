@@ -22,7 +22,11 @@ impl WebUrl {
     pub fn add_param(&mut self, param: Param) {
         // A URL with no query has no '?' either, so the query starts with one here. Every other case appends to a
         // query that already has at least one param.
-        let separator: char = if self.path_end == self.query_end { '?' } else { '&' };
+        let separator: char = if self.path_end == self.query_end {
+            '?'
+        } else {
+            '&'
+        };
         let added: usize = Self::push_param_len(param);
 
         // The length is checked before anything is modified so an over-long URL panics with the URL intact rather than
@@ -308,7 +312,11 @@ mod tests {
         ];
         for (input, name, removed, expected) in test_cases {
             let mut url: WebUrl = WebUrl::from_str(input)?;
-            assert_eq!(url.remove_params(name), *removed, "input={input} name={name}");
+            assert_eq!(
+                url.remove_params(name),
+                *removed,
+                "input={input} name={name}"
+            );
             assert_eq!(url.as_str(), *expected, "input={input} name={name}");
         }
 
@@ -329,7 +337,12 @@ mod tests {
         let test_cases: &[(&str, &str, usize, &str)] = &[
             ("https://host/p?a=1", "a=9", 1, "https://host/p?a=9"),
             ("https://host/p?b=2&a=1", "a=9", 1, "https://host/p?b=2&a=9"),
-            ("https://host/p?a=1&b=2&a=3", "a=9", 2, "https://host/p?a=9&b=2"),
+            (
+                "https://host/p?a=1&b=2&a=3",
+                "a=9",
+                2,
+                "https://host/p?a=9&b=2",
+            ),
             ("https://host/p?a=1#f", "a=9", 1, "https://host/p?a=9#f"),
             // The replacement drops the value when it has none.
             ("https://host/p?a=1", "a", 1, "https://host/p?a"),
@@ -344,7 +357,11 @@ mod tests {
         for (input, param, replaced, expected) in test_cases {
             let mut url: WebUrl = WebUrl::from_str(input)?;
             let param: Param = Param::try_from(*param)?;
-            assert_eq!(url.replace_params(param), *replaced, "input={input} param={param}");
+            assert_eq!(
+                url.replace_params(param),
+                *replaced,
+                "input={input} param={param}"
+            );
             assert_eq!(url.as_str(), *expected, "input={input} param={param}");
         }
 
@@ -353,7 +370,8 @@ mod tests {
 
     #[test]
     fn with_replaced_params() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")?.with_replaced_params(Param::try_from("a=9")?);
+        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")?
+            .with_replaced_params(Param::try_from("a=9")?);
         assert_eq!(url.as_str(), "https://host/p?a=9&b=2");
 
         Ok(())

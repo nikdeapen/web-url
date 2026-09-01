@@ -108,7 +108,8 @@ mod tests {
 
     #[test]
     fn with_fragment() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com")?.with_fragment(Fragment::try_from("#frag")?);
+        let url =
+            WebUrl::from_str("https://example.com")?.with_fragment(Fragment::try_from("#frag")?);
         assert_eq!(url.as_str(), "https://example.com/#frag");
 
         let url = WebUrl::from_str("https://example.com/path#old")?.with_fragment(None);

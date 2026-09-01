@@ -100,7 +100,12 @@ mod tests {
 
             // An excluded char is invalid even when it is in the set.
             assert_eq!(is_valid_char(c, "?"), expected && c != b'?', "c={}", c);
-            assert_eq!(is_valid_char(c, "&="), expected && c != b'&' && c != b'=', "c={}", c);
+            assert_eq!(
+                is_valid_char(c, "&="),
+                expected && c != b'&' && c != b'=',
+                "c={}",
+                c
+            );
         }
     }
 

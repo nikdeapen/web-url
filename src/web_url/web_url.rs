@@ -145,7 +145,10 @@ impl WebUrl {
             return false;
         }
         let pre_path: &PrePath = &parts.pre_path;
-        if self.url[..pre_path.host_end()].bytes().any(|c| c.is_ascii_uppercase()) {
+        if self.url[..pre_path.host_end()]
+            .bytes()
+            .any(|c| c.is_ascii_uppercase())
+        {
             return false;
         }
 
