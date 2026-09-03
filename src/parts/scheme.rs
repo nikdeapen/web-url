@@ -1,14 +1,13 @@
 use crate::Error;
 use crate::Error::InvalidScheme;
-use std::borrow::Borrow;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL scheme.
 ///
+/// - The `scheme` cannot be empty.
+/// - The `scheme` will be lowercase.
+///
 /// # RFC 3986
-/// The scheme is restricted to the canonical lowercase form the RFC recommends;
-/// [`Self::is_valid_ignore_case`] accepts the mixed-case forms it also allows. The scheme string
-/// does not include the ':' delimiter.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.1>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -29,23 +28,27 @@ impl Scheme<'static> {
 impl<'a> Scheme<'a> {
     //! Validation
 
-    /// Checks if the `scheme` is valid, optionally ignoring case.
-    const fn is_valid_op_ignore_case(scheme: &str, ignore_case: bool) -> bool {
-        let bytes: &[u8] = scheme.as_bytes();
+    /// Checks if the `scheme` is valid.
+    #[must_use]
+    pub const fn is_valid(scheme: &str) -> bool {
+        Self::is_valid_optionally_ignore_case(scheme, false)
+    }
 
-        // The first char must be a letter.
-        if bytes.is_empty()
-            || !(bytes[0].is_ascii_lowercase() || (ignore_case && bytes[0].is_ascii_uppercase()))
-        {
+    /// Checks if the `scheme` is valid, ignoring case.
+    #[must_use]
+    pub const fn is_valid_ignore_case(scheme: &str) -> bool {
+        Self::is_valid_optionally_ignore_case(scheme, true)
+    }
+
+    /// Checks if the `scheme` is valid, optionally ignoring case.
+    const fn is_valid_optionally_ignore_case(scheme: &str, ignore_case: bool) -> bool {
+        let bytes: &[u8] = scheme.as_bytes();
+        if bytes.is_empty() || !Self::is_letter(bytes[0], ignore_case) {
             return false;
         }
-
-        // The rest may also be digits & the '+', '-', & '.' chars.
         let mut index: usize = 1;
         while index < bytes.len() {
-            let c: u8 = bytes[index];
-            let alpha: bool = c.is_ascii_lowercase() || (ignore_case && c.is_ascii_uppercase());
-            if !alpha && !c.is_ascii_digit() && c != b'+' && c != b'-' && c != b'.' {
+            if !Self::is_valid_char(bytes[index], ignore_case) {
                 return false;
             }
             index += 1;
@@ -53,22 +56,14 @@ impl<'a> Scheme<'a> {
         true
     }
 
-    /// Checks if the `scheme` is valid.
-    ///
-    /// A scheme can never be empty & must start with a lowercase letter, followed by any number of
-    /// lowercase letters, digits, '+', '-', & '.' chars. The valid scheme format is defined by [RFC
-    /// 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.1).
-    #[must_use]
-    pub const fn is_valid(scheme: &str) -> bool {
-        Self::is_valid_op_ignore_case(scheme, false)
+    /// Checks if the char `c` is a letter, optionally ignoring case.
+    const fn is_letter(c: u8, ignore_case: bool) -> bool {
+        c.is_ascii_lowercase() || (ignore_case && c.is_ascii_uppercase())
     }
 
-    /// Checks if the `scheme` is valid, ignoring case.
-    ///
-    /// See [`Self::is_valid`].
-    #[must_use]
-    pub const fn is_valid_ignore_case(scheme: &str) -> bool {
-        Self::is_valid_op_ignore_case(scheme, true)
+    /// Checks if the char `c` is valid after the first char, optionally ignoring case.
+    const fn is_valid_char(c: u8, ignore_case: bool) -> bool {
+        Self::is_letter(c, ignore_case) || c.is_ascii_digit() || matches!(c, b'+' | b'-' | b'.')
     }
 }
 
@@ -76,8 +71,6 @@ impl<'a> Scheme<'a> {
     //! Construction
 
     /// Creates a new scheme.
-    ///
-    /// The `scheme` must be valid.
     pub const fn new(scheme: &'a str) -> Result<Self, Error> {
         if Self::is_valid(scheme) {
             Ok(Self { scheme })
@@ -115,57 +108,9 @@ impl<'a> Scheme<'a> {
     }
 }
 
-impl<'a> PartialEq<str> for Scheme<'a> {
-    fn eq(&self, other: &str) -> bool {
-        self.scheme == other
-    }
-}
-
-impl<'a> PartialEq<Scheme<'a>> for str {
-    fn eq(&self, other: &Scheme<'a>) -> bool {
-        self == other.scheme
-    }
-}
-
-impl<'a> PartialEq<&str> for Scheme<'a> {
-    fn eq(&self, other: &&str) -> bool {
-        self.scheme == *other
-    }
-}
-
-impl<'a> PartialEq<Scheme<'a>> for &str {
-    fn eq(&self, other: &Scheme<'a>) -> bool {
-        *self == other.scheme
-    }
-}
-
-impl<'a> PartialEq<String> for Scheme<'a> {
-    fn eq(&self, other: &String) -> bool {
-        self.scheme == other.as_str()
-    }
-}
-
-impl<'a> PartialEq<Scheme<'a>> for String {
-    fn eq(&self, other: &Scheme<'a>) -> bool {
-        self.as_str() == other.scheme
-    }
-}
-
-impl<'a> AsRef<str> for Scheme<'a> {
-    fn as_ref(&self) -> &str {
-        self.scheme
-    }
-}
-
-impl<'a> Borrow<str> for Scheme<'a> {
-    fn borrow(&self) -> &str {
-        self.scheme
-    }
-}
-
 impl<'a> Debug for Scheme<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self, f)
+        Debug::fmt(self.scheme, f)
     }
 }
 
@@ -179,17 +124,9 @@ impl<'a> Display for Scheme<'a> {
 mod tests {
     use crate::Scheme;
 
-    /// The constants bypass validation, so a typo in one would not be caught anywhere else.
-    #[test]
-    fn constants() {
-        assert_eq!(Scheme::HTTP, "http");
-        assert_eq!(Scheme::HTTPS, "https");
-    }
-
     #[test]
     fn is_valid() {
-        // The third column is `is_valid_ignore_case`, which accepts the mixed-case forms `is_valid`
-        // rejects.
+        // (scheme, expected, expected_ignore_case)
         let test_cases: &[(&str, bool, bool)] = &[
             ("", false, false),
             ("a", true, true),

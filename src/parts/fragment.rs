@@ -1,14 +1,14 @@
 use crate::Error;
 use crate::Error::InvalidFragment;
 use crate::parse;
-use std::borrow::Borrow;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL fragment.
 ///
+/// - The `fragment` string will not be empty and will always start with a '#'.
+/// - The `fragment` value (after the '#') may be empty.
+///
 /// # RFC 3986
-/// The fragment string includes the '#' delimiter, which the RFC excludes from the `fragment`
-/// production.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.5>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -20,10 +20,6 @@ impl<'a> Fragment<'a> {
     //! Validation
 
     /// Checks if the `fragment` is valid.
-    ///
-    /// A fragment string can never be empty and must start with a '#'. The fragment itself can be
-    /// empty. The valid fragment format is defined by [RFC
-    /// 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.5).
     #[must_use]
     pub const fn is_valid(fragment: &str) -> bool {
         parse::is_valid_segment(fragment, b'#', "")
@@ -53,12 +49,6 @@ impl<'a> Fragment<'a> {
     }
 }
 
-impl<'a> Default for Fragment<'a> {
-    fn default() -> Self {
-        Self { fragment: "#" }
-    }
-}
-
 impl<'a> TryFrom<&'a str> for Fragment<'a> {
     type Error = Error;
 
@@ -83,57 +73,9 @@ impl<'a> Fragment<'a> {
     }
 }
 
-impl<'a> PartialEq<str> for Fragment<'a> {
-    fn eq(&self, other: &str) -> bool {
-        self.fragment == other
-    }
-}
-
-impl<'a> PartialEq<Fragment<'a>> for str {
-    fn eq(&self, other: &Fragment<'a>) -> bool {
-        self == other.fragment
-    }
-}
-
-impl<'a> PartialEq<&str> for Fragment<'a> {
-    fn eq(&self, other: &&str) -> bool {
-        self.fragment == *other
-    }
-}
-
-impl<'a> PartialEq<Fragment<'a>> for &str {
-    fn eq(&self, other: &Fragment<'a>) -> bool {
-        *self == other.fragment
-    }
-}
-
-impl<'a> PartialEq<String> for Fragment<'a> {
-    fn eq(&self, other: &String) -> bool {
-        self.fragment == other.as_str()
-    }
-}
-
-impl<'a> PartialEq<Fragment<'a>> for String {
-    fn eq(&self, other: &Fragment<'a>) -> bool {
-        self.as_str() == other.fragment
-    }
-}
-
-impl<'a> AsRef<str> for Fragment<'a> {
-    fn as_ref(&self) -> &str {
-        self.fragment
-    }
-}
-
-impl<'a> Borrow<str> for Fragment<'a> {
-    fn borrow(&self) -> &str {
-        self.fragment
-    }
-}
-
 impl<'a> Debug for Fragment<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self, f)
+        Debug::fmt(self.fragment, f)
     }
 }
 

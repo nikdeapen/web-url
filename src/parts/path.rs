@@ -2,15 +2,14 @@ use crate::Error;
 use crate::Error::InvalidPath;
 use crate::PieceIterator;
 use crate::parse;
-use std::borrow::Borrow;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL path.
 ///
+/// - The `path` string will never be empty and always start with a '/'.
+/// - The `path` value (after the '/') may be empty.
+///
 /// # RFC 3986
-/// The path can never be empty, unlike the RFC `path-abempty` production, since a URL with no
-/// explicit path gets an implied '/' path. A path may hold dot-segments;
-/// [`WebUrl::set_path`](crate::WebUrl::set_path) removes them.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.3>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -22,9 +21,6 @@ impl<'a> Path<'a> {
     //! Validation
 
     /// Checks if the `path` is valid.
-    ///
-    /// A path string can never be empty & must start with a '/'. The valid path format is defined
-    /// by [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.3).
     #[must_use]
     pub const fn is_valid(path: &str) -> bool {
         parse::is_valid_segment(path, b'/', "?")
@@ -76,21 +72,20 @@ impl<'a> Path<'a> {
     pub const fn as_str(self) -> &'a str {
         self.path
     }
+
+    /// Gets the path value. (will not contain the '/' prefix)
+    #[must_use]
+    pub const fn value(self) -> &'a str {
+        self.path.split_at(1).1
+    }
 }
 
 impl<'a> Path<'a> {
     //! Segments
 
     /// Creates a new iterator for the path segments.
-    ///
-    /// The '/' chars are separators, so the regions between them are the segments & an empty region
-    /// is an empty segment. The path `"/"` is a single empty segment & the path `"//"` is two of
-    /// them. Only a literal '/' char separates, so a `%2F` escape stays within its segment.
-    ///
-    /// # Example
-    /// `"/a/b/c/"` -> `["a", "b", "c", ""]`
     pub const fn iter_segments(self) -> PieceIterator<'a> {
-        PieceIterator::new(self.path, b'/')
+        PieceIterator::new(self.value(), b'/')
     }
 }
 
@@ -103,57 +98,9 @@ impl<'a> IntoIterator for Path<'a> {
     }
 }
 
-impl<'a> PartialEq<str> for Path<'a> {
-    fn eq(&self, other: &str) -> bool {
-        self.path == other
-    }
-}
-
-impl<'a> PartialEq<Path<'a>> for str {
-    fn eq(&self, other: &Path<'a>) -> bool {
-        self == other.path
-    }
-}
-
-impl<'a> PartialEq<&str> for Path<'a> {
-    fn eq(&self, other: &&str) -> bool {
-        self.path == *other
-    }
-}
-
-impl<'a> PartialEq<Path<'a>> for &str {
-    fn eq(&self, other: &Path<'a>) -> bool {
-        *self == other.path
-    }
-}
-
-impl<'a> PartialEq<String> for Path<'a> {
-    fn eq(&self, other: &String) -> bool {
-        self.path == other.as_str()
-    }
-}
-
-impl<'a> PartialEq<Path<'a>> for String {
-    fn eq(&self, other: &Path<'a>) -> bool {
-        self.as_str() == other.path
-    }
-}
-
-impl<'a> AsRef<str> for Path<'a> {
-    fn as_ref(&self) -> &str {
-        self.path
-    }
-}
-
-impl<'a> Borrow<str> for Path<'a> {
-    fn borrow(&self) -> &str {
-        self.path
-    }
-}
-
 impl<'a> Debug for Path<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self, f)
+        Debug::fmt(self.path, f)
     }
 }
 
@@ -204,7 +151,6 @@ mod tests {
 
     #[test]
     fn iter_segments() {
-        // The '/' chars are separators, so an empty region between them is an empty segment.
         let test_cases: &[(&str, &[&str])] = &[
             ("/", &[""]),
             ("//", &["", ""]),
