@@ -3,14 +3,16 @@ use crate::Error::InvalidQuery;
 use crate::Param;
 use crate::PieceIterator;
 use crate::parse;
-use std::borrow::Borrow;
 use std::fmt::{Debug, Display, Formatter};
 use std::iter::Map;
 
 /// A web-based URL query.
 ///
+/// - The `query` string will not be empty and will always start with a '?'.
+/// - The `query` value (after the '?') may be empty.
+///
+///
 /// # RFC 3986
-/// The query string includes the '?' delimiter, which the RFC excludes from the `query` production.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.4>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -22,10 +24,6 @@ impl<'a> Query<'a> {
     //! Validation
 
     /// Checks if the `query` is valid.
-    ///
-    /// A query string can never be empty & must start with a '?'. The query itself can be empty.
-    /// The valid query format is defined by [RFC
-    /// 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3.4).
     #[must_use]
     pub const fn is_valid(query: &str) -> bool {
         parse::is_valid_segment(query, b'?', "")
@@ -52,12 +50,6 @@ impl<'a> Query<'a> {
         debug_assert!(Self::is_valid(query));
 
         Self { query }
-    }
-}
-
-impl<'a> Default for Query<'a> {
-    fn default() -> Self {
-        Self { query: "?" }
     }
 }
 
@@ -89,19 +81,6 @@ impl<'a> Query<'a> {
     //! Params
 
     /// Creates a new iterator for the query parameters.
-    ///
-    /// A query always has at least one param. The '?' & '&' chars are separators, so the regions
-    /// between them are the params & an empty region is an empty param. The query `"?"` is a single
-    /// empty param & the query `"?&"` is two of them.
-    ///
-    /// Only a literal '&' char separates, so a `%26` escape stays within its param. Every piece of
-    /// a valid query is a valid param, which is why the params are not re-validated.
-    ///
-    /// This is why a URL with no query has no query at all rather than an empty one: the URL `"/"`
-    /// has zero params while the URL `"/?"` has one.
-    ///
-    /// # Example
-    /// `"?a=1&b"` -> `[("a", Some("1")), ("b", None)]`
     pub fn iter_params(self) -> Map<PieceIterator<'a>, fn(&'a str) -> Param<'a>> {
         self.into_iter()
     }
@@ -112,63 +91,14 @@ impl<'a> IntoIterator for Query<'a> {
     type IntoIter = Map<PieceIterator<'a>, fn(&'a str) -> Param<'a>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        // Every piece of a valid query is a valid param. (see [`Self::iter_params`])
-        PieceIterator::new(self.query, b'&')
+        PieceIterator::new(self.value(), b'&')
             .map(|piece| unsafe { Param::from_str_unchecked(piece) })
-    }
-}
-
-impl<'a> PartialEq<str> for Query<'a> {
-    fn eq(&self, other: &str) -> bool {
-        self.query == other
-    }
-}
-
-impl<'a> PartialEq<Query<'a>> for str {
-    fn eq(&self, other: &Query<'a>) -> bool {
-        self == other.query
-    }
-}
-
-impl<'a> PartialEq<&str> for Query<'a> {
-    fn eq(&self, other: &&str) -> bool {
-        self.query == *other
-    }
-}
-
-impl<'a> PartialEq<Query<'a>> for &str {
-    fn eq(&self, other: &Query<'a>) -> bool {
-        *self == other.query
-    }
-}
-
-impl<'a> PartialEq<String> for Query<'a> {
-    fn eq(&self, other: &String) -> bool {
-        self.query == other.as_str()
-    }
-}
-
-impl<'a> PartialEq<Query<'a>> for String {
-    fn eq(&self, other: &Query<'a>) -> bool {
-        self.as_str() == other.query
-    }
-}
-
-impl<'a> AsRef<str> for Query<'a> {
-    fn as_ref(&self) -> &str {
-        self.query
-    }
-}
-
-impl<'a> Borrow<str> for Query<'a> {
-    fn borrow(&self) -> &str {
-        self.query
     }
 }
 
 impl<'a> Debug for Query<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self, f)
+        Debug::fmt(self.query, f)
     }
 }
 
@@ -182,7 +112,7 @@ impl<'a> Display for Query<'a> {
 mod tests {
     use crate::Query;
 
-    /// The name & optional value of a query param. `(name, value)`
+    /// `(name, value)`
     type ParamParts<'a> = (&'a str, Option<&'a str>);
 
     #[test]
