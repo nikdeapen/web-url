@@ -11,7 +11,6 @@ use std::iter::Map;
 /// - The `query` string will not be empty and will always start with a '?'.
 /// - The `query` value (after the '?') may be empty.
 ///
-///
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.4>
 #[must_use]
