@@ -6,7 +6,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL path.
 ///
-/// - The `path` string will never be empty and always start with a '/'.
+/// - The `path` string will not be empty and will always start with a '/'.
 /// - The `path` value (after the '/') may be empty.
 ///
 /// # RFC 3986

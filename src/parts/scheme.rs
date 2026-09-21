@@ -4,7 +4,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL scheme.
 ///
-/// - The `scheme` cannot be empty.
+/// - The `scheme` will not be empty.
 /// - The `scheme` will be lowercase.
 ///
 /// # RFC 3986
