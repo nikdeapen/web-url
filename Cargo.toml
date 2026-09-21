@@ -13,7 +13,7 @@ keywords = ["url", "web", "parse", "normalization"]
 categories = ["parser-implementations", "web-programming"]
 
 [dependencies]
-address = "0.21.0"
+address = "0.22.0"
 
 [lints.rust]
 missing_debug_implementations = "warn"
