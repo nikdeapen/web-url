@@ -1,6 +1,5 @@
-use crate::Error;
-use crate::Error::InvalidFragment;
-use crate::parse;
+use crate::ParseError::InvalidFragment;
+use crate::{ParseError, parse};
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL fragment.
@@ -30,7 +29,7 @@ impl<'a> Fragment<'a> {
     //! Construction
 
     /// Creates a new fragment.
-    pub const fn new(fragment: &'a str) -> Result<Self, Error> {
+    pub const fn new(fragment: &'a str) -> Result<Self, ParseError> {
         if Self::is_valid(fragment) {
             Ok(Self { fragment })
         } else {
@@ -50,7 +49,7 @@ impl<'a> Fragment<'a> {
 }
 
 impl<'a> TryFrom<&'a str> for Fragment<'a> {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(fragment: &'a str) -> Result<Self, Self::Error> {
         Self::new(fragment)

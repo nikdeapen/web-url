@@ -1,7 +1,5 @@
-use crate::Error;
-use crate::Error::InvalidPath;
-use crate::PieceIterator;
-use crate::parse;
+use crate::ParseError::InvalidPath;
+use crate::{ParseError, parse};
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL path.
@@ -31,7 +29,7 @@ impl<'a> Path<'a> {
     //! Construction
 
     /// Creates a new path.
-    pub const fn new(path: &'a str) -> Result<Self, Error> {
+    pub const fn new(path: &'a str) -> Result<Self, ParseError> {
         if Self::is_valid(path) {
             Ok(Self { path })
         } else {
@@ -57,7 +55,7 @@ impl<'a> Default for Path<'a> {
 }
 
 impl<'a> TryFrom<&'a str> for Path<'a> {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(path: &'a str) -> Result<Self, Self::Error> {
         Self::new(path)
@@ -77,24 +75,6 @@ impl<'a> Path<'a> {
     #[must_use]
     pub const fn value(self) -> &'a str {
         self.path.split_at(1).1
-    }
-}
-
-impl<'a> Path<'a> {
-    //! Segments
-
-    /// Creates a new iterator for the path segments.
-    pub const fn iter_segments(self) -> PieceIterator<'a> {
-        PieceIterator::new(self.value(), b'/')
-    }
-}
-
-impl<'a> IntoIterator for Path<'a> {
-    type Item = &'a str;
-    type IntoIter = PieceIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter_segments()
     }
 }
 
@@ -146,23 +126,6 @@ mod tests {
         for (path, expected) in test_cases {
             let result: bool = Path::is_valid(path);
             assert_eq!(result, *expected, "path={}", path);
-        }
-    }
-
-    #[test]
-    fn iter_segments() {
-        let test_cases: &[(&str, &[&str])] = &[
-            ("/", &[""]),
-            ("//", &["", ""]),
-            ("/a", &["a"]),
-            ("/the/path", &["the", "path"]),
-            ("/the/path/", &["the", "path", ""]),
-        ];
-
-        for (path, expected) in test_cases {
-            let path: Path = Path::new(path).unwrap();
-            let result: Vec<&str> = path.iter_segments().collect();
-            assert_eq!(result.as_slice(), *expected, "path={}", path);
         }
     }
 }

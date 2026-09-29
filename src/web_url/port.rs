@@ -1,5 +1,4 @@
-use crate::WebUrl;
-use crate::parse;
+use crate::{WebUrl, parse};
 
 impl WebUrl {
     //! Port
@@ -18,10 +17,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    pub fn set_port<P>(&mut self, port: P)
-    where
-        P: Into<Option<u16>>,
-    {
+    pub fn set_port<P: Into<Option<u16>>>(&mut self, port: P) {
         let port: Option<u16> = port.into();
 
         // The port is written with its ':' prefix & without leading zeros, which is the normalized
@@ -61,10 +57,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
-    pub fn with_port<P>(mut self, port: P) -> Self
-    where
-        P: Into<Option<u16>>,
-    {
+    pub fn with_port<P: Into<Option<u16>>>(mut self, port: P) -> Self {
         self.set_port(port);
         self
     }
@@ -73,25 +66,19 @@ impl WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::WebUrl;
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn port_present() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com:8080")?;
+    fn port() {
+        let url: WebUrl = WebUrl::from_str("https://example.com:8080").unwrap();
         assert_eq!(url.port(), Some(8080));
-        Ok(())
-    }
 
-    #[test]
-    fn port_absent() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com")?;
+        let url: WebUrl = WebUrl::from_str("https://example.com").unwrap();
         assert_eq!(url.port(), None);
-        Ok(())
     }
 
     #[test]
-    fn set_port() -> Result<(), Box<dyn Error>> {
+    fn set_port() {
         // The port changes length, so the path, query, & fragment offsets must shift with it.
         let test_cases: &[(&str, Option<u16>, &str)] = &[
             ("http://host/p?q#f", Some(8080), "http://host:8080/p?q#f"),
@@ -103,23 +90,21 @@ mod tests {
             ("http://[::1]/p", Some(80), "http://[::1]:80/p"),
         ];
         for (input, port, expected) in test_cases {
-            let mut url: WebUrl = WebUrl::from_str(input)?;
+            let mut url: WebUrl = WebUrl::from_str(input).unwrap();
             url.set_port(*port);
             assert_eq!(url.as_str(), *expected, "input={}", input);
             assert_eq!(url.port(), *port, "input={}", input);
         }
-
-        Ok(())
     }
 
     #[test]
-    fn with_port() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://example.com/p")?.with_port(8080);
+    fn with_port() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/p")
+            .unwrap()
+            .with_port(8080);
         assert_eq!(url.as_str(), "https://example.com:8080/p");
 
         let url: WebUrl = url.with_port(None);
         assert_eq!(url.as_str(), "https://example.com/p");
-
-        Ok(())
     }
 }

@@ -1,5 +1,4 @@
-use crate::WebUrl;
-use crate::parse;
+use crate::{WebUrl, parse};
 use address::{DomainRef, HostRef, IPAddress};
 
 impl WebUrl {
@@ -21,9 +20,14 @@ impl WebUrl {
     /// - If the host is an IP address it will be in its canonical form.
     /// - If the host is an IPv6 address it will include the '[]' brackets.
     fn host_str(&self) -> &str {
-        let start: usize = (self.scheme_len + 3) as usize;
+        let start: usize = self.host_start() as usize;
         let end: usize = self.host_end as usize;
         &self.url[start..end]
+    }
+
+    /// Gets the index of the host. (just past the "://" that follows the scheme)
+    pub(in crate::web_url) fn host_start(&self) -> u32 {
+        self.scheme_len + 3
     }
 }
 
@@ -34,10 +38,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    pub fn set_host<'a, H>(&mut self, host: H)
-    where
-        H: Into<HostRef<'a>>,
-    {
+    pub fn set_host<'a, H: Into<HostRef<'a>>>(&mut self, host: H) {
         let host: HostRef = host.into();
 
         // An IP address is written in its canonical form & a domain name is already lowercase, so
@@ -53,7 +54,7 @@ impl WebUrl {
             }
         };
 
-        let start: usize = (self.scheme_len + 3) as usize;
+        let start: usize = self.host_start() as usize;
         let end: usize = self.host_end as usize;
 
         // The length is checked before anything is modified so an over-long URL panics with the URL
@@ -84,10 +85,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
-    pub fn with_host<'a, H>(mut self, host: H) -> Self
-    where
-        H: Into<HostRef<'a>>,
-    {
+    pub fn with_host<'a, H: Into<HostRef<'a>>>(mut self, host: H) -> Self {
         self.set_host(host);
         self
     }
@@ -97,75 +95,46 @@ impl WebUrl {
 mod tests {
     use crate::WebUrl;
     use address::{DomainRef, HostRef, IPv4Address, IPv6Address};
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn host_domain() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com")?;
-        match url.host() {
-            HostRef::Domain(domain) => assert_eq!(domain.name(), "example.com"),
-            _ => panic!("expected domain"),
+    fn host() {
+        let test_cases: &[(&str, HostRef)] = &[
+            ("https://example.com", HostRef::Domain(DomainRef::EXAMPLE)),
+            ("https://EXAMPLE.COM", HostRef::Domain(DomainRef::EXAMPLE)),
+            // The `xn--` ACE prefix has consecutive hyphens, which requires `address` >= 0.19.
+            (
+                "https://xn--bcher-kva.example",
+                HostRef::Domain(DomainRef::try_from("xn--bcher-kva.example").unwrap()),
+            ),
+            (
+                "https://127.0.0.1",
+                HostRef::IPAddress(IPv4Address::LOCALHOST.to_ip()),
+            ),
+            (
+                "https://[::1]",
+                HostRef::IPAddress(IPv6Address::LOCALHOST.to_ip()),
+            ),
+        ];
+        for (input, expected) in test_cases {
+            let url: WebUrl = WebUrl::from_str(input).unwrap();
+            assert_eq!(url.host(), *expected, "input={}", input);
         }
-        Ok(())
     }
 
     #[test]
-    fn host_domain_uppercase() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://EXAMPLE.COM")?;
-        match url.host() {
-            HostRef::Domain(domain) => assert_eq!(domain.name(), "example.com"),
-            _ => panic!("expected domain"),
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn host_domain_idn() -> Result<(), Box<dyn Error>> {
-        // The `xn--` ACE prefix has consecutive hyphens, which requires `address` >= 0.19.
-        let url = WebUrl::from_str("https://xn--bcher-kva.example")?;
-        match url.host() {
-            HostRef::Domain(domain) => assert_eq!(domain.name(), "xn--bcher-kva.example"),
-            _ => panic!("expected domain"),
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn host_ipv4() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://127.0.0.1")?;
-        match url.host() {
-            HostRef::IPAddress(ip) => assert_eq!(ip, IPv4Address::LOCALHOST.to_ip()),
-            _ => panic!("expected ip address"),
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn host_ipv6() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://[::1]")?;
-        match url.host() {
-            HostRef::IPAddress(ip) => assert_eq!(ip, IPv6Address::LOCALHOST.to_ip()),
-            _ => panic!("expected ip address"),
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn host_str() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://EXAMPLE.com")?;
+    fn host_str() {
+        let url: WebUrl = WebUrl::from_str("https://EXAMPLE.com").unwrap();
         assert_eq!(url.host_str(), "example.com");
 
-        let url = WebUrl::from_str("https://[::1]:80")?;
+        let url: WebUrl = WebUrl::from_str("https://[::1]:80").unwrap();
         assert_eq!(url.host_str(), "[::1]");
-
-        Ok(())
     }
 
     #[test]
-    fn set_host() -> Result<(), Box<dyn Error>> {
+    fn set_host() {
         // The host changes length, so the port, path, query, & fragment offsets must shift with it.
-        let mut url: WebUrl = WebUrl::from_str("http://host:8080/p?q#f")?;
+        let mut url: WebUrl = WebUrl::from_str("http://host:8080/p?q#f").unwrap();
 
         url.set_host(DomainRef::EXAMPLE);
         assert_eq!(url.as_str(), "http://example.com:8080/p?q#f");
@@ -185,15 +154,13 @@ mod tests {
             url.host(),
             HostRef::IPAddress(IPv4Address::LOCALHOST.to_ip())
         );
-
-        Ok(())
     }
 
     #[test]
-    fn with_host() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("http://host/p")?.with_host(DomainRef::EXAMPLE);
+    fn with_host() {
+        let url: WebUrl = WebUrl::from_str("http://host/p")
+            .unwrap()
+            .with_host(DomainRef::EXAMPLE);
         assert_eq!(url.as_str(), "http://example.com/p");
-
-        Ok(())
     }
 }

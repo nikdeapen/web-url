@@ -1,37 +1,38 @@
-use crate::Error;
-use crate::Path;
+use crate::{ParseError, Path};
 
 /// Parses the path from the prefix of `s`.
-pub fn parse_path(s: &str) -> Result<(Path<'_>, &str), Error> {
-    if let Some(qh) = s.as_bytes().iter().position(|c| *c == b'?' || *c == b'#') {
-        let path: Path = Path::try_from(&s[..qh])?;
-        let s: &str = &s[qh..];
-        Ok((path, s))
-    } else {
-        let path: Path = Path::try_from(s)?;
-        Ok((path, ""))
-    }
+pub(crate) fn parse_path(s: &str) -> Result<(Path<'_>, &str), ParseError> {
+    let end: usize = s
+        .as_bytes()
+        .iter()
+        .position(|c| *c == b'?' || *c == b'#')
+        .unwrap_or(s.len());
+    let (path, rest) = s.split_at(end);
+    Ok((Path::try_from(path)?, rest))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Path;
+    use crate::ParseError;
+    use crate::ParseError::InvalidPath;
     use crate::parse::parse_path;
 
+    type TestCase<'a> = (&'a str, Result<(&'a str, &'a str), ParseError>);
+
     #[test]
-    fn fn_parse_path() {
-        let test_cases: &[(&str, Option<(&str, &str)>)] = &[
-            ("", None),
-            ("no/starting/slash", None),
-            ("/", Some(("/", ""))),
-            ("/the/path", Some(("/the/path", ""))),
-            ("/the/path?query", Some(("/the/path", "?query"))),
-            ("/the/path#fragment", Some(("/the/path", "#fragment"))),
+    fn path() {
+        let test_cases: &[TestCase] = &[
+            ("", Err(InvalidPath)),
+            ("no/starting/slash", Err(InvalidPath)),
+            ("/", Ok(("/", ""))),
+            ("/the/path", Ok(("/the/path", ""))),
+            ("/the/path?query", Ok(("/the/path", "?query"))),
+            ("/the/path#fragment", Ok(("/the/path", "#fragment"))),
         ];
         for (s, expected) in test_cases {
-            let expected: Option<(Path, &str)> = expected.map(|(p, s)| (Path::new(p).unwrap(), s));
-            let result: Option<(Path, &str)> = parse_path(s).ok();
-            assert_eq!(result, expected, "s={}", s);
+            let result: Result<(&str, &str), ParseError> =
+                parse_path(s).map(|(path, rest)| (path.as_str(), rest));
+            assert_eq!(result, *expected, "s={}", s);
         }
     }
 }

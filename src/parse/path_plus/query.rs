@@ -1,34 +1,31 @@
-use crate::Error;
-use crate::Query;
+use crate::{ParseError, Query};
 
 /// Parses the optional query from the prefix of `s`.
 ///
 /// The query is `None` when `s` does not start with a '?'.
-pub fn parse_query(s: &str) -> Result<(Option<Query<'_>>, &str), Error> {
-    if !s.is_empty() && s.as_bytes()[0] == b'?' {
-        if let Some(hash) = s.as_bytes().iter().position(|c| *c == b'#') {
-            let (query, fragment) = s.split_at(hash);
-            let query: Query = Query::try_from(query)?;
-            Ok((Some(query), fragment))
-        } else {
-            let query: Query = Query::try_from(s)?;
-            Ok((Some(query), ""))
-        }
-    } else {
-        Ok((None, s))
+pub(crate) fn parse_query(s: &str) -> Result<(Option<Query<'_>>, &str), ParseError> {
+    if !s.starts_with('?') {
+        return Ok((None, s));
     }
+    let end: usize = s
+        .as_bytes()
+        .iter()
+        .position(|c| *c == b'#')
+        .unwrap_or(s.len());
+    let (query, rest) = s.split_at(end);
+    Ok((Some(Query::try_from(query)?), rest))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Error;
-    use crate::Query;
     use crate::parse::parse_query;
+    use crate::{ParseError, Query};
+
+    type TestCase<'a> = (&'a str, Result<(Option<Query<'a>>, &'a str), ParseError>);
 
     #[test]
-    #[allow(clippy::type_complexity)]
-    fn fn_parse_query() {
-        let test_cases: &[(&str, Result<(Option<Query>, &str), Error>)] = &[
+    fn query() {
+        let test_cases: &[TestCase] = &[
             ("", Ok((None, ""))),
             ("no&start=q", Ok((None, "no&start=q"))),
             ("?", Ok((Some(Query::new("?").unwrap()), ""))),
@@ -47,8 +44,8 @@ mod tests {
             ),
         ];
         for (s, expected) in test_cases {
-            let result: Result<(Option<Query>, &str), Error> = parse_query(s);
-            assert_eq!(result, *expected, "s={}", *s);
+            let result: Result<(Option<Query>, &str), ParseError> = parse_query(s);
+            assert_eq!(result, *expected, "s={}", s);
         }
     }
 }

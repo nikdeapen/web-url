@@ -1,11 +1,10 @@
-use crate::Error;
-use crate::Error::InvalidFragment;
-use crate::Fragment;
+use crate::ParseError::InvalidFragment;
+use crate::{Fragment, ParseError};
 
 /// Checks the optional `fragment`.
 ///
 /// The `fragment` must be a valid fragment or be empty.
-pub fn check_fragment(fragment: &str) -> Result<(), Error> {
+pub(crate) fn check_fragment(fragment: &str) -> Result<(), ParseError> {
     if fragment.is_empty() || Fragment::is_valid(fragment) {
         Ok(())
     } else {
@@ -15,13 +14,13 @@ pub fn check_fragment(fragment: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::Error;
-    use crate::Error::InvalidFragment;
+    use crate::ParseError;
+    use crate::ParseError::InvalidFragment;
     use crate::parse::check_fragment;
 
     #[test]
-    fn fn_check_fragment() {
-        let test_cases: &[(&str, Result<(), Error>)] = &[
+    fn fragment() {
+        let test_cases: &[(&str, Result<(), ParseError>)] = &[
             ("", Ok(())),
             ("fragment", Err(InvalidFragment)),
             ("#", Ok(())),
@@ -31,7 +30,7 @@ mod tests {
             ("#fragment ", Err(InvalidFragment)),
         ];
         for (fragment, expected) in test_cases {
-            let result: Result<(), Error> = check_fragment(fragment);
+            let result: Result<(), ParseError> = check_fragment(fragment);
             assert_eq!(result, *expected, "fragment={}", fragment);
         }
     }

@@ -29,42 +29,6 @@ impl Hash for WebUrl {
     }
 }
 
-impl PartialEq<str> for WebUrl {
-    fn eq(&self, other: &str) -> bool {
-        self.as_str() == other
-    }
-}
-
-impl PartialEq<WebUrl> for str {
-    fn eq(&self, other: &WebUrl) -> bool {
-        self == other.as_str()
-    }
-}
-
-impl PartialEq<&str> for WebUrl {
-    fn eq(&self, other: &&str) -> bool {
-        self.as_str() == *other
-    }
-}
-
-impl PartialEq<WebUrl> for &str {
-    fn eq(&self, other: &WebUrl) -> bool {
-        *self == other.as_str()
-    }
-}
-
-impl PartialEq<String> for WebUrl {
-    fn eq(&self, other: &String) -> bool {
-        self.as_str() == other.as_str()
-    }
-}
-
-impl PartialEq<WebUrl> for String {
-    fn eq(&self, other: &WebUrl) -> bool {
-        self.as_str() == other.as_str()
-    }
-}
-
 /// The `Borrow` contract holds since `Eq`, `Ord`, & `Hash` all delegate to the URL string. This
 /// enables map & set lookups by `&str`.
 impl Borrow<str> for WebUrl {
@@ -82,25 +46,15 @@ mod tests {
     use std::str::FromStr;
 
     fn hash_of(url: &WebUrl) -> u64 {
-        let mut hasher = DefaultHasher::new();
+        let mut hasher: DefaultHasher = DefaultHasher::new();
         url.hash(&mut hasher);
         hasher.finish()
     }
 
     #[test]
-    fn eq() {
-        let a = WebUrl::from_str("https://example.com").unwrap();
-        let b = WebUrl::from_str("https://example.com").unwrap();
-        let c = WebUrl::from_str("https://other.com").unwrap();
-
-        assert_eq!(a, b);
-        assert_ne!(a, c);
-    }
-
-    #[test]
     fn ord() {
-        let a = WebUrl::from_str("https://aaa.com").unwrap();
-        let b = WebUrl::from_str("https://bbb.com").unwrap();
+        let a: WebUrl = WebUrl::from_str("https://aaa.com").unwrap();
+        let b: WebUrl = WebUrl::from_str("https://bbb.com").unwrap();
 
         assert!(a < b);
         assert!(b > a);
@@ -108,11 +62,13 @@ mod tests {
     }
 
     #[test]
-    fn hash() {
-        let a = WebUrl::from_str("https://example.com").unwrap();
-        let b = WebUrl::from_str("https://example.com").unwrap();
+    fn eq() {
+        let a: WebUrl = WebUrl::from_str("https://example.com").unwrap();
+        let b: WebUrl = WebUrl::from_str("https://example.com").unwrap();
+        let c: WebUrl = WebUrl::from_str("https://other.com").unwrap();
 
-        assert_eq!(hash_of(&a), hash_of(&b));
+        assert_eq!(a, b);
+        assert_ne!(a, c);
     }
 
     #[test]
@@ -125,11 +81,19 @@ mod tests {
             ("http://host:080?q", "http://host:80/?q"),
         ];
         for (a, b) in test_cases {
-            let a = WebUrl::from_str(a).unwrap();
-            let b = WebUrl::from_str(b).unwrap();
+            let a: WebUrl = WebUrl::from_str(a).unwrap();
+            let b: WebUrl = WebUrl::from_str(b).unwrap();
             assert_eq!(a, b);
             assert_eq!(hash_of(&a), hash_of(&b), "a={} b={}", a, b);
         }
+    }
+
+    #[test]
+    fn hash() {
+        let a: WebUrl = WebUrl::from_str("https://example.com").unwrap();
+        let b: WebUrl = WebUrl::from_str("https://example.com").unwrap();
+
+        assert_eq!(hash_of(&a), hash_of(&b));
     }
 
     #[test]

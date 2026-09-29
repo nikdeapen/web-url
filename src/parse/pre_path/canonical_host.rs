@@ -2,7 +2,7 @@ use address::IPAddress;
 use std::fmt::Write;
 
 /// The canonical host string of an IP address, written to a stack buffer.
-pub struct CanonicalHost {
+pub(crate) struct CanonicalHost {
     buffer: [u8; Self::MAX_LEN],
     len: usize,
 }
@@ -11,13 +11,7 @@ impl CanonicalHost {
     //! Limits
 
     /// The maximum length of a canonical host string.
-    ///
-    /// The longest the `address` display produces is an IPv6 address with all eight groups & the
-    /// '[]' brackets: `[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]`, which is 41 chars. The
-    /// embedded-IPv4 form is only used when the leading groups are zero, so it is shorter. The
-    /// extra room covers that form at full width in case the display ever emits it:
-    /// `[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]`.
-    const MAX_LEN: usize = 47;
+    const MAX_LEN: usize = "[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]".len();
 }
 
 impl CanonicalHost {
@@ -27,7 +21,7 @@ impl CanonicalHost {
     ///
     /// An IPv6 address is bracketed, as it appears in a URL. The canonical form is the `address`
     /// display, so it is lowercase & its zero groups are elided.
-    pub fn new(ip: IPAddress) -> Self {
+    pub(crate) fn new(ip: IPAddress) -> Self {
         let mut host: Self = Self {
             buffer: [0; Self::MAX_LEN],
             len: 0,
@@ -50,10 +44,9 @@ impl CanonicalHost {
     //! Properties
 
     /// Gets the canonical host string.
-    pub fn as_str(&self) -> &str {
+    pub(crate) fn as_str(&self) -> &str {
         debug_assert!(std::str::from_utf8(&self.buffer[..self.len]).is_ok());
 
-        // The buffer holds the strings written to it, so it is valid UTF-8 up to the length.
         unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
     }
 }
@@ -95,7 +88,6 @@ mod tests {
         assert_eq!(canonical.as_str(), "127.0.0.1");
     }
 
-    /// The buffer is sized for the longest canonical host, so the longest ones must still fit.
     #[test]
     fn new_longest() {
         let test_cases: &[(&str, &str)] = &[
