@@ -1,16 +1,11 @@
-use crate::Error;
-use crate::Error::InvalidQuery;
-use crate::Param;
-use crate::PieceIterator;
-use crate::parse;
+use crate::ParseError::InvalidQuery;
+use crate::{ParseError, parse};
 use std::fmt::{Debug, Display, Formatter};
-use std::iter::Map;
 
 /// A web-based URL query.
 ///
 /// - The `query` string will not be empty and will always start with a '?'.
 /// - The `query` value (after the '?') may be empty.
-///
 ///
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.4>
@@ -34,7 +29,7 @@ impl<'a> Query<'a> {
     //! Construction
 
     /// Creates a new query.
-    pub const fn new(query: &'a str) -> Result<Self, Error> {
+    pub const fn new(query: &'a str) -> Result<Self, ParseError> {
         if Self::is_valid(query) {
             Ok(Self { query })
         } else {
@@ -54,7 +49,7 @@ impl<'a> Query<'a> {
 }
 
 impl<'a> TryFrom<&'a str> for Query<'a> {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(query: &'a str) -> Result<Self, Self::Error> {
         Self::new(query)
@@ -77,25 +72,6 @@ impl<'a> Query<'a> {
     }
 }
 
-impl<'a> Query<'a> {
-    //! Params
-
-    /// Creates a new iterator for the query parameters.
-    pub fn iter_params(self) -> Map<PieceIterator<'a>, fn(&'a str) -> Param<'a>> {
-        self.into_iter()
-    }
-}
-
-impl<'a> IntoIterator for Query<'a> {
-    type Item = Param<'a>;
-    type IntoIter = Map<PieceIterator<'a>, fn(&'a str) -> Param<'a>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        PieceIterator::new(self.value(), b'&')
-            .map(|piece| unsafe { Param::from_str_unchecked(piece) })
-    }
-}
-
 impl<'a> Debug for Query<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(self.query, f)
@@ -111,9 +87,6 @@ impl<'a> Display for Query<'a> {
 #[cfg(test)]
 mod tests {
     use crate::Query;
-
-    /// `(name, value)`
-    type ParamParts<'a> = (&'a str, Option<&'a str>);
 
     #[test]
     fn is_valid() {
@@ -145,31 +118,6 @@ mod tests {
         for (query, expected) in test_cases {
             let result: bool = Query::is_valid(query);
             assert_eq!(result, *expected, "query={}", query);
-        }
-    }
-
-    #[test]
-    fn iter_params() {
-        let test_cases: &[(&str, &[ParamParts])] = &[
-            ("?", &[("", None)]),
-            ("?&", &[("", None), ("", None)]),
-            ("?a", &[("a", None)]),
-            ("?a=", &[("a", Some(""))]),
-            (
-                "?the&query=params",
-                &[("the", None), ("query", Some("params"))],
-            ),
-            (
-                "?a=1&b=2&a=3",
-                &[("a", Some("1")), ("b", Some("2")), ("a", Some("3"))],
-            ),
-        ];
-
-        for (query, expected) in test_cases {
-            let query: Query = Query::new(query).unwrap();
-            let result: Vec<ParamParts> =
-                query.iter_params().map(|p| (p.name(), p.value())).collect();
-            assert_eq!(result.as_slice(), *expected, "query={}", query);
         }
     }
 }

@@ -4,7 +4,7 @@
 ///
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
-pub fn canonical_path_len(path: &str) -> usize {
+pub(crate) fn canonical_path_len(path: &str) -> usize {
     // The segments are scanned in reverse so the segments a ".." removes are known without a stack:
     // a ".." raises the skip count & the next kept segment lowers it.
     let mut len: usize = 0;
@@ -32,7 +32,7 @@ pub fn canonical_path_len(path: &str) -> usize {
 ///
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
-pub fn write_canonical_path(path: &str, url: &mut String) {
+pub(crate) fn write_canonical_path(path: &str, url: &mut String) {
     // The segments are written as they are scanned & a ".." truncates the last written segment, so
     // the written path is the segment stack. The truncation never reaches past `start`, which is
     // what keeps a leading ".." from escaping the path.
@@ -68,7 +68,7 @@ mod tests {
     use crate::parse::{canonical_path_len, write_canonical_path};
 
     #[test]
-    fn fn_write_canonical_path() {
+    fn canonical_path() {
         let test_cases: &[(&str, &str)] = &[
             // A path with no dot-segments is unchanged.
             ("/", "/"),
@@ -118,10 +118,8 @@ mod tests {
         }
     }
 
-    /// The path is appended to the URL, so a ".." must never truncate past what was already
-    /// written.
     #[test]
-    fn fn_write_canonical_path_appends() {
+    fn canonical_path_appends() {
         let mut result: String = String::from("https://host");
         write_canonical_path("/a/../../b", &mut result);
         assert_eq!(result, "https://host/b");

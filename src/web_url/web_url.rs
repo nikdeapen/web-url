@@ -56,16 +56,8 @@ impl WebUrl {
     ///   `scheme_len <= host_end <= port_end <= path_end <= query_end <= url.len()`.
     /// - The `ip` is the parsed host when the host is an IP address & `None` when it is a domain.
     /// - The `port` is the parsed port & matches the `[host_end..port_end]` text.
-    ///
-    /// Breaking the contract does not cause undefined behavior in this crate; the component
-    /// accessors return the wrong slice or panic. It is still `unsafe` because `host()` hands the
-    /// host slice to `DomainRef::new_unchecked`, whose own contract requires a valid domain name.
-    ///
-    /// The contract is `debug_assert`ed by re-parsing the `url`, which is the work this function
-    /// exists to skip, so the check is absent from release builds. Use `FromStr` or
-    /// `TryFrom<String>` to build a URL that is validated in release builds too.
     #[allow(clippy::too_many_arguments)]
-    pub unsafe fn new_unchecked<S>(
+    pub unsafe fn new_unchecked<S: Into<String>>(
         url: S,
         scheme_len: u32,
         host_end: u32,
@@ -74,10 +66,7 @@ impl WebUrl {
         port: Option<u16>,
         path_end: u32,
         query_end: u32,
-    ) -> Self
-    where
-        S: Into<String>,
-    {
+    ) -> Self {
         let url: Self = Self {
             url: url.into(),
             scheme_len,
@@ -166,6 +155,12 @@ impl WebUrl {
 impl WebUrl {
     //! Properties
 
+    /// Gets the URL string.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        self.url.as_str()
+    }
+
     /// Gets the length.
     #[must_use]
     pub fn len(&self) -> usize {
@@ -194,28 +189,24 @@ impl From<WebUrl> for String {
 #[cfg(test)]
 mod tests {
     use crate::WebUrl;
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn properties() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://example.com/p?q#f")?;
+    fn properties() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/p?q#f").unwrap();
+        assert_eq!(url.as_str(), "https://example.com/p?q#f");
         assert_eq!(url.len(), "https://example.com/p?q#f".len());
         assert!(!url.is_empty());
-
-        Ok(())
     }
 
     #[test]
-    fn deconstruction() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://example.com/p?q#f")?;
+    fn deconstruction() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/p?q#f").unwrap();
         let url: String = url.into_string();
         assert_eq!(url, "https://example.com/p?q#f");
 
         // The string is already normalized, so the round trip reuses it.
-        let url: WebUrl = WebUrl::try_from(url)?;
+        let url: WebUrl = WebUrl::try_from(url).unwrap();
         assert_eq!(String::from(url), "https://example.com/p?q#f");
-
-        Ok(())
     }
 }

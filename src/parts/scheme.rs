@@ -1,5 +1,5 @@
-use crate::Error;
-use crate::Error::InvalidScheme;
+use crate::ParseError;
+use crate::ParseError::InvalidScheme;
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL scheme.
@@ -71,7 +71,7 @@ impl<'a> Scheme<'a> {
     //! Construction
 
     /// Creates a new scheme.
-    pub const fn new(scheme: &'a str) -> Result<Self, Error> {
+    pub const fn new(scheme: &'a str) -> Result<Self, ParseError> {
         if Self::is_valid(scheme) {
             Ok(Self { scheme })
         } else {
@@ -91,7 +91,7 @@ impl<'a> Scheme<'a> {
 }
 
 impl<'a> TryFrom<&'a str> for Scheme<'a> {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(scheme: &'a str) -> Result<Self, Self::Error> {
         Self::new(scheme)

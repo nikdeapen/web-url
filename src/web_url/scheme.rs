@@ -36,7 +36,7 @@ impl WebUrl {
 
         // The host, port, path, query, & fragment follow the scheme & are unchanged, so their
         // lengths are saved to rebuild the offsets that the splice shifts.
-        let host_len: u32 = self.host_end - self.scheme_len - 3;
+        let host_len: u32 = self.host_end - self.host_start();
         let port_len: u32 = self.port_end - self.host_end;
         let path_len: u32 = self.path_end - self.port_end;
         let query_len: u32 = self.query_end - self.path_end;
@@ -44,7 +44,7 @@ impl WebUrl {
         self.url.replace_range(..end, insert);
 
         self.scheme_len = insert.len() as u32;
-        self.host_end = self.scheme_len + 3 + host_len;
+        self.host_end = self.host_start() + host_len;
         self.port_end = self.host_end + port_len;
         self.path_end = self.port_end + path_len;
         self.query_end = self.path_end + query_len;
@@ -65,25 +65,23 @@ impl WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::{Scheme, WebUrl};
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn scheme() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com")?;
-        assert_eq!(url.scheme().as_str(), "https");
-
-        let url = WebUrl::from_str("http://example.com")?;
-        assert_eq!(url.scheme().as_str(), "http");
-
-        let url = WebUrl::from_str("HTTPS://example.com")?;
-        assert_eq!(url.scheme().as_str(), "https");
-
-        Ok(())
+    fn scheme() {
+        let test_cases: &[(&str, &str)] = &[
+            ("https://example.com", "https"),
+            ("http://example.com", "http"),
+            ("HTTPS://example.com", "https"),
+        ];
+        for (input, expected) in test_cases {
+            let url: WebUrl = WebUrl::from_str(input).unwrap();
+            assert_eq!(url.scheme().as_str(), *expected, "input={}", input);
+        }
     }
 
     #[test]
-    fn set_scheme() -> Result<(), Box<dyn Error>> {
+    fn set_scheme() {
         // The scheme changes length, so every offset after it must shift with it.
         let test_cases: &[(&str, &str, &str)] = &[
             ("http://host/p?q#f", "https", "https://host/p?q#f"),
@@ -92,20 +90,18 @@ mod tests {
             ("http://[::1]/p?q#f", "https", "https://[::1]/p?q#f"),
         ];
         for (input, scheme, expected) in test_cases {
-            let mut url: WebUrl = WebUrl::from_str(input)?;
-            url.set_scheme(Scheme::try_from(*scheme)?);
+            let mut url: WebUrl = WebUrl::from_str(input).unwrap();
+            url.set_scheme(Scheme::try_from(*scheme).unwrap());
             assert_eq!(url.as_str(), *expected, "input={}", input);
             assert_eq!(url.scheme().as_str(), *scheme, "input={}", input);
         }
-
-        Ok(())
     }
 
     #[test]
-    fn with_scheme() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("http://example.com/p")?.with_scheme(Scheme::HTTPS);
+    fn with_scheme() {
+        let url: WebUrl = WebUrl::from_str("http://example.com/p")
+            .unwrap()
+            .with_scheme(Scheme::HTTPS);
         assert_eq!(url.as_str(), "https://example.com/p");
-
-        Ok(())
     }
 }

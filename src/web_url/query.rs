@@ -36,10 +36,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    pub fn set_query<'a, Q>(&mut self, query: Q)
-    where
-        Q: Into<Option<Query<'a>>>,
-    {
+    pub fn set_query<'a, Q: Into<Option<Query<'a>>>>(&mut self, query: Q) {
         // The query is preserved exactly, so a query string is already the normalized form. A URL
         // with no query has no '?' either.
         let query: Option<Query> = query.into();
@@ -50,10 +47,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
-    pub fn with_query<'a, Q>(mut self, query: Q) -> Self
-    where
-        Q: Into<Option<Query<'a>>>,
-    {
+    pub fn with_query<'a, Q: Into<Option<Query<'a>>>>(mut self, query: Q) -> Self {
         self.set_query(query);
         self
     }
@@ -82,23 +76,20 @@ impl WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::{Query, WebUrl};
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn query_accessor() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com/path?key=value")?;
-        let query = url.query().unwrap();
+    fn query() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/path?key=value").unwrap();
+        let query: Query = url.query().unwrap();
         assert_eq!(query.as_str(), "?key=value");
 
-        let url = WebUrl::from_str("https://example.com/path")?;
+        let url: WebUrl = WebUrl::from_str("https://example.com/path").unwrap();
         assert!(url.query().is_none());
-
-        Ok(())
     }
 
     #[test]
-    fn set_query() -> Result<(), Box<dyn Error>> {
+    fn set_query() {
         // The query is preserved exactly & a URL with no query has no '?' either.
         let test_cases: &[(&str, Option<&str>, &str)] = &[
             ("http://host/p", Some("?a=1"), "http://host/p?a=1"),
@@ -114,24 +105,21 @@ mod tests {
             ("http://host/p?a=1#f", None, "http://host/p#f"),
         ];
         for (input, query, expected) in test_cases {
-            let mut url: WebUrl = WebUrl::from_str(input)?;
-            url.set_query(query.map(Query::try_from).transpose()?);
+            let mut url: WebUrl = WebUrl::from_str(input).unwrap();
+            url.set_query(query.map(|query| Query::try_from(query).unwrap()));
             assert_eq!(url.as_str(), *expected, "input={}", input);
             assert_eq!(url.query().map(Query::as_str), *query, "input={}", input);
         }
-
-        Ok(())
     }
 
     #[test]
-    fn with_query() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl =
-            WebUrl::from_str("https://example.com/p")?.with_query(Query::try_from("?a=1")?);
+    fn with_query() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/p")
+            .unwrap()
+            .with_query(Query::try_from("?a=1").unwrap());
         assert_eq!(url.as_str(), "https://example.com/p?a=1");
 
         let url: WebUrl = url.with_query(None);
         assert_eq!(url.as_str(), "https://example.com/p");
-
-        Ok(())
     }
 }

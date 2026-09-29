@@ -1,7 +1,7 @@
 use crate::{Param, WebUrl};
 
 impl WebUrl {
-    //! Query Parameter Mutations
+    //! Param Mutation
 
     /// Adds the query `param`.
     ///
@@ -9,13 +9,6 @@ impl WebUrl {
     /// present. The '?' separator is used when the URL has no query yet, otherwise the '&'
     /// separator is used. Since an empty region between separators is an empty parameter, a query
     /// that is just a '?' already has one parameter & therefore still needs the '&' separator.
-    ///
-    /// # Example
-    /// Adding the param `p=1`:
-    /// - `"/"` -> `"/?p=1"`
-    /// - `"/?"` -> `"/?&p=1"`
-    /// - `"/?a=2"` -> `"/?a=2&p=1"`
-    /// - `"/?&"` -> `"/?&&p=1"`
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
@@ -60,12 +53,6 @@ impl WebUrl {
     ///
     /// Removing every param removes the query along with its '?', since a query that is just a '?'
     /// is still one empty param.
-    ///
-    /// # Example
-    /// Removing the params named `a`:
-    /// - `"/?a=1"` -> `"/"`
-    /// - `"/?a=1&b=2"` -> `"/?b=2"`
-    /// - `"/?a=1&b=2&a=3"` -> `"/?b=2"`
     pub fn remove_params(&mut self, name: &str) -> usize {
         // The query is scanned before it is rebuilt so that a URL without a matching param is left
         // untouched & never allocates.
@@ -97,13 +84,6 @@ impl WebUrl {
     ///
     /// The first param with the name keeps its position & the rest are removed. When no param has
     /// the name the `param` is appended as with `add_param`.
-    ///
-    /// # Example
-    /// Replacing with the param `a=9`:
-    /// - `"/"` -> `"/?a=9"`
-    /// - `"/?a=1"` -> `"/?a=9"`
-    /// - `"/?b=2&a=1"` -> `"/?b=2&a=9"`
-    /// - `"/?a=1&b=2&a=3"` -> `"/?a=9&b=2"`
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
@@ -168,7 +148,6 @@ impl WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::{Fragment, Param, WebUrl};
-    use std::error::Error;
     use std::str::FromStr;
 
     /// Snapshots the query params as owned values.
@@ -177,7 +156,7 @@ mod tests {
     fn params_of(url: &WebUrl) -> Vec<(String, Option<String>)> {
         url.query()
             .map(|q| {
-                q.iter_params()
+                q.params()
                     .map(|p| (p.name().to_string(), p.value().map(str::to_string)))
                     .collect()
             })
@@ -185,21 +164,19 @@ mod tests {
     }
 
     #[test]
-    fn add_param() -> Result<(), Box<dyn Error>> {
-        let mut url: WebUrl = WebUrl::from_str("https://example.com")?;
-        url.set_fragment(Fragment::try_from("#fragment")?);
+    fn add_param() {
+        let mut url: WebUrl = WebUrl::from_str("https://example.com").unwrap();
+        url.set_fragment(Fragment::try_from("#fragment").unwrap());
 
-        url.add_param(Param::try_from("one")?);
+        url.add_param(Param::try_from("one").unwrap());
         assert_eq!("https://example.com/?one#fragment", url.as_str());
 
-        url.add_param(Param::try_from("two=3")?);
+        url.add_param(Param::try_from("two=3").unwrap());
         assert_eq!("https://example.com/?one&two=3#fragment", url.as_str());
-
-        Ok(())
     }
 
     #[test]
-    fn add_param_appends_exactly_one_param() -> Result<(), Box<dyn Error>> {
+    fn add_param_appends_exactly_one_param() {
         // The '?' & '&' chars are separators, so an empty region between them is an empty
         // parameter. Adding a parameter must append exactly one & leave the existing ones
         // untouched.
@@ -214,12 +191,12 @@ mod tests {
             ("https://host/p#f", "https://host/p?p=1#f", 0, 1),
         ];
         for (input, expected, before_count, after_count) in test_cases {
-            let mut url: WebUrl = WebUrl::from_str(input)?;
+            let mut url: WebUrl = WebUrl::from_str(input).unwrap();
 
             let before: Vec<(String, Option<String>)> = params_of(&url);
             assert_eq!(before.len(), *before_count, "input={input}");
 
-            url.add_param(Param::try_from("p=1")?);
+            url.add_param(Param::try_from("p=1").unwrap());
             assert_eq!(url.as_str(), *expected, "input={input}");
 
             let after: Vec<(String, Option<String>)> = params_of(&url);
@@ -234,7 +211,7 @@ mod tests {
             );
 
             // The path & fragment are untouched & the URL still re-parses identically.
-            let reparsed: WebUrl = WebUrl::from_str(url.as_str())?;
+            let reparsed: WebUrl = WebUrl::from_str(url.as_str()).unwrap();
             assert_eq!(reparsed, url, "input={input}");
             assert_eq!(reparsed.path().as_str(), "/p", "input={input}");
             assert_eq!(
@@ -243,14 +220,12 @@ mod tests {
                 "input={input}"
             );
         }
-
-        Ok(())
     }
 
     #[test]
-    fn add_param_repeated() -> Result<(), Box<dyn Error>> {
+    fn add_param_repeated() {
         // Repeated additions must keep appending one at a time.
-        let mut url: WebUrl = WebUrl::from_str("https://host/p#f")?;
+        let mut url: WebUrl = WebUrl::from_str("https://host/p#f").unwrap();
         for (i, expected) in [
             "https://host/p?a=0#f",
             "https://host/p?a=0&a=1#f",
@@ -259,43 +234,38 @@ mod tests {
         .iter()
         .enumerate()
         {
-            url.add_param(Param::try_from(format!("a={i}").as_str())?);
+            url.add_param(Param::try_from(format!("a={i}").as_str()).unwrap());
             assert_eq!(url.as_str(), *expected);
-            assert_eq!(url.query().unwrap().iter_params().count(), i + 1);
+            assert_eq!(url.query().unwrap().params().count(), i + 1);
         }
-
-        Ok(())
     }
 
     #[test]
-    fn add_param_without_value() -> Result<(), Box<dyn Error>> {
+    fn add_param_without_value() {
         // A param with no value has no '=' at all, which is distinct from an empty value.
-        let mut url: WebUrl = WebUrl::from_str("https://host/p")?;
-        url.add_param(Param::try_from("flag")?);
+        let mut url: WebUrl = WebUrl::from_str("https://host/p").unwrap();
+        url.add_param(Param::try_from("flag").unwrap());
         assert_eq!(url.as_str(), "https://host/p?flag");
 
-        url.add_param(Param::try_from("empty=")?);
+        url.add_param(Param::try_from("empty=").unwrap());
         assert_eq!(url.as_str(), "https://host/p?flag&empty=");
 
-        let params: Vec<Param> = url.query().unwrap().iter_params().collect();
+        let params: Vec<Param> = url.query().unwrap().params().collect();
         assert_eq!(params[0].value(), None);
         assert_eq!(params[1].value(), Some(""));
-
-        Ok(())
     }
 
     #[test]
-    fn with_param() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com")?
-            .with_param(Param::try_from("a=1")?)
-            .with_param(Param::try_from("b=2")?);
+    fn with_param() {
+        let url: WebUrl = WebUrl::from_str("https://example.com")
+            .unwrap()
+            .with_param(Param::try_from("a=1").unwrap())
+            .with_param(Param::try_from("b=2").unwrap());
         assert_eq!(url.as_str(), "https://example.com/?a=1&b=2");
-
-        Ok(())
     }
 
     #[test]
-    fn remove_params() -> Result<(), Box<dyn Error>> {
+    fn remove_params() {
         // Removing every param removes the query along with its '?'.
         let test_cases: &[(&str, &str, usize, &str)] = &[
             ("https://host/p?a=1", "a", 1, "https://host/p"),
@@ -313,7 +283,7 @@ mod tests {
             ("https://host/p?&a=1", "", 1, "https://host/p?a=1"),
         ];
         for (input, name, removed, expected) in test_cases {
-            let mut url: WebUrl = WebUrl::from_str(input)?;
+            let mut url: WebUrl = WebUrl::from_str(input).unwrap();
             assert_eq!(
                 url.remove_params(name),
                 *removed,
@@ -321,20 +291,18 @@ mod tests {
             );
             assert_eq!(url.as_str(), *expected, "input={input} name={name}");
         }
-
-        Ok(())
     }
 
     #[test]
-    fn without_params() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")?.without_params("a");
+    fn without_params() {
+        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")
+            .unwrap()
+            .without_params("a");
         assert_eq!(url.as_str(), "https://host/p?b=2");
-
-        Ok(())
     }
 
     #[test]
-    fn replace_params() -> Result<(), Box<dyn Error>> {
+    fn replace_params() {
         // The first param with the name keeps its position & the rest are removed.
         let test_cases: &[(&str, &str, usize, &str)] = &[
             ("https://host/p?a=1", "a=9", 1, "https://host/p?a=9"),
@@ -357,8 +325,8 @@ mod tests {
             ("https://host/p?", "", 1, "https://host/p?"),
         ];
         for (input, param, replaced, expected) in test_cases {
-            let mut url: WebUrl = WebUrl::from_str(input)?;
-            let param: Param = Param::try_from(*param)?;
+            let mut url: WebUrl = WebUrl::from_str(input).unwrap();
+            let param: Param = Param::try_from(*param).unwrap();
             assert_eq!(
                 url.replace_params(param),
                 *replaced,
@@ -366,16 +334,13 @@ mod tests {
             );
             assert_eq!(url.as_str(), *expected, "input={input} param={param}");
         }
-
-        Ok(())
     }
 
     #[test]
-    fn with_replaced_params() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")?
-            .with_replaced_params(Param::try_from("a=9")?);
+    fn with_replaced_params() {
+        let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")
+            .unwrap()
+            .with_replaced_params(Param::try_from("a=9").unwrap());
         assert_eq!(url.as_str(), "https://host/p?a=9&b=2");
-
-        Ok(())
     }
 }

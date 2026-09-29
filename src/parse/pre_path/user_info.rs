@@ -1,5 +1,5 @@
-use crate::Error;
-use crate::Error::UserInfoNotSupported;
+use crate::ParseError;
+use crate::ParseError::UserInfoNotSupported;
 use crate::parse::is_authority_end;
 
 /// Checks that the authority at the prefix of `s` has no user info.
@@ -12,7 +12,7 @@ use crate::parse::is_authority_end;
 /// optional port. User info is rejected rather than silently discarded, since discarding it would
 /// drop credentials & leave the caller with an unauthenticated URL & no indication why.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-3.2.1>
-pub fn check_no_user_info(s: &str) -> Result<(), Error> {
+pub(crate) fn check_no_user_info(s: &str) -> Result<(), ParseError> {
     let end: usize = s
         .as_bytes()
         .iter()
@@ -28,13 +28,13 @@ pub fn check_no_user_info(s: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::Error;
-    use crate::Error::UserInfoNotSupported;
+    use crate::ParseError;
+    use crate::ParseError::UserInfoNotSupported;
     use crate::parse::check_no_user_info;
 
     #[test]
-    fn fn_check_no_user_info() {
-        let test_cases: &[(&str, Result<(), Error>)] = &[
+    fn no_user_info() {
+        let test_cases: &[(&str, Result<(), ParseError>)] = &[
             // No user info.
             ("", Ok(())),
             ("host", Ok(())),
@@ -61,7 +61,7 @@ mod tests {
             ("user@[::1]:80/p", Err(UserInfoNotSupported)),
         ];
         for (s, expected) in test_cases {
-            let result: Result<(), Error> = check_no_user_info(s);
+            let result: Result<(), ParseError> = check_no_user_info(s);
             assert_eq!(result, *expected, "s={}", s);
         }
     }

@@ -1,6 +1,5 @@
-use crate::Error;
-use crate::Error::InvalidParam;
-use crate::parse;
+use crate::ParseError::InvalidParam;
+use crate::{ParseError, parse};
 use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL query parameter.
@@ -50,6 +49,7 @@ impl<'a> Param<'a> {
     }
 
     /// Splits the `param` into a name & optional value on the first '=' char.
+    #[inline]
     const fn split(param: &str) -> (&str, Option<&str>) {
         let bytes: &[u8] = param.as_bytes();
         let mut index: usize = 0;
@@ -69,7 +69,7 @@ impl<'a> Param<'a> {
     //! Construction
 
     /// Creates a new query parameter.
-    pub const fn new(name: &'a str, value: Option<&'a str>) -> Result<Self, Error> {
+    pub const fn new(name: &'a str, value: Option<&'a str>) -> Result<Self, ParseError> {
         if Self::is_valid_parts(name, value) {
             Ok(Self { name, value })
         } else {
@@ -91,6 +91,7 @@ impl<'a> Param<'a> {
     ///
     /// # Safety
     /// The `param` must be valid.
+    #[inline]
     pub const unsafe fn from_str_unchecked(param: &'a str) -> Self {
         let (name, value) = Self::split(param);
         unsafe { Self::new_unchecked(name, value) }
@@ -98,7 +99,7 @@ impl<'a> Param<'a> {
 }
 
 impl<'a> TryFrom<&'a str> for Param<'a> {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(param: &'a str) -> Result<Self, Self::Error> {
         let (name, value) = Self::split(param);

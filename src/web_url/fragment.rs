@@ -30,10 +30,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    pub fn set_fragment<'a, F>(&mut self, fragment: F)
-    where
-        F: Into<Option<Fragment<'a>>>,
-    {
+    pub fn set_fragment<'a, F: Into<Option<Fragment<'a>>>>(&mut self, fragment: F) {
         let fragment: Option<Fragment> = fragment.into();
 
         // The fragment runs from `query_end` to the end of the URL, so truncating to `query_end`
@@ -57,10 +54,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
-    pub fn with_fragment<'a, F>(mut self, fragment: F) -> Self
-    where
-        F: Into<Option<Fragment<'a>>>,
-    {
+    pub fn with_fragment<'a, F: Into<Option<Fragment<'a>>>>(mut self, fragment: F) -> Self {
         self.set_fragment(fragment);
         self
     }
@@ -69,53 +63,41 @@ impl WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::{Fragment, WebUrl};
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn fragment_accessor() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com/path#section")?;
-        let fragment = url.fragment().unwrap();
+    fn fragment() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/path#section").unwrap();
+        let fragment: Fragment = url.fragment().unwrap();
         assert_eq!(fragment.as_str(), "#section");
         assert_eq!(fragment.value(), "section");
 
-        let url = WebUrl::from_str("https://example.com/path")?;
+        let url: WebUrl = WebUrl::from_str("https://example.com/path").unwrap();
         assert!(url.fragment().is_none());
-
-        Ok(())
     }
 
     #[test]
-    fn set_fragment() -> Result<(), Box<dyn Error>> {
-        let mut url: WebUrl = WebUrl::from_str("https://example.com")?;
-
-        url.set_fragment(Fragment::try_from("#fragment")?);
+    fn set_fragment() {
+        let mut url: WebUrl = WebUrl::from_str("https://example.com").unwrap();
+        url.set_fragment(Fragment::try_from("#fragment").unwrap());
         assert_eq!(url.as_str(), "https://example.com/#fragment");
 
-        Ok(())
-    }
-
-    #[test]
-    fn set_fragment_none() -> Result<(), Box<dyn Error>> {
-        let mut url = WebUrl::from_str("https://example.com/path#fragment")?;
-        assert!(url.fragment().is_some());
-
+        let mut url: WebUrl = WebUrl::from_str("https://example.com/path#fragment").unwrap();
         url.set_fragment(None);
         assert!(url.fragment().is_none());
         assert_eq!(url.as_str(), "https://example.com/path");
-
-        Ok(())
     }
 
     #[test]
-    fn with_fragment() -> Result<(), Box<dyn Error>> {
-        let url =
-            WebUrl::from_str("https://example.com")?.with_fragment(Fragment::try_from("#frag")?);
+    fn with_fragment() {
+        let url: WebUrl = WebUrl::from_str("https://example.com")
+            .unwrap()
+            .with_fragment(Fragment::try_from("#frag").unwrap());
         assert_eq!(url.as_str(), "https://example.com/#frag");
 
-        let url = WebUrl::from_str("https://example.com/path#old")?.with_fragment(None);
+        let url: WebUrl = WebUrl::from_str("https://example.com/path#old")
+            .unwrap()
+            .with_fragment(None);
         assert_eq!(url.as_str(), "https://example.com/path");
-
-        Ok(())
     }
 }

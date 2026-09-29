@@ -27,7 +27,7 @@ const VALID: [u64; 4] = {
 ///
 /// The '%' char is valid here since it begins a percent-encoded octet; the two hex digits that must
 /// follow it are checked by [`is_valid_chars`].
-pub const fn is_valid_char(c: u8, exclude: &str) -> bool {
+const fn is_valid_char(c: u8, exclude: &str) -> bool {
     // The mask is a table lookup rather than a scan since this runs once per char of every path,
     // query, & fragment.
     if VALID[(c >> 6) as usize] & (1 << (c & 0b11_1111)) == 0 {
@@ -55,7 +55,7 @@ pub const fn is_valid_char(c: u8, exclude: &str) -> bool {
 /// # RFC 3986
 /// A '%' char begins a percent-encoded octet & must be followed by exactly two hex digits.
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-2.1>
-pub const fn is_valid_chars(chars: &[u8], exclude: &str) -> bool {
+pub(crate) const fn is_valid_chars(chars: &[u8], exclude: &str) -> bool {
     let mut index: usize = 0;
     while index < chars.len() {
         let c: u8 = chars[index];
@@ -79,7 +79,7 @@ pub const fn is_valid_chars(chars: &[u8], exclude: &str) -> bool {
 
 /// Checks if the `segment` is valid. The `segment` must start with `start` & the chars in `exclude`
 /// are invalid.
-pub const fn is_valid_segment(segment: &str, start: u8, exclude: &str) -> bool {
+pub(crate) const fn is_valid_segment(segment: &str, start: u8, exclude: &str) -> bool {
     let bytes: &[u8] = segment.as_bytes();
     if bytes.is_empty() || bytes[0] != start {
         return false;
@@ -92,10 +92,10 @@ pub const fn is_valid_segment(segment: &str, start: u8, exclude: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::{is_valid_char, is_valid_chars, is_valid_segment};
+    use crate::parse::is_valid::{is_valid_char, is_valid_chars, is_valid_segment};
 
     #[test]
-    fn fn_is_valid_char() {
+    fn valid_char() {
         // Every char is checked so the mask cannot drift from the RFC 3986 char set.
         for c in 0..=u8::MAX {
             let expected: bool = c.is_ascii_alphanumeric() || b"-._~!$&'()*+,;=%:@/?".contains(&c);
@@ -113,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn fn_is_valid_chars() {
+    fn valid_chars() {
         let test_cases: &[(&str, bool)] = &[
             ("", true),
             ("azAZ09", true),
@@ -148,9 +148,8 @@ mod tests {
         }
     }
 
-    /// The escape is consumed whole, so excluding a char must not reject its percent-encoded form.
     #[test]
-    fn fn_is_valid_chars_exclude() {
+    fn valid_chars_exclude() {
         assert!(!is_valid_chars(b"=", "&="));
         assert!(!is_valid_chars(b"&", "&="));
         assert!(is_valid_chars(b"%3D", "&="));
@@ -158,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn fn_is_valid_segment() {
+    fn valid_segment() {
         let test_cases: &[(&str, u8, &str, bool)] = &[
             ("", b'/', "", false),
             ("/", b'/', "", true),

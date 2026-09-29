@@ -1,5 +1,4 @@
-use crate::parse;
-use crate::{Path, WebUrl};
+use crate::{Path, WebUrl, parse};
 
 impl WebUrl {
     //! Path
@@ -63,25 +62,19 @@ impl WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::{Path, WebUrl};
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn path_explicit() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com/the/path")?;
+    fn path() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/the/path").unwrap();
         assert_eq!(url.path().as_str(), "/the/path");
-        Ok(())
-    }
 
-    #[test]
-    fn path_default() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com")?;
+        let url: WebUrl = WebUrl::from_str("https://example.com").unwrap();
         assert_eq!(url.path().as_str(), "/");
-        Ok(())
     }
 
     #[test]
-    fn set_path() -> Result<(), Box<dyn Error>> {
+    fn set_path() {
         // The path is normalized as it is set, so the dot-segments never reach the URL.
         let test_cases: &[(&str, &str, &str)] = &[
             ("http://host/old?q#f", "/new", "http://host/new?q#f"),
@@ -94,20 +87,17 @@ mod tests {
             ("http://host:8080/old?q", "/new", "http://host:8080/new?q"),
         ];
         for (input, path, expected) in test_cases {
-            let mut url: WebUrl = WebUrl::from_str(input)?;
-            url.set_path(Path::try_from(*path)?);
+            let mut url: WebUrl = WebUrl::from_str(input).unwrap();
+            url.set_path(Path::try_from(*path).unwrap());
             assert_eq!(url.as_str(), *expected, "input={} path={}", input, path);
         }
-
-        Ok(())
     }
 
     #[test]
-    fn with_path() -> Result<(), Box<dyn Error>> {
-        let url: WebUrl =
-            WebUrl::from_str("https://example.com/old")?.with_path(Path::try_from("/new")?);
+    fn with_path() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/old")
+            .unwrap()
+            .with_path(Path::try_from("/new").unwrap());
         assert_eq!(url.as_str(), "https://example.com/new");
-
-        Ok(())
     }
 }

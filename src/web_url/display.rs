@@ -1,16 +1,6 @@
 use crate::WebUrl;
 use std::fmt::{Debug, Display, Formatter};
 
-impl WebUrl {
-    //! Display
-
-    /// Gets the URL string.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        self.url.as_str()
-    }
-}
-
 impl AsRef<str> for WebUrl {
     fn as_ref(&self) -> &str {
         self.as_str()
@@ -19,7 +9,7 @@ impl AsRef<str> for WebUrl {
 
 impl Debug for WebUrl {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self, f)
+        Debug::fmt(self.url.as_str(), f)
     }
 }
 
@@ -32,15 +22,12 @@ impl Display for WebUrl {
 #[cfg(test)]
 mod tests {
     use crate::WebUrl;
-    use std::error::Error;
     use std::str::FromStr;
 
     #[test]
-    fn display() -> Result<(), Box<dyn Error>> {
-        let url = WebUrl::from_str("https://example.com/path?query=1#frag")?;
-        assert_eq!(url.as_str(), "https://example.com/path?query=1#frag");
+    fn display() {
+        let url: WebUrl = WebUrl::from_str("https://example.com/path?query=1#frag").unwrap();
         assert_eq!(url.as_ref(), "https://example.com/path?query=1#frag");
         assert_eq!(url.to_string(), "https://example.com/path?query=1#frag");
-        Ok(())
     }
 }

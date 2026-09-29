@@ -1,7 +1,6 @@
-use crate::Error;
-use crate::Error::UrlTooLong;
-use crate::WebUrl;
+use crate::ParseError::UrlTooLong;
 use crate::parse::{PathPlus, PrePath};
+use crate::{ParseError, WebUrl};
 use address::IPAddress;
 
 /// Finalizes the web-based URL from the pre-path & path-plus parts.
@@ -10,11 +9,11 @@ use address::IPAddress;
 ///
 /// # Safety
 /// The given URL must match the given pre-path & path-plus parts.
-pub unsafe fn finalize_web_url(
+pub(crate) unsafe fn finalize_web_url(
     mut url: String,
     pre_path: PrePath,
     path_plus: PathPlus,
-) -> Result<WebUrl, (Error, String)> {
+) -> Result<WebUrl, (ParseError, String)> {
     if url.len() > WebUrl::MAX_LEN {
         return Err((UrlTooLong, url));
     }

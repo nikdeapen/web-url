@@ -2,18 +2,13 @@
 name = "web-url"
 version = "0.11.0"
 description = "This library aids in processing web-based URLs."
-readme = "README.md"
 repository = "https://github.com/nikdeapen/web-url"
-homepage = "https://github.com/nikdeapen/web-url"
-authors = ["Nik Deapen <nik@deapen.com>"]
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.87"
 license = "MIT"
 keywords = ["url", "web", "parse", "normalization"]
 categories = ["parser-implementations", "web-programming"]
-
-[dependencies]
-address = "0.22.0"
+exclude = [".github/", ".idea/", ".gitignore", "ISSUES.md"]
 
 [lints.rust]
 missing_debug_implementations = "warn"
@@ -23,3 +18,6 @@ missing_docs = "warn"
 copy_iterator = "warn"
 module_inception = "allow"
 must_use_candidate = "warn"
+
+[dependencies]
+address = "0.24.0"

@@ -65,7 +65,25 @@ jobs:
         with:
           key: msrv
       - name: Check
-        run: cargo check --locked
+        run: cargo check --locked --all-features
+  docs_rs:
+    name: Docs.rs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: docs_rs
+      - name: Docs
+        run: cargo doc --locked --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: --cfg docsrs -D warnings
   build:
     name: Build
     runs-on: ubuntu-latest

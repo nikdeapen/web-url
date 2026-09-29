@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::ParseError;
 use std::fmt::{Display, Formatter};
 
 /// An error parsing a web-based URL from an owned string.
@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 /// The invalid URL string can be recovered, like `std::string::FromUtf8Error`.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct InvalidUrlError {
-    error: Error,
+    error: ParseError,
     url: String,
 }
 
@@ -14,7 +14,7 @@ impl InvalidUrlError {
     //! Construction
 
     /// Creates a new invalid URL error.
-    pub(crate) const fn new(error: Error, url: String) -> Self {
+    pub(crate) const fn new(error: ParseError, url: String) -> Self {
         Self { error, url }
     }
 }
@@ -24,7 +24,7 @@ impl InvalidUrlError {
 
     /// Gets the parse error.
     #[must_use]
-    pub const fn error(&self) -> Error {
+    pub const fn error(&self) -> ParseError {
         self.error
     }
 
@@ -45,7 +45,7 @@ impl InvalidUrlError {
     }
 }
 
-impl From<InvalidUrlError> for Error {
+impl From<InvalidUrlError> for ParseError {
     fn from(error: InvalidUrlError) -> Self {
         error.error
     }
@@ -53,10 +53,8 @@ impl From<InvalidUrlError> for Error {
 
 impl Display for InvalidUrlError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.pad(self.error.message())
+        Display::fmt(&self.error, f)
     }
 }
 
-/// The `source` is not the parse error: its message is this error's message, so a chain would just
-/// print it twice. Use `error` for the typed parse error.
 impl std::error::Error for InvalidUrlError {}
