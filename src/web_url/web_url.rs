@@ -157,19 +157,19 @@ impl WebUrl {
 
     /// Gets the URL string.
     #[must_use]
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         self.url.as_str()
     }
 
     /// Gets the length.
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.url.len()
     }
 
     /// Checks if the URL is empty. (always false)
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         false
     }
 

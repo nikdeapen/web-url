@@ -27,6 +27,7 @@
 - Add percent-encoding encode & decode helpers.
 - Add `TryFrom<&str>` for `WebUrl`; only `FromStr` & `TryFrom<String>` exist.
 - Add `WebUrl::params` yielding the query params, empty when there is no query.
+- Add `Query::param` & `WebUrl::param` getting the first param with a name.
 - Add `WebUrl::host_str`; the `HostRef` from `host()` drops the '[]' brackets of an IPv6 host.
 - Add a `parse(&[u8])` entry point like the `address` types; URLs are ASCII, so no UTF-8 pass.
 - Add an optional `serde` feature like the `address` crate has.

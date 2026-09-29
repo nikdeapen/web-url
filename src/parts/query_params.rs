@@ -1,20 +1,20 @@
-use crate::{Param, PieceIterator, Query};
+use crate::{PieceIterator, Query, QueryParam};
 use std::iter::FusedIterator;
 
 impl<'a> Query<'a> {
     //! Params
 
     /// Gets the params.
-    pub const fn params(self) -> Params<'a> {
-        Params {
+    pub const fn params(self) -> QueryParams<'a> {
+        QueryParams {
             pieces: PieceIterator::new(self.value(), b'&'),
         }
     }
 }
 
 impl<'a> IntoIterator for Query<'a> {
-    type Item = Param<'a>;
-    type IntoIter = Params<'a>;
+    type Item = QueryParam<'a>;
+    type IntoIter = QueryParams<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.params()
@@ -24,18 +24,18 @@ impl<'a> IntoIterator for Query<'a> {
 /// An iterator over the params of a query.
 #[must_use]
 #[derive(Clone, Debug)]
-pub struct Params<'a> {
+pub struct QueryParams<'a> {
     pieces: PieceIterator<'a>,
 }
 
-impl<'a> Iterator for Params<'a> {
-    type Item = Param<'a>;
+impl<'a> Iterator for QueryParams<'a> {
+    type Item = QueryParam<'a>;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.pieces
             .next()
-            .map(|param| unsafe { Param::from_str_unchecked(param) })
+            .map(|param| unsafe { QueryParam::new_unchecked(param) })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -43,16 +43,16 @@ impl<'a> Iterator for Params<'a> {
     }
 }
 
-impl<'a> DoubleEndedIterator for Params<'a> {
+impl<'a> DoubleEndedIterator for QueryParams<'a> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.pieces
             .next_back()
-            .map(|param| unsafe { Param::from_str_unchecked(param) })
+            .map(|param| unsafe { QueryParam::new_unchecked(param) })
     }
 }
 
-impl<'a> FusedIterator for Params<'a> {}
+impl<'a> FusedIterator for QueryParams<'a> {}
 
 #[cfg(test)]
 mod tests {

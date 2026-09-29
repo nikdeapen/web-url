@@ -4,7 +4,7 @@ use crate::{Fragment, ParseError};
 /// Checks the optional `fragment`.
 ///
 /// The `fragment` must be a valid fragment or be empty.
-pub(crate) fn check_fragment(fragment: &str) -> Result<(), ParseError> {
+pub(crate) const fn check_fragment(fragment: &str) -> Result<(), ParseError> {
     if fragment.is_empty() || Fragment::is_valid(fragment) {
         Ok(())
     } else {

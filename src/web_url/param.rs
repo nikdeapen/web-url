@@ -1,4 +1,4 @@
-use crate::{Param, WebUrl};
+use crate::{QueryParam, WebUrl};
 
 impl WebUrl {
     //! Param Mutation
@@ -12,7 +12,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    pub fn add_param(&mut self, param: Param) {
+    pub fn add_param(&mut self, param: QueryParam) {
         // A URL with no query has no '?' either, so the query starts with one here. Every other
         // case appends to a query that already has at least one param.
         let separator: char = if self.path_end == self.query_end {
@@ -44,7 +44,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
-    pub fn with_param(mut self, param: Param) -> Self {
+    pub fn with_param(mut self, param: QueryParam) -> Self {
         self.add_param(param);
         self
     }
@@ -87,7 +87,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
-    pub fn replace_params(&mut self, param: Param) -> usize {
+    pub fn replace_params(&mut self, param: QueryParam) -> usize {
         let mut replaced: usize = 0;
         let mut query: String = String::with_capacity(self.query_len());
         for existing in self.query().into_iter().flatten() {
@@ -114,7 +114,7 @@ impl WebUrl {
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.
-    pub fn with_replaced_params(mut self, param: Param) -> Self {
+    pub fn with_replaced_params(mut self, param: QueryParam) -> Self {
         self.replace_params(param);
         self
     }
@@ -123,7 +123,7 @@ impl WebUrl {
     ///
     /// This is the only place a param is spelled out, so `push_param_len` must match what it
     /// writes.
-    fn push_param(out: &mut String, separator: char, param: Param) {
+    fn push_param(out: &mut String, separator: char, param: QueryParam) {
         out.push(separator);
         out.push_str(param.name());
         if let Some(value) = param.value() {
@@ -133,21 +133,21 @@ impl WebUrl {
     }
 
     /// Gets the number of bytes `push_param` appends for the `param`. (including its separator)
-    fn push_param_len(param: Param) -> usize {
+    fn push_param_len(param: QueryParam) -> usize {
         1 + param.name().len() + param.value().map(|v| 1 + v.len()).unwrap_or(0)
     }
 
     /// Appends the `param` to the `query` string being rebuilt, with its separator.
     ///
     /// The '?' separator is used when the `query` is empty, otherwise the '&' separator is used.
-    fn push_query_param(query: &mut String, param: Param) {
+    fn push_query_param(query: &mut String, param: QueryParam) {
         Self::push_param(query, if query.is_empty() { '?' } else { '&' }, param);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{Fragment, Param, WebUrl};
+    use crate::{Fragment, QueryParam, WebUrl};
     use std::str::FromStr;
 
     /// Snapshots the query params as owned values.
@@ -168,10 +168,10 @@ mod tests {
         let mut url: WebUrl = WebUrl::from_str("https://example.com").unwrap();
         url.set_fragment(Fragment::try_from("#fragment").unwrap());
 
-        url.add_param(Param::try_from("one").unwrap());
+        url.add_param(QueryParam::try_from("one").unwrap());
         assert_eq!("https://example.com/?one#fragment", url.as_str());
 
-        url.add_param(Param::try_from("two=3").unwrap());
+        url.add_param(QueryParam::try_from("two=3").unwrap());
         assert_eq!("https://example.com/?one&two=3#fragment", url.as_str());
     }
 
@@ -196,7 +196,7 @@ mod tests {
             let before: Vec<(String, Option<String>)> = params_of(&url);
             assert_eq!(before.len(), *before_count, "input={input}");
 
-            url.add_param(Param::try_from("p=1").unwrap());
+            url.add_param(QueryParam::try_from("p=1").unwrap());
             assert_eq!(url.as_str(), *expected, "input={input}");
 
             let after: Vec<(String, Option<String>)> = params_of(&url);
@@ -234,7 +234,7 @@ mod tests {
         .iter()
         .enumerate()
         {
-            url.add_param(Param::try_from(format!("a={i}").as_str()).unwrap());
+            url.add_param(QueryParam::try_from(format!("a={i}").as_str()).unwrap());
             assert_eq!(url.as_str(), *expected);
             assert_eq!(url.query().unwrap().params().count(), i + 1);
         }
@@ -244,13 +244,13 @@ mod tests {
     fn add_param_without_value() {
         // A param with no value has no '=' at all, which is distinct from an empty value.
         let mut url: WebUrl = WebUrl::from_str("https://host/p").unwrap();
-        url.add_param(Param::try_from("flag").unwrap());
+        url.add_param(QueryParam::try_from("flag").unwrap());
         assert_eq!(url.as_str(), "https://host/p?flag");
 
-        url.add_param(Param::try_from("empty=").unwrap());
+        url.add_param(QueryParam::try_from("empty=").unwrap());
         assert_eq!(url.as_str(), "https://host/p?flag&empty=");
 
-        let params: Vec<Param> = url.query().unwrap().params().collect();
+        let params: Vec<QueryParam> = url.query().unwrap().params().collect();
         assert_eq!(params[0].value(), None);
         assert_eq!(params[1].value(), Some(""));
     }
@@ -259,8 +259,8 @@ mod tests {
     fn with_param() {
         let url: WebUrl = WebUrl::from_str("https://example.com")
             .unwrap()
-            .with_param(Param::try_from("a=1").unwrap())
-            .with_param(Param::try_from("b=2").unwrap());
+            .with_param(QueryParam::try_from("a=1").unwrap())
+            .with_param(QueryParam::try_from("b=2").unwrap());
         assert_eq!(url.as_str(), "https://example.com/?a=1&b=2");
     }
 
@@ -326,7 +326,7 @@ mod tests {
         ];
         for (input, param, replaced, expected) in test_cases {
             let mut url: WebUrl = WebUrl::from_str(input).unwrap();
-            let param: Param = Param::try_from(*param).unwrap();
+            let param: QueryParam = QueryParam::try_from(*param).unwrap();
             assert_eq!(
                 url.replace_params(param),
                 *replaced,
@@ -340,7 +340,7 @@ mod tests {
     fn with_replaced_params() {
         let url: WebUrl = WebUrl::from_str("https://host/p?a=1&b=2&a=3")
             .unwrap()
-            .with_replaced_params(Param::try_from("a=9").unwrap());
+            .with_replaced_params(QueryParam::try_from("a=9").unwrap());
         assert_eq!(url.as_str(), "https://host/p?a=9&b=2");
     }
 }

@@ -19,7 +19,7 @@ impl CanonicalPort {
     /// Creates the canonical port string for the `port`.
     ///
     /// The canonical form is the ':' prefix followed by the decimal digits with no leading zeros.
-    pub(crate) fn new(port: u16) -> Self {
+    pub(crate) const fn new(port: u16) -> Self {
         let mut canonical: Self = Self {
             buffer: [b':'; Self::MAX_LEN],
             len: 1 + port_decimal_len(port),

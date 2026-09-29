@@ -1,5 +1,9 @@
 # Notes
 
+# Security
+
+- `InvalidUrlError` includes the URL in its `Debug` output. This can leak credentials.
+
 ## Safety
 
 - The `unsafe` blocks have no safety comments by design. Each wraps an unchecked operation such as

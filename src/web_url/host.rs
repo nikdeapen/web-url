@@ -26,7 +26,7 @@ impl WebUrl {
     }
 
     /// Gets the index of the host. (just past the "://" that follows the scheme)
-    pub(in crate::web_url) fn host_start(&self) -> u32 {
+    pub(in crate::web_url) const fn host_start(&self) -> u32 {
         self.scheme_len + 3
     }
 }

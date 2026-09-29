@@ -19,7 +19,7 @@ web-url = "0.11.0"
 
 ```rust
 use std::str::FromStr;
-use web_url::{Param, WebUrl};
+use web_url::{QueryParam, WebUrl};
 
 // Parsing normalizes the URL: the scheme & host are lowercased & the port is rewritten.
 let url = WebUrl::from_str("HTTPS://Example.com:0443/path?key=value#section").unwrap();
@@ -32,7 +32,7 @@ assert_eq!(url.query().unwrap().as_str(), "?key=value");
 assert_eq!(url.fragment().unwrap().as_str(), "#section");
 
 // URLs can be mutated in place; a URL parsed without a path gets the path '/'.
-let param: Param = Param::try_from("page=2").unwrap();
+let param: QueryParam = QueryParam::try_from("page=2").unwrap();
 let url = WebUrl::from_str("https://example.com").unwrap().with_param(param);
 assert_eq!(url.as_str(), "https://example.com/?page=2");
 ```
@@ -74,8 +74,8 @@ the URL string & they can also be created from their own strings.
 
 - `Scheme`: A lowercase URL scheme, with `HTTP` & `HTTPS` constants.
 - `Path`: A URL path starting with '/', with an iterator for its segments.
-- `Query`: A URL query starting with '?', with an iterator for its `Param`s.
-- `Param`: A query parameter with a name & an optional value.
+- `Query`: A URL query starting with '?', with an iterator for its `QueryParam`s.
+- `QueryParam`: A query parameter with a name & an optional value.
 - `Fragment`: A URL fragment starting with '#'.
 
 The host is an `address::HostRef`, either a domain name or an IP address. The `address` crate is

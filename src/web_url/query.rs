@@ -24,7 +24,7 @@ impl WebUrl {
     }
 
     /// Gets the length of the query string. (including the '?' prefix)
-    pub(in crate::web_url) fn query_len(&self) -> usize {
+    pub(in crate::web_url) const fn query_len(&self) -> usize {
         (self.query_end - self.path_end) as usize
     }
 }

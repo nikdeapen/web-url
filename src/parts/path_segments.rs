@@ -5,8 +5,8 @@ impl<'a> Path<'a> {
     //! Segments
 
     /// Gets the segments.
-    pub const fn segments(self) -> Segments<'a> {
-        Segments {
+    pub const fn segments(self) -> PathSegments<'a> {
+        PathSegments {
             pieces: PieceIterator::new(self.value(), b'/'),
         }
     }
@@ -14,7 +14,7 @@ impl<'a> Path<'a> {
 
 impl<'a> IntoIterator for Path<'a> {
     type Item = &'a str;
-    type IntoIter = Segments<'a>;
+    type IntoIter = PathSegments<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.segments()
@@ -24,11 +24,11 @@ impl<'a> IntoIterator for Path<'a> {
 /// An iterator over the segments of a path.
 #[must_use]
 #[derive(Clone, Debug)]
-pub struct Segments<'a> {
+pub struct PathSegments<'a> {
     pieces: PieceIterator<'a>,
 }
 
-impl<'a> Iterator for Segments<'a> {
+impl<'a> Iterator for PathSegments<'a> {
     type Item = &'a str;
 
     #[inline]
@@ -41,14 +41,14 @@ impl<'a> Iterator for Segments<'a> {
     }
 }
 
-impl<'a> DoubleEndedIterator for Segments<'a> {
+impl<'a> DoubleEndedIterator for PathSegments<'a> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.pieces.next_back()
     }
 }
 
-impl<'a> FusedIterator for Segments<'a> {}
+impl<'a> FusedIterator for PathSegments<'a> {}
 
 #[cfg(test)]
 mod tests {

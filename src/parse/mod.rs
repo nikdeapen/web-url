@@ -1,3 +1,7 @@
+pub use error::*;
+
+mod error;
+
 pub(crate) use finalize::*;
 pub(crate) use is_valid::*;
 pub(crate) use parts::*;
