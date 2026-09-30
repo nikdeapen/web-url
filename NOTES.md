@@ -1,6 +1,6 @@
 # Notes
 
-# Security
+## Security
 
 - `InvalidUrlError` includes the URL in its `Debug` output. This can leak credentials.
 

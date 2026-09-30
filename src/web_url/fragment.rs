@@ -5,7 +5,7 @@ impl WebUrl {
 
     /// Gets the optional fragment.
     #[must_use]
-    pub fn fragment(&self) -> Option<Fragment<'_>> {
+    pub const fn fragment(&self) -> Option<Fragment<'_>> {
         let fragment: &str = self.fragment_str();
         if fragment.is_empty() {
             None
@@ -17,40 +17,31 @@ impl WebUrl {
     /// Gets the fragment string.
     ///
     /// This will be a valid fragment starting with a '#' or empty.
-    fn fragment_str(&self) -> &str {
+    const fn fragment_str(&self) -> &str {
         let start: usize = self.query_end as usize;
-        &self.url[start..]
+        self.url.as_str().split_at(start).1
     }
 }
 
 impl WebUrl {
     //! Fragment Mutation
 
-    /// Sets the `fragment`.
+    /// Sets the optional `fragment`.
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn set_fragment<'a, F: Into<Option<Fragment<'a>>>>(&mut self, fragment: F) {
         let fragment: Option<Fragment> = fragment.into();
-
-        // The fragment runs from `query_end` to the end of the URL, so truncating to `query_end`
-        // drops it.
         let base_len: usize = self.query_end as usize;
-
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact. No offset changes here since the fragment is last, but the URL must still stay
-        // short enough for its own parser to accept it.
         Self::check_len(base_len + fragment.map(|f| f.as_str().len()).unwrap_or(0));
-
         self.url.truncate(base_len);
         if let Some(fragment) = fragment {
             self.url.push_str(fragment.as_str())
         }
-
         debug_assert!(self.is_consistent());
     }
 
-    /// Sets the `fragment`.
+    /// Sets the optional `fragment`.
     ///
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`.

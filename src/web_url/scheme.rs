@@ -4,16 +4,16 @@ impl WebUrl {
     //! Scheme
 
     /// Gets the scheme.
-    pub fn scheme(&self) -> Scheme<'_> {
+    pub const fn scheme(&self) -> Scheme<'_> {
         unsafe { Scheme::new_unchecked(self.scheme_str()) }
     }
 
     /// Gets the scheme string.
     ///
     /// This will be a valid lowercase scheme string.
-    fn scheme_str(&self) -> &str {
+    const fn scheme_str(&self) -> &str {
         let end: usize = self.scheme_len as usize;
-        &self.url[..end]
+        self.url.as_str().split_at(end).0
     }
 }
 
@@ -30,12 +30,8 @@ impl WebUrl {
 
         let end: usize = self.scheme_len as usize;
 
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
         Self::check_len((self.url.len() - end) + insert.len());
 
-        // The host, port, path, query, & fragment follow the scheme & are unchanged, so their
-        // lengths are saved to rebuild the offsets that the splice shifts.
         let host_len: u32 = self.host_end - self.host_start();
         let port_len: u32 = self.port_end - self.host_end;
         let path_len: u32 = self.path_end - self.port_end;

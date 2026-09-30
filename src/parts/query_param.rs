@@ -1,4 +1,4 @@
-use crate::ParseError::InvalidParam;
+use crate::ParseError::InvalidQueryParam;
 use crate::{ParseError, parse};
 use std::fmt::{Debug, Display, Formatter};
 
@@ -89,7 +89,7 @@ impl<'a> QueryParam<'a> {
         if Self::is_valid_parts(name, value) {
             Ok(Self { name, value })
         } else {
-            Err(InvalidParam)
+            Err(InvalidQueryParam)
         }
     }
 

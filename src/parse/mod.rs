@@ -1,7 +1,3 @@
-pub use error::*;
-
-mod error;
-
 pub(crate) use finalize::*;
 pub(crate) use is_valid::*;
 pub(crate) use parts::*;
@@ -13,5 +9,9 @@ mod is_valid;
 mod parts;
 mod path_plus;
 mod pre_path;
+
+pub use error::*;
+
+mod error;
 
 mod web_url;

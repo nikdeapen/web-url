@@ -23,7 +23,7 @@ pub enum ParseError {
     InvalidQuery,
 
     /// The query parameter is invalid.
-    InvalidParam,
+    InvalidQueryParam,
 
     /// The fragment is invalid.
     InvalidFragment,
@@ -41,7 +41,7 @@ impl Display for ParseError {
             Self::InvalidPort => "invalid port",
             Self::InvalidPath => "invalid path",
             Self::InvalidQuery => "invalid query",
-            Self::InvalidParam => "invalid query parameter",
+            Self::InvalidQueryParam => "invalid query parameter",
             Self::InvalidFragment => "invalid fragment",
             Self::UrlTooLong => "URL too long (>= 4 GiB)",
         };

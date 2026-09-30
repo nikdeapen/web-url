@@ -8,7 +8,7 @@ use address::IPAddress;
 /// subset of [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986#section-3).
 ///
 /// - The `port`, `query`, & `fragment` are all optional.
-/// - The `path` will never be empty & will always start with a '/'.
+/// - The `path` will not be empty & will always start with a '/'.
 #[must_use]
 #[derive(Clone)]
 pub struct WebUrl {
@@ -57,8 +57,8 @@ impl WebUrl {
     /// - The `ip` is the parsed host when the host is an IP address & `None` when it is a domain.
     /// - The `port` is the parsed port & matches the `[host_end..port_end]` text.
     #[allow(clippy::too_many_arguments)]
-    pub unsafe fn new_unchecked<S: Into<String>>(
-        url: S,
+    pub(crate) unsafe fn new_unchecked(
+        url: String,
         scheme_len: u32,
         host_end: u32,
         ip: Option<IPAddress>,
@@ -68,7 +68,7 @@ impl WebUrl {
         query_end: u32,
     ) -> Self {
         let url: Self = Self {
-            url: url.into(),
+            url,
             scheme_len,
             host_end,
             ip,
@@ -172,6 +172,10 @@ impl WebUrl {
     pub const fn is_empty(&self) -> bool {
         false
     }
+}
+
+impl WebUrl {
+    //! Deconstruction
 
     /// Converts the URL into its string.
     #[must_use]
