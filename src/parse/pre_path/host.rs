@@ -1,30 +1,25 @@
 use crate::ParseError;
 use crate::ParseError::InvalidHost;
-use crate::parse::is_authority_end;
 use address::{Domain, IPAddress, IPv4Address, IPv6Address};
 use std::str::FromStr;
 
-/// Parses the host string from the prefix of `s`.
+/// Splits the `authority` into the host string & the port string, which is empty or starts with
+/// the ':'.
 ///
 /// The host will **not** be validated.
-pub(crate) fn parse_host(s: &str) -> (&str, &str) {
-    let end: usize = s
-        .as_bytes()
-        .iter()
-        .position(|c| is_authority_end(*c))
-        .unwrap_or(s.len());
-    let host_and_port: &str = &s[..end];
-    let bracketed: bool = host_and_port.starts_with('[') && host_and_port.ends_with(']');
-    let host_len: usize = match host_and_port.as_bytes().iter().rposition(|c| *c == b':') {
+pub(crate) fn split_authority(authority: &str) -> (&str, &str) {
+    // A bracketed host is an IPv6 literal, whose own ':' chars are not the port separator.
+    let bracketed: bool = authority.starts_with('[') && authority.ends_with(']');
+    let host_len: usize = match authority.as_bytes().iter().rposition(|c| *c == b':') {
         Some(colon) if !bracketed => colon,
-        _ => end,
+        _ => authority.len(),
     };
-    s.split_at(host_len)
+    authority.split_at(host_len)
 }
 
 /// Parses the optional IP address from the `host` string. If the host is not an IP address the
 /// domain will be validated (case-insensitively).
-pub(crate) fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddress>, ParseError> {
+pub(crate) fn parse_host(host: &str) -> Result<Option<IPAddress>, ParseError> {
     if let Some(ip) = host.strip_prefix('[') {
         let ip: &str = ip.strip_suffix(']').ok_or(InvalidHost)?;
         let ip: IPv6Address = IPv6Address::from_str(ip).map_err(|_| InvalidHost)?;
@@ -42,42 +37,35 @@ pub(crate) fn parse_ip_and_validate_domain(host: &str) -> Result<Option<IPAddres
 mod tests {
     use crate::ParseError;
     use crate::ParseError::InvalidHost;
-    use crate::parse::{parse_host, parse_ip_and_validate_domain};
+    use crate::parse::{parse_host, split_authority};
     use address::{IPAddress, IPv4Address, IPv6Address};
 
     #[test]
-    fn host() {
+    fn authority() {
         let test_cases: &[(&str, (&str, &str))] = &[
             ("", ("", "")),
             ("host", ("host", "")),
-            ("host/", ("host", "/")),
-            ("host/rest", ("host", "/rest")),
-            ("host:port/rest", ("host", ":port/rest")),
-            ("[host:port/rest", ("[host", ":port/rest")),
-            ("[host:port]/rest", ("[host:port]", "/rest")),
-            ("[host:port]", ("[host:port]", "")),
-            ("[host:port]80", ("[host", ":port]80")),
             ("host:", ("host", ":")),
-            ("host?query", ("host", "?query")),
-            ("host#frag", ("host", "#frag")),
-            ("host?", ("host", "?")),
-            ("host#", ("host", "#")),
-            ("host:80?query", ("host", ":80?query")),
-            ("host:80#frag", ("host", ":80#frag")),
-            ("[::1]?query", ("[::1]", "?query")),
-            ("[::1]#frag", ("[::1]", "#frag")),
-            ("[::1]:80?query", ("[::1]", ":80?query")),
-            ("?query", ("", "?query")),
-            ("#frag", ("", "#frag")),
+            ("host:80", ("host", ":80")),
+            ("host:port", ("host", ":port")),
+            // The port is split at the last ':' char.
+            ("a:b:80", ("a:b", ":80")),
+            // The ':' chars of a bracketed host are not port separators.
+            ("[::1]", ("[::1]", "")),
+            ("[::1]:", ("[::1]", ":")),
+            ("[::1]:80", ("[::1]", ":80")),
+            ("[host:port]", ("[host:port]", "")),
+            ("[host:port", ("[host", ":port")),
+            ("[host:port]80", ("[host", ":port]80")),
         ];
-        for (s, expected) in test_cases {
-            let result: (&str, &str) = parse_host(s);
-            assert_eq!(result, *expected, "s={}", s);
+        for (authority, expected) in test_cases {
+            let result: (&str, &str) = split_authority(authority);
+            assert_eq!(result, *expected, "authority={}", authority);
         }
     }
 
     #[test]
-    fn ip_and_validate_domain() {
+    fn host() {
         let test_cases: &[(&str, Result<Option<IPAddress>, ParseError>)] = &[
             ("", Err(InvalidHost)),
             ("[::1", Err(InvalidHost)),
@@ -97,7 +85,7 @@ mod tests {
             ("xn--bcher-kva.example", Ok(None)),
         ];
         for (host, expected) in test_cases {
-            let result: Result<Option<IPAddress>, ParseError> = parse_ip_and_validate_domain(host);
+            let result: Result<Option<IPAddress>, ParseError> = parse_host(host);
             assert_eq!(result, *expected, "host={}", host);
         }
     }

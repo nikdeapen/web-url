@@ -2,12 +2,10 @@
 
 pub use address;
 
-pub use error::*;
+pub use parse::*;
 pub use parts::*;
 pub use web_url::*;
 
-mod error;
+mod parse;
 mod parts;
 mod web_url;
-
-mod parse;

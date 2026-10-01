@@ -4,31 +4,31 @@ use std::fmt::{Display, Formatter};
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 #[non_exhaustive]
 pub enum ParseError {
-    /// The scheme was invalid.
+    /// The scheme is invalid.
     InvalidScheme,
 
-    /// The URL had user info, which is not supported.
+    /// The URL has user info, which is not supported.
     UserInfoNotSupported,
 
-    /// The host was invalid.
+    /// The host is invalid.
     InvalidHost,
 
-    /// The port was invalid.
+    /// The port is invalid.
     InvalidPort,
 
-    /// The path was invalid.
+    /// The path is invalid.
     InvalidPath,
 
-    /// The query was invalid.
+    /// The query is invalid.
     InvalidQuery,
 
-    /// The query parameter was invalid.
-    InvalidParam,
+    /// The query parameter is invalid.
+    InvalidQueryParam,
 
-    /// The fragment was invalid.
+    /// The fragment is invalid.
     InvalidFragment,
 
-    /// The URL was too long. (must be under 4 GiB)
+    /// The URL is too long. (must be under 4 GiB)
     UrlTooLong,
 }
 
@@ -41,7 +41,7 @@ impl Display for ParseError {
             Self::InvalidPort => "invalid port",
             Self::InvalidPath => "invalid path",
             Self::InvalidQuery => "invalid query",
-            Self::InvalidParam => "invalid query parameter",
+            Self::InvalidQueryParam => "invalid query parameter",
             Self::InvalidFragment => "invalid fragment",
             Self::UrlTooLong => "URL too long (>= 4 GiB)",
         };

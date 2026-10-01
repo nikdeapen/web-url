@@ -4,7 +4,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 /// A web-based URL path.
 ///
-/// - The `path` string will never be empty and always start with a '/'.
+/// - The `path` string will not be empty and will always start with a '/'.
 /// - The `path` value (after the '/') may be empty.
 ///
 /// # RFC 3986
@@ -21,7 +21,7 @@ impl<'a> Path<'a> {
     /// Checks if the `path` is valid.
     #[must_use]
     pub const fn is_valid(path: &str) -> bool {
-        parse::is_valid_segment(path, b'/', "?")
+        parse::is_valid_prefixed(path, b'/', "?")
     }
 }
 

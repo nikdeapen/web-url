@@ -2,7 +2,8 @@ use crate::ParseError;
 use crate::parse::{canonical_path_len, check_fragment, parse_path, parse_query};
 
 /// The parsing data for a web-based URL from the path to the end.
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[must_use]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub(crate) struct PathPlus {
     /// The length of the path including the '/'. (will be 1+)
     pub(crate) path_len: usize,
@@ -18,17 +19,13 @@ pub(crate) struct PathPlus {
 ///
 /// The path, query, & fragment will be validated.
 pub(crate) fn parse_path_plus(path_plus: &str) -> Result<PathPlus, ParseError> {
-    let (path, after_path) = parse_path(path_plus)?;
-    let (query, after_query) = parse_query(after_path)?;
-    check_fragment(after_query)?;
-
+    let (path, query_plus) = parse_path(path_plus)?;
     let path: &str = path.as_str();
-    let query_len: usize = query.map(|q| q.as_str().len()).unwrap_or(0);
 
     Ok(PathPlus {
         path_len: path.len(),
         canonical_path_len: canonical_path_len(path),
-        query_len,
+        ..parse_query_plus(query_plus)?
     })
 }
 

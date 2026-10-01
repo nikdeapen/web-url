@@ -1,4 +1,4 @@
-use crate::ParseError::InvalidParam;
+use crate::ParseError::InvalidQueryParam;
 use crate::{ParseError, parse};
 use std::fmt::{Debug, Display, Formatter};
 
@@ -12,12 +12,12 @@ use std::fmt::{Debug, Display, Formatter};
 /// <https://url.spec.whatwg.org/#application/x-www-form-urlencoded>
 #[must_use]
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct Param<'a> {
+pub struct QueryParam<'a> {
     name: &'a str,
     value: Option<&'a str>,
 }
 
-impl<'a> Param<'a> {
+impl<'a> QueryParam<'a> {
     //! Validation
 
     /// Checks if the `name` is valid.
@@ -65,49 +65,54 @@ impl<'a> Param<'a> {
     }
 }
 
-impl<'a> Param<'a> {
+impl<'a> QueryParam<'a> {
     //! Construction
 
     /// Creates a new query parameter.
-    pub const fn new(name: &'a str, value: Option<&'a str>) -> Result<Self, ParseError> {
-        if Self::is_valid_parts(name, value) {
-            Ok(Self { name, value })
-        } else {
-            Err(InvalidParam)
-        }
+    pub const fn new(param: &'a str) -> Result<Self, ParseError> {
+        let (name, value) = Self::split(param);
+        Self::from_parts(name, value)
     }
 
     /// Creates a new query parameter.
-    ///
-    /// # Safety
-    /// The `name` & `value` must be valid.
-    pub const unsafe fn new_unchecked(name: &'a str, value: Option<&'a str>) -> Self {
-        debug_assert!(Self::is_valid_parts(name, value));
-
-        Self { name, value }
-    }
-
-    /// Creates a new query parameter by splitting the `param` string.
     ///
     /// # Safety
     /// The `param` must be valid.
     #[inline]
-    pub const unsafe fn from_str_unchecked(param: &'a str) -> Self {
+    pub const unsafe fn new_unchecked(param: &'a str) -> Self {
         let (name, value) = Self::split(param);
-        unsafe { Self::new_unchecked(name, value) }
+        unsafe { Self::from_parts_unchecked(name, value) }
+    }
+
+    /// Creates a new query parameter from the `name` & optional `value`.
+    pub const fn from_parts(name: &'a str, value: Option<&'a str>) -> Result<Self, ParseError> {
+        if Self::is_valid_parts(name, value) {
+            Ok(Self { name, value })
+        } else {
+            Err(InvalidQueryParam)
+        }
+    }
+
+    /// Creates a new query parameter from the `name` & optional `value`.
+    ///
+    /// # Safety
+    /// The `name` & `value` must be valid.
+    pub const unsafe fn from_parts_unchecked(name: &'a str, value: Option<&'a str>) -> Self {
+        debug_assert!(Self::is_valid_parts(name, value));
+
+        Self { name, value }
     }
 }
 
-impl<'a> TryFrom<&'a str> for Param<'a> {
+impl<'a> TryFrom<&'a str> for QueryParam<'a> {
     type Error = ParseError;
 
     fn try_from(param: &'a str) -> Result<Self, Self::Error> {
-        let (name, value) = Self::split(param);
-        Self::new(name, value)
+        Self::new(param)
     }
 }
 
-impl<'a> Param<'a> {
+impl<'a> QueryParam<'a> {
     //! Properties
 
     /// Gets the name.
@@ -123,13 +128,13 @@ impl<'a> Param<'a> {
     }
 }
 
-impl<'a> Debug for Param<'a> {
+impl<'a> Debug for QueryParam<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.pad(&format!("\"{}\"", self))
     }
 }
 
-impl<'a> Display for Param<'a> {
+impl<'a> Display for QueryParam<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(value) = self.value {
             f.pad(&format!("{}={}", self.name, value))
@@ -141,7 +146,7 @@ impl<'a> Display for Param<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::Param;
+    use crate::QueryParam;
 
     /// `(name, value)`
     type ParamParts<'a> = (&'a str, Option<&'a str>);
@@ -181,13 +186,13 @@ mod tests {
         ];
 
         for (param, expected) in test_cases {
-            let result: bool = Param::is_valid(param);
+            let result: bool = QueryParam::is_valid(param);
             assert_eq!(result, *expected, "param={}", param);
         }
     }
 
     #[test]
-    fn from_str_unchecked() {
+    fn new() {
         let test_cases: &[(&str, ParamParts)] = &[
             ("name", ("name", None)),
             ("name=", ("name", Some(""))),
@@ -199,7 +204,10 @@ mod tests {
         ];
 
         for (input, expected) in test_cases {
-            let param: Param = unsafe { Param::from_str_unchecked(input) };
+            let param: QueryParam = QueryParam::new(input).unwrap();
+            assert_eq!((param.name, param.value), *expected, "input={}", input);
+
+            let param: QueryParam = unsafe { QueryParam::new_unchecked(input) };
             assert_eq!((param.name, param.value), *expected, "input={}", input);
         }
     }

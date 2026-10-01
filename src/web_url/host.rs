@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{WebUrl, parse};
 use address::{DomainRef, HostRef, IPAddress};
 
@@ -13,21 +14,12 @@ impl WebUrl {
         }
     }
 
-    /// Gets the host string.
-    ///
-    /// This will be valid:
-    /// - If the host is a domain it will be lowercase.
-    /// - If the host is an IP address it will be in its canonical form.
-    /// - If the host is an IPv6 address it will include the '[]' brackets.
-    fn host_str(&self) -> &str {
-        let start: usize = self.host_start() as usize;
-        let end: usize = self.host_end as usize;
-        &self.url[start..end]
-    }
-
-    /// Gets the index of the host. (just past the "://" that follows the scheme)
-    pub(in crate::web_url) fn host_start(&self) -> u32 {
-        self.scheme_len + 3
+    /// Gets the host string. (an IPv6 host includes its '[]' brackets)
+    #[must_use]
+    pub const fn host_str(&self) -> &str {
+        let start: usize = self.offsets.host_start() as usize;
+        let end: usize = self.offsets.host_end as usize;
+        self.url.as_str().split_at(end).0.split_at(start).1
     }
 }
 
@@ -41,10 +33,6 @@ impl WebUrl {
     pub fn set_host<'a, H: Into<HostRef<'a>>>(&mut self, host: H) {
         let host: HostRef = host.into();
 
-        // An IP address is written in its canonical form & a domain name is already lowercase, so
-        // both arms are the normalized form as they stand. A domain name cannot also be an IP
-        // address since its final label cannot be all-numeric, so the variant alone determines the
-        // IP.
         let canonical: parse::CanonicalHost;
         let (insert, ip): (&str, Option<IPAddress>) = match host {
             HostRef::Domain(domain) => (domain.name(), None),
@@ -54,29 +42,8 @@ impl WebUrl {
             }
         };
 
-        let start: usize = self.host_start() as usize;
-        let end: usize = self.host_end as usize;
-
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
-        Self::check_len((self.url.len() - (end - start)) + insert.len());
-
-        // The port, path, query, & fragment follow the host & are unchanged, so their lengths are
-        // saved to rebuild the offsets that the splice shifts.
-        let port_len: u32 = self.port_end - self.host_end;
-        let path_len: u32 = self.path_end - self.port_end;
-        let query_len: u32 = self.query_end - self.path_end;
-
-        // The IP is assigned after the length check so an over-long URL leaves the URL & its IP
-        // unmodified.
+        self.splice(Part::Host, insert);
         self.ip = ip;
-
-        self.url.replace_range(start..end, insert);
-
-        self.host_end = (start + insert.len()) as u32;
-        self.port_end = self.host_end + port_len;
-        self.path_end = self.port_end + path_len;
-        self.query_end = self.path_end + query_len;
 
         debug_assert!(self.is_consistent());
     }

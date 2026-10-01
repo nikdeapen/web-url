@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{Query, WebUrl};
 
 impl WebUrl {
@@ -5,7 +6,7 @@ impl WebUrl {
 
     /// Gets the optional query.
     #[must_use]
-    pub fn query(&self) -> Option<Query<'_>> {
+    pub const fn query(&self) -> Option<Query<'_>> {
         let query: &str = self.query_str();
         if query.is_empty() {
             None
@@ -17,15 +18,10 @@ impl WebUrl {
     /// Gets the query string.
     ///
     /// This will be a valid query string starting with a '?' or it will be empty.
-    fn query_str(&self) -> &str {
-        let start: usize = self.path_end as usize;
-        let end: usize = self.query_end as usize;
-        &self.url[start..end]
-    }
-
-    /// Gets the length of the query string. (including the '?' prefix)
-    pub(in crate::web_url) fn query_len(&self) -> usize {
-        (self.query_end - self.path_end) as usize
+    const fn query_str(&self) -> &str {
+        let start: usize = self.offsets.path_end as usize;
+        let end: usize = self.offsets.query_end as usize;
+        self.url.as_str().split_at(end).0.split_at(start).1
     }
 }
 
@@ -37,8 +33,6 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn set_query<'a, Q: Into<Option<Query<'a>>>>(&mut self, query: Q) {
-        // The query is preserved exactly, so a query string is already the normalized form. A URL
-        // with no query has no '?' either.
         let query: Option<Query> = query.into();
         self.set_query_str(query.map(Query::as_str).unwrap_or(""));
     }
@@ -57,17 +51,7 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub(in crate::web_url) fn set_query_str(&mut self, query: &str) {
-        let start: usize = self.path_end as usize;
-        let end: usize = self.query_end as usize;
-
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
-        Self::check_len((self.url.len() - self.query_len()) + query.len());
-
-        // Only the fragment follows the query, so the splice shifts the fragment alone.
-        self.url.replace_range(start..end, query);
-
-        self.query_end = (start + query.len()) as u32;
+        self.splice(Part::Query, query);
 
         debug_assert!(self.is_consistent());
     }

@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{WebUrl, parse};
 
 impl WebUrl {
@@ -5,7 +6,7 @@ impl WebUrl {
 
     /// Gets the optional port.
     #[must_use]
-    pub fn port(&self) -> Option<u16> {
+    pub const fn port(&self) -> Option<u16> {
         self.port
     }
 }
@@ -31,24 +32,8 @@ impl WebUrl {
             None => "",
         };
 
-        let start: usize = self.host_end as usize;
-        let end: usize = self.port_end as usize;
-
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
-        Self::check_len((self.url.len() - (end - start)) + insert.len());
-
-        // The path, query, & fragment follow the port & are unchanged, so their lengths are saved
-        // to rebuild the offsets that the splice shifts.
-        let path_len: u32 = self.path_end - self.port_end;
-        let query_len: u32 = self.query_end - self.path_end;
-
-        self.url.replace_range(start..end, insert);
-
+        self.splice(Part::Port, insert);
         self.port = port;
-        self.port_end = (start + insert.len()) as u32;
-        self.path_end = self.port_end + path_len;
-        self.query_end = self.path_end + query_len;
 
         debug_assert!(self.is_consistent());
     }

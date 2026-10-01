@@ -8,7 +8,7 @@ rust-version = "1.87"
 license = "MIT"
 keywords = ["url", "web", "parse", "normalization"]
 categories = ["parser-implementations", "web-programming"]
-exclude = [".github/", ".idea/", ".gitignore", "ISSUES.md"]
+exclude = [".github/", ".idea/", ".gitignore", "FUTURE.md", "ISSUES.md"]
 
 [lints.rust]
 missing_debug_implementations = "warn"

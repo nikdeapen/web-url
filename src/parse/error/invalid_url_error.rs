@@ -1,9 +1,7 @@
 use crate::ParseError;
 use std::fmt::{Display, Formatter};
 
-/// An error parsing a web-based URL from an owned string.
-///
-/// The invalid URL string can be recovered, like `std::string::FromUtf8Error`.
+/// A [ParseError] with the associated owned URL string.
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct InvalidUrlError {
     error: ParseError,
@@ -13,7 +11,7 @@ pub struct InvalidUrlError {
 impl InvalidUrlError {
     //! Construction
 
-    /// Creates a new invalid URL error.
+    /// Creates a new [InvalidUrlError].
     pub(crate) const fn new(error: ParseError, url: String) -> Self {
         Self { error, url }
     }
@@ -30,7 +28,7 @@ impl InvalidUrlError {
 
     /// Gets the invalid URL string.
     #[must_use]
-    pub fn url(&self) -> &str {
+    pub const fn url(&self) -> &str {
         self.url.as_str()
     }
 }

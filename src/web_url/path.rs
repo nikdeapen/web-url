@@ -1,20 +1,21 @@
+use crate::web_url::Part;
 use crate::{Path, WebUrl, parse};
 
 impl WebUrl {
     //! Path
 
     /// Gets the path.
-    pub fn path(&self) -> Path<'_> {
+    pub const fn path(&self) -> Path<'_> {
         unsafe { Path::new_unchecked(self.path_str()) }
     }
 
     /// Gets the path string.
     ///
     /// This will be a valid path starting with a '/' & having no dot-segments.
-    fn path_str(&self) -> &str {
-        let start: usize = self.port_end as usize;
-        let end: usize = self.path_end as usize;
-        &self.url[start..end]
+    const fn path_str(&self) -> &str {
+        let start: usize = self.offsets.port_end as usize;
+        let end: usize = self.offsets.path_end as usize;
+        self.url.as_str().split_at(end).0.split_at(start).1
     }
 }
 
@@ -26,25 +27,21 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn set_path(&mut self, path: Path) {
-        // The path is written with the dot-segments removed, which is the normalized form.
-        let mut insert: String = String::with_capacity(parse::canonical_path_len(path.as_str()));
-        parse::write_canonical_path(path.as_str(), &mut insert);
+        // The path is written with the dot-segments removed, which is the normalized form. Removing
+        // a dot-segment always shortens the path, so a path already of its canonical length has
+        // none & is spliced in directly without building a copy.
+        let path: &str = path.as_str();
+        let canonical_len: usize = parse::canonical_path_len(path);
+        let mut canonical: String = String::new();
+        let insert: &str = if canonical_len == path.len() {
+            path
+        } else {
+            canonical.reserve_exact(canonical_len);
+            parse::write_canonical_path(path, &mut canonical);
+            canonical.as_str()
+        };
 
-        let start: usize = self.port_end as usize;
-        let end: usize = self.path_end as usize;
-
-        // The length is checked before anything is modified so an over-long URL panics with the URL
-        // intact rather than leaving the string inconsistent with the component offsets.
-        Self::check_len((self.url.len() - (end - start)) + insert.len());
-
-        // The query & fragment follow the path & are unchanged, so the query length is saved to
-        // rebuild the offsets that the splice shifts.
-        let query_len: u32 = self.query_end - self.path_end;
-
-        self.url.replace_range(start..end, insert.as_str());
-
-        self.path_end = (start + insert.len()) as u32;
-        self.query_end = self.path_end + query_len;
+        self.splice(Part::Path, insert);
 
         debug_assert!(self.is_consistent());
     }

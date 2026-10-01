@@ -1,11 +1,14 @@
-use crate::ParseError;
+use crate::ParseError::UrlTooLong;
 use crate::parse::{
-    CanonicalHost, CanonicalPort, PathPlus, PrePath, parse_path_plus, parse_pre_path,
-    parse_query_plus, write_canonical_path,
+    CanonicalPort, PathPlus, PrePath, parse_path_plus, parse_pre_path, parse_query_plus,
+    write_canonical_path,
 };
+use crate::web_url::Offsets;
+use crate::{ParseError, WebUrl};
 
 /// The validated parts of a web-based URL.
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[must_use]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub(crate) struct Parts {
     /// The parsing data before the path.
     pub(crate) pre_path: PrePath,
@@ -53,7 +56,7 @@ impl Parts {
     }
 
     /// Gets the length of the normalized URL string for a parsed URL of `len` chars.
-    pub(crate) fn normalized_len(self, len: usize) -> usize {
+    pub(crate) const fn normalized_len(self, len: usize) -> usize {
         // The canonical path is never longer than the parsed path since it only drops dot-segments.
         let dropped: usize = self.path_plus.path_len - self.path_plus.canonical_path_len;
 
@@ -69,18 +72,36 @@ impl Parts {
     pub(crate) const fn slash_index(self) -> usize {
         self.pre_path.len()
     }
+
+    /// Gets the offsets of the normalized URL.
+    ///
+    /// The normalized URL never exceeds `WebUrl::MAX_LEN` since `parse_parts` checks it, so every
+    /// offset fits a `u32`.
+    pub(crate) const fn offsets(self) -> Offsets {
+        // The canonical lengths are used since the offsets are into the normalized URL, in which an
+        // IP address host may be shorter or longer & the port & path may be shorter.
+        let port_end: usize = self.pre_path.canonical_len();
+        let path_end: usize = port_end + self.path_plus.canonical_path_len;
+        Offsets {
+            scheme_len: self.pre_path.scheme_len as u32,
+            host_end: self.pre_path.canonical_host_end() as u32,
+            port_end: port_end as u32,
+            path_end: path_end as u32,
+            query_end: (path_end + self.path_plus.query_len) as u32,
+        }
+    }
 }
 
 /// Writes the normalized URL for the parsed URL `s` to `url`.
 ///
-/// The `parts` must have been parsed from `s`. The letter case is **not** normalized here; that is
-/// done in place once the URL string is built.
+/// The `parts` must have been parsed from `s`. The scheme & a domain host keep their letter case
+/// here; they are lowercased in place once the URL string is built.
 pub(crate) fn write_normalized(s: &str, parts: Parts, url: &mut String) {
     let pre_path: PrePath = parts.pre_path;
 
     url.push_str(&s[..pre_path.host_start()]);
     if let Some(ip) = pre_path.ip {
-        url.push_str(CanonicalHost::new(ip).as_str());
+        url.push_str(ip.as_str());
     } else {
         url.push_str(pre_path.host_str(s));
     }
@@ -119,12 +140,19 @@ pub(crate) fn parse_parts(s: &str) -> Result<Parts, ParseError> {
         parse_path_plus(after_authority)?
     };
 
-    Ok(Parts {
+    let parts: Parts = Parts {
         pre_path,
         path_plus,
         needs_slash,
         needs_host_rewrite,
-    })
+    };
+
+    // The normalized length is checked, since that is the URL that is stored. It is checked here,
+    // before anything is built, so a URL that is too long is never modified.
+    if parts.normalized_len(s.len()) > WebUrl::MAX_LEN {
+        return Err(UrlTooLong);
+    }
+    Ok(parts)
 }
 
 #[cfg(test)]
@@ -132,9 +160,13 @@ mod tests {
     use crate::ParseError;
     use crate::ParseError::{InvalidHost, InvalidPath, InvalidQuery, InvalidScheme};
     use crate::parse::{Parts, parse_parts, write_normalized};
+    use crate::web_url::Offsets;
 
     /// The summary of the parsed parts. `(needs_slash, slash_index, path_len, query_len)`
     type Summary = (bool, usize, usize, usize);
+
+    /// The summary of the offsets. `(scheme_len, host_end, port_end, path_end, query_end)`
+    type OffsetsSummary = (u32, u32, u32, u32, u32);
 
     fn parts_of(s: &str) -> Result<Summary, ParseError> {
         parse_parts(s).map(|p: Parts| {
@@ -184,8 +216,9 @@ mod tests {
                 "http://[0:0:0:0:0:0:0:1]:0080/a/../b?q#f",
                 "http://[::1]:80/b?q#f",
             ),
-            // The letter case is normalized in place once the URL string is built, not here.
+            // The scheme & a domain host keep their letter case; an IP host is written canonically.
             ("HTTP://HOST/P", "HTTP://HOST/P"),
+            ("http://[::FFFF:1.2.3.4]/", "http://[::ffff:1.2.3.4]/"),
         ];
         for (input, expected) in test_cases {
             let parts: Parts = parse_parts(input).unwrap();
@@ -202,8 +235,37 @@ mod tests {
                 input
             );
 
-            // A URL written back unchanged is exactly the one that needs no rewrite.
-            assert_eq!(parts.is_normalized(), *input == result, "input={}", input);
+            // A URL written back unchanged, ignoring the letter case, is exactly the one that needs no
+            // rewrite.
+            assert_eq!(
+                parts.is_normalized(),
+                input.eq_ignore_ascii_case(&result),
+                "input={}",
+                input
+            );
+        }
+    }
+
+    #[test]
+    fn offsets() {
+        // The offsets are into the normalized URL, so they follow the rewritten host, port, & path.
+        let test_cases: &[(&str, OffsetsSummary)] = &[
+            ("http://host/p?q#f", (4, 11, 11, 13, 15)),
+            ("http://host", (4, 11, 11, 12, 12)),
+            ("http://host:0080/a/../b?q", (4, 11, 14, 16, 18)),
+            ("HTTP://[0:0:0:0:0:0:0:1]:80#f", (4, 12, 15, 16, 16)),
+            ("s://127.0.0.1:/?", (1, 13, 13, 14, 15)),
+        ];
+        for (input, expected) in test_cases {
+            let offsets: Offsets = parse_parts(input).unwrap().offsets();
+            let result: OffsetsSummary = (
+                offsets.scheme_len,
+                offsets.host_end,
+                offsets.port_end,
+                offsets.path_end,
+                offsets.query_end,
+            );
+            assert_eq!(result, *expected, "input={}", input);
         }
     }
 }

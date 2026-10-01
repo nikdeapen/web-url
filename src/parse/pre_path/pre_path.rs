@@ -1,12 +1,12 @@
 use crate::ParseError;
 use crate::parse::{
-    CanonicalHost, check_no_user_info, parse_host, parse_ip_and_validate_domain, parse_port,
-    parse_scheme_len, port_decimal_len,
+    CanonicalHost, check_no_user_info, is_authority_end, parse_host, parse_port, parse_scheme_len,
+    port_decimal_len, split_authority,
 };
-use address::IPAddress;
 
 /// The parsing data for a web-based URL before the path.
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+#[must_use]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub(crate) struct PrePath {
     /// The length of the scheme.
     pub(crate) scheme_len: usize,
@@ -14,8 +14,8 @@ pub(crate) struct PrePath {
     /// The length of the host in the parsed URL. (including the '[]' brackets)
     pub(crate) host_len: usize,
 
-    /// The IP address when the host is an IP address.
-    pub(crate) ip: Option<IPAddress>,
+    /// The IP address & its canonical host string when the host is an IP address.
+    pub(crate) ip: Option<CanonicalHost>,
 
     /// The port. (`None` when the port is absent or empty)
     pub(crate) port: Option<u16>,
@@ -44,23 +44,23 @@ impl PrePath {
     }
 
     /// Gets the host string in the parsed URL `s`.
-    pub(crate) fn host_str(self, s: &str) -> &str {
-        &s[self.host_start()..self.host_end()]
+    pub(crate) const fn host_str(self, s: &str) -> &str {
+        s.split_at(self.host_end()).0.split_at(self.host_start()).1
     }
 
     /// Gets the length of the host string in the normalized URL. (including the '[]' brackets)
     ///
     /// An IP address is written in its canonical form, which can be shorter or longer than the
     /// parsed host. A domain name is unaffected since only its letter case is normalized.
-    fn canonical_host_len(self) -> usize {
+    const fn canonical_host_len(self) -> usize {
         match self.ip {
-            Some(ip) => CanonicalHost::new(ip).as_str().len(),
+            Some(ip) => ip.as_str().len(),
             None => self.host_len,
         }
     }
 
     /// Gets the index just past the host in the normalized URL.
-    pub(crate) fn canonical_host_end(self) -> usize {
+    pub(crate) const fn canonical_host_end(self) -> usize {
         self.host_start() + self.canonical_host_len()
     }
 
@@ -76,7 +76,7 @@ impl PrePath {
     }
 
     /// Gets the length of the pre-path string in the normalized URL.
-    pub(crate) fn canonical_len(self) -> usize {
+    pub(crate) const fn canonical_len(self) -> usize {
         self.canonical_host_end() + self.canonical_port_len()
     }
 
@@ -86,9 +86,7 @@ impl PrePath {
     /// letter case is excluded since it is normalized in place & never changes the length.
     pub(crate) fn needs_host_rewrite(self, s: &str) -> bool {
         match self.ip {
-            Some(ip) => !CanonicalHost::new(ip)
-                .as_str()
-                .eq_ignore_ascii_case(self.host_str(s)),
+            Some(ip) => !ip.as_str().eq_ignore_ascii_case(self.host_str(s)),
             None => false,
         }
     }
@@ -107,24 +105,33 @@ impl PrePath {
 
 /// Parses the pre-path portion of the URL. The scheme & host will be validated but may be
 /// uppercase.
-pub(crate) fn parse_pre_path(url: &str) -> Result<PrePath, ParseError> {
-    let (scheme_len, after_scheme) = parse_scheme_len(url)?;
+pub(crate) fn parse_pre_path(s: &str) -> Result<PrePath, ParseError> {
+    let (scheme_len, after_scheme) = parse_scheme_len(s)?;
+
+    // The authority is split off once, so the user info, host, & port parsers only see its text.
+    let authority_len: usize = after_scheme
+        .as_bytes()
+        .iter()
+        .position(|c| is_authority_end(*c))
+        .unwrap_or(after_scheme.len());
+    let (authority, _) = after_scheme.split_at(authority_len);
 
     // User info is checked before the host & port so that every form of it reports the same error.
     // Otherwise the '@' & ':' chars fall through to the host or port parser & the reported error
     // depends on where the colons happen to be.
-    check_no_user_info(after_scheme)?;
+    check_no_user_info(authority)?;
 
-    let (host_str, after_host) = parse_host(after_scheme);
-    let ip: Option<IPAddress> = parse_ip_and_validate_domain(host_str)?;
-    let (port, after_port) = parse_port(after_host)?;
-    let port_len: usize = after_host.len() - after_port.len();
+    // The canonical host of an IP address is built once here & carried in the parts, since the
+    // normalized length, the rewrite check, & the normalized URL all need it.
+    let (host_str, port_str) = split_authority(authority);
+    let ip: Option<CanonicalHost> = parse_host(host_str)?.map(CanonicalHost::new);
+    let port: Option<u16> = parse_port(port_str)?;
     let pre_path: PrePath = PrePath {
         scheme_len,
         host_len: host_str.len(),
         ip,
         port,
-        port_len,
+        port_len: port_str.len(),
     };
     Ok(pre_path)
 }
@@ -133,7 +140,7 @@ pub(crate) fn parse_pre_path(url: &str) -> Result<PrePath, ParseError> {
 mod tests {
     use crate::ParseError;
     use crate::ParseError::{InvalidHost, InvalidScheme, UserInfoNotSupported};
-    use crate::parse::{PrePath, parse_pre_path};
+    use crate::parse::{CanonicalHost, PrePath, parse_pre_path};
     use address::{IPv4Address, IPv6Address};
 
     #[test]
@@ -157,7 +164,7 @@ mod tests {
                 Ok(PrePath {
                     scheme_len: 6,
                     host_len: 9,
-                    ip: Some(IPv4Address::LOCALHOST.to_ip()),
+                    ip: Some(CanonicalHost::new(IPv4Address::LOCALHOST.to_ip())),
                     port: None,
                     port_len: 0,
                 }),
@@ -168,7 +175,7 @@ mod tests {
                 Ok(PrePath {
                     scheme_len: 6,
                     host_len: 5,
-                    ip: Some(IPv6Address::LOCALHOST.to_ip()),
+                    ip: Some(CanonicalHost::new(IPv6Address::LOCALHOST.to_ip())),
                     port: None,
                     port_len: 0,
                 }),
@@ -178,7 +185,7 @@ mod tests {
                 Ok(PrePath {
                     scheme_len: 6,
                     host_len: 5,
-                    ip: Some(IPv6Address::LOCALHOST.to_ip()),
+                    ip: Some(CanonicalHost::new(IPv6Address::LOCALHOST.to_ip())),
                     port: Some(80),
                     port_len: 3,
                 }),
@@ -188,7 +195,7 @@ mod tests {
                 Ok(PrePath {
                     scheme_len: 6,
                     host_len: 5,
-                    ip: Some(IPv6Address::LOCALHOST.to_ip()),
+                    ip: Some(CanonicalHost::new(IPv6Address::LOCALHOST.to_ip())),
                     port: Some(80),
                     port_len: 3,
                 }),
@@ -223,6 +230,17 @@ mod tests {
                     port_len: 3,
                 }),
             ),
+            // An empty port has no value, but its ':' is still part of the parsed URL.
+            (
+                "scheme://host:/p",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 4,
+                    ip: None,
+                    port: None,
+                    port_len: 1,
+                }),
+            ),
             ("scheme://?query", Err(InvalidHost)),
             ("scheme://#frag", Err(InvalidHost)),
             // Every form of user info reports the same error.
@@ -240,6 +258,47 @@ mod tests {
                     ip: None,
                     port: None,
                     port_len: 0,
+                }),
+            ),
+            (
+                "scheme://host?a@b",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 4,
+                    ip: None,
+                    port: None,
+                    port_len: 0,
+                }),
+            ),
+            (
+                "scheme://host#a@b",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 4,
+                    ip: None,
+                    port: None,
+                    port_len: 0,
+                }),
+            ),
+            // The authority of a bracketed host ends at the '?' or '#' char too.
+            (
+                "scheme://[::1]?query",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 5,
+                    ip: Some(CanonicalHost::new(IPv6Address::LOCALHOST.to_ip())),
+                    port: None,
+                    port_len: 0,
+                }),
+            ),
+            (
+                "scheme://[::1]:80#frag",
+                Ok(PrePath {
+                    scheme_len: 6,
+                    host_len: 5,
+                    ip: Some(CanonicalHost::new(IPv6Address::LOCALHOST.to_ip())),
+                    port: Some(80),
+                    port_len: 3,
                 }),
             ),
         ];

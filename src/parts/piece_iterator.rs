@@ -1,6 +1,6 @@
 use std::iter::FusedIterator;
 
-/// Responsible for iterating over the separated pieces of a string.
+/// An iterator over the separated pieces of a string.
 #[must_use]
 #[derive(Clone, Debug)]
 pub(crate) struct PieceIterator<'a> {
