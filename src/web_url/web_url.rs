@@ -1,5 +1,7 @@
-use crate::parse::{Parts, PrePath, parse_parts};
+use crate::parse::{CanonicalHost, Parts, PrePath, parse_parts};
+use crate::web_url::{Offsets, Part};
 use address::IPAddress;
+use std::ops::Range;
 
 /// A web-based URL.
 ///
@@ -13,13 +15,9 @@ use address::IPAddress;
 #[derive(Clone)]
 pub struct WebUrl {
     pub(in crate::web_url) url: String,
-    pub(in crate::web_url) scheme_len: u32,
-    pub(in crate::web_url) host_end: u32,
+    pub(in crate::web_url) offsets: Offsets,
     pub(in crate::web_url) ip: Option<IPAddress>,
-    pub(in crate::web_url) port_end: u32,
     pub(in crate::web_url) port: Option<u16>,
-    pub(in crate::web_url) path_end: u32,
-    pub(in crate::web_url) query_end: u32,
 }
 
 impl WebUrl {
@@ -52,45 +50,32 @@ impl WebUrl {
     /// - The `url` parses & is already normalized. The scheme & host are lowercase, an IP address
     ///   host is in its canonical form, the path is present, starts with a '/', & has no
     ///   dot-segments, an empty port is absent along with its ':', & the port has no leading zeros.
-    /// - The offsets are non-decreasing & the last is within the `url`:
+    /// - The `offsets` are non-decreasing & the last is within the `url`:
     ///   `scheme_len <= host_end <= port_end <= path_end <= query_end <= url.len()`.
     /// - The `ip` is the parsed host when the host is an IP address & `None` when it is a domain.
     /// - The `port` is the parsed port & matches the `[host_end..port_end]` text.
-    #[allow(clippy::too_many_arguments)]
     pub(crate) unsafe fn new_unchecked(
         url: String,
-        scheme_len: u32,
-        host_end: u32,
+        offsets: Offsets,
         ip: Option<IPAddress>,
-        port_end: u32,
         port: Option<u16>,
-        path_end: u32,
-        query_end: u32,
     ) -> Self {
         let url: Self = Self {
             url,
-            scheme_len,
-            host_end,
+            offsets,
             ip,
-            port_end,
             port,
-            path_end,
-            query_end,
         };
 
         debug_assert!(
             url.is_consistent(),
             "web-url: WebUrl::new_unchecked was called with a URL that is not normalized or with \
-             offsets that do not describe it. The URL was {:?} with scheme_len={} host_end={} \
-             ip={:?} port_end={} port={:?} path_end={} query_end={}.",
+             offsets that do not describe it. The URL was {:?} with offsets={:?} ip={:?} \
+             port={:?}.",
             url.url,
-            scheme_len,
-            host_end,
+            offsets,
             ip,
-            port_end,
-            port,
-            path_end,
-            query_end
+            port
         );
 
         url
@@ -105,27 +90,9 @@ impl WebUrl {
     /// This is the `new_unchecked` contract. It re-parses the URL, so it is only used in
     /// `debug_assert`s; parsing is exactly the work `new_unchecked` exists to skip.
     pub(in crate::web_url) fn is_consistent(&self) -> bool {
-        // The offsets are checked before anything is sliced so that a bad offset returns false
-        // rather than panicking inside the check itself.
-        if self.url.len() > Self::MAX_LEN {
-            return false;
-        }
-        let scheme_len: usize = self.scheme_len as usize;
-        let host_end: usize = self.host_end as usize;
-        let port_end: usize = self.port_end as usize;
-        let path_end: usize = self.path_end as usize;
-        let query_end: usize = self.query_end as usize;
-        if scheme_len > host_end
-            || host_end > port_end
-            || port_end > path_end
-            || path_end > query_end
-            || query_end > self.url.len()
-        {
-            return false;
-        }
-
-        // The parser is the oracle for the URL string. A normalized URL must parse, must need no
-        // further normalization, & must already be lowercase through the host.
+        // The parser is the oracle for the URL string. A normalized URL must parse, which includes
+        // fitting `Self::MAX_LEN`, must need no further normalization, & must already be lowercase
+        // through the host.
         let parts: Parts = match parse_parts(self.url.as_str()) {
             Ok(parts) => parts,
             Err(_) => return false,
@@ -141,14 +108,28 @@ impl WebUrl {
             return false;
         }
 
-        // Every offset must match what the parser found.
-        scheme_len == pre_path.scheme_len
-            && host_end == pre_path.canonical_host_end()
-            && self.ip == pre_path.ip
-            && port_end == host_end + pre_path.canonical_port_len()
+        // Every offset & value must match what the parser found. The offsets need no bounds checks
+        // since they are only compared here, never used to slice.
+        self.offsets == parts.offsets()
+            && self.ip == pre_path.ip.as_ref().map(CanonicalHost::ip)
             && self.port == pre_path.port
-            && path_end == port_end + parts.path_plus.canonical_path_len
-            && query_end == path_end + parts.path_plus.query_len
+    }
+}
+
+impl WebUrl {
+    //! Splicing
+
+    /// Replaces the `part` of the URL string with the `insert`, shifting the parts after it.
+    ///
+    /// The `insert` must keep the URL normalized.
+    ///
+    /// # Panics
+    /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
+    pub(in crate::web_url) fn splice(&mut self, part: Part, insert: &str) {
+        let range: Range<usize> = self.offsets.range(part);
+        Self::check_len((self.url.len() - range.len()) + insert.len());
+        self.url.replace_range(range, insert);
+        self.offsets.resize(part, insert.len());
     }
 }
 

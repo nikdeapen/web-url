@@ -77,11 +77,11 @@ pub(crate) const fn is_valid_chars(chars: &[u8], exclude: &str) -> bool {
     true
 }
 
-/// Checks if the `segment` is valid. The `segment` must start with `start` & the chars in `exclude`
-/// are invalid.
-pub(crate) const fn is_valid_segment(segment: &str, start: u8, exclude: &str) -> bool {
-    let bytes: &[u8] = segment.as_bytes();
-    if bytes.is_empty() || bytes[0] != start {
+/// Checks if the `s` is valid. The `s` must start with the `prefix` & the chars in `exclude` are
+/// invalid.
+pub(crate) const fn is_valid_prefixed(s: &str, prefix: u8, exclude: &str) -> bool {
+    let bytes: &[u8] = s.as_bytes();
+    if bytes.is_empty() || bytes[0] != prefix {
         return false;
     }
 
@@ -92,7 +92,7 @@ pub(crate) const fn is_valid_segment(segment: &str, start: u8, exclude: &str) ->
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::is_valid::{is_valid_char, is_valid_chars, is_valid_segment};
+    use crate::parse::is_valid::{is_valid_char, is_valid_chars, is_valid_prefixed};
 
     #[test]
     fn valid_char() {
@@ -157,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn valid_segment() {
+    fn valid_prefixed() {
         let test_cases: &[(&str, u8, &str, bool)] = &[
             ("", b'/', "", false),
             ("/", b'/', "", true),
@@ -172,9 +172,9 @@ mod tests {
             ("/a%", b'/', "", false),
             ("#%zz", b'#', "", false),
         ];
-        for (segment, start, exclude, expected) in test_cases {
-            let result: bool = is_valid_segment(segment, *start, exclude);
-            assert_eq!(result, *expected, "segment={}", segment);
+        for (s, prefix, exclude, expected) in test_cases {
+            let result: bool = is_valid_prefixed(s, *prefix, exclude);
+            assert_eq!(result, *expected, "s={}", s);
         }
     }
 }

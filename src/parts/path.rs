@@ -21,7 +21,7 @@ impl<'a> Path<'a> {
     /// Checks if the `path` is valid.
     #[must_use]
     pub const fn is_valid(path: &str) -> bool {
-        parse::is_valid_segment(path, b'/', "?")
+        parse::is_valid_prefixed(path, b'/', "?")
     }
 }
 

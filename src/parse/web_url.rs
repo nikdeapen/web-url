@@ -10,11 +10,16 @@ impl FromStr for WebUrl {
 
         // The URL is validated before it is allocated, so invalid input never allocates & the
         // normalized length is known exactly.
-        let mut url: String = String::with_capacity(parts.normalized_len(s.len()));
-        write_normalized(s, parts, &mut url);
+        let url: String = if parts.is_normalized() {
+            // The string is already normalized so it is copied whole rather than rebuilt.
+            String::from(s)
+        } else {
+            let mut url: String = String::with_capacity(parts.normalized_len(s.len()));
+            write_normalized(s, parts, &mut url);
+            url
+        };
 
-        unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }
-            .map_err(|(error, _)| error)
+        Ok(unsafe { finalize_web_url(url, parts) })
     }
 }
 
@@ -45,8 +50,7 @@ impl TryFrom<String> for WebUrl {
             url
         };
 
-        unsafe { finalize_web_url(url, parts.pre_path, parts.path_plus) }
-            .map_err(|(error, url)| InvalidUrlError::new(error, url))
+        Ok(unsafe { finalize_web_url(url, parts) })
     }
 }
 
@@ -110,6 +114,11 @@ mod tests {
             let result: Result<&str, ParseError> =
                 url.as_ref().map(WebUrl::as_str).map_err(|error| *error);
             assert_eq!(result, *expected, "from_str input={}", input);
+
+            let url: Result<WebUrl, ParseError> = WebUrl::try_from(*input);
+            let result: Result<&str, ParseError> =
+                url.as_ref().map(WebUrl::as_str).map_err(|error| *error);
+            assert_eq!(result, *expected, "try_from(&str) input={}", input);
 
             let url: Result<WebUrl, InvalidUrlError> = WebUrl::try_from(input.to_string());
             let result: Result<&str, ParseError> =

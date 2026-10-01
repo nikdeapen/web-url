@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{WebUrl, parse};
 
 impl WebUrl {
@@ -31,20 +32,8 @@ impl WebUrl {
             None => "",
         };
 
-        let start: usize = self.host_end as usize;
-        let end: usize = self.port_end as usize;
-
-        Self::check_len((self.url.len() - (end - start)) + insert.len());
-
-        let path_len: u32 = self.path_end - self.port_end;
-        let query_len: u32 = self.query_end - self.path_end;
-
-        self.url.replace_range(start..end, insert);
-
+        self.splice(Part::Port, insert);
         self.port = port;
-        self.port_end = (start + insert.len()) as u32;
-        self.path_end = self.port_end + path_len;
-        self.query_end = self.path_end + query_len;
 
         debug_assert!(self.is_consistent());
     }

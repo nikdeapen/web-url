@@ -1,6 +1,7 @@
 use crate::parse::port_decimal_len;
 
 /// The canonical port string of a port, written to a stack buffer.
+#[must_use]
 pub(crate) struct CanonicalPort {
     buffer: [u8; Self::MAX_LEN],
     len: usize,
@@ -43,10 +44,11 @@ impl CanonicalPort {
     //! Properties
 
     /// Gets the canonical port string.
-    pub(crate) fn as_str(&self) -> &str {
-        debug_assert!(std::str::from_utf8(&self.buffer[..self.len]).is_ok());
+    pub(crate) const fn as_str(&self) -> &str {
+        let (bytes, _) = self.buffer.split_at(self.len);
+        debug_assert!(std::str::from_utf8(bytes).is_ok());
 
-        unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
+        unsafe { std::str::from_utf8_unchecked(bytes) }
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{WebUrl, parse};
 use address::{DomainRef, HostRef, IPAddress};
 
@@ -13,21 +14,12 @@ impl WebUrl {
         }
     }
 
-    /// Gets the host string.
-    ///
-    /// This will be valid:
-    /// - If the host is a domain it will be lowercase.
-    /// - If the host is an IP address it will be in its canonical form.
-    /// - If the host is an IPv6 address it will include the '[]' brackets.
-    const fn host_str(&self) -> &str {
-        let start: usize = self.host_start() as usize;
-        let end: usize = self.host_end as usize;
+    /// Gets the host string. (an IPv6 host includes its '[]' brackets)
+    #[must_use]
+    pub const fn host_str(&self) -> &str {
+        let start: usize = self.offsets.host_start() as usize;
+        let end: usize = self.offsets.host_end as usize;
         self.url.as_str().split_at(end).0.split_at(start).1
-    }
-
-    /// Gets the index of the host. (just past the "://" that follows the scheme)
-    pub(in crate::web_url) const fn host_start(&self) -> u32 {
-        self.scheme_len + 3
     }
 }
 
@@ -50,23 +42,8 @@ impl WebUrl {
             }
         };
 
-        let start: usize = self.host_start() as usize;
-        let end: usize = self.host_end as usize;
-
-        Self::check_len((self.url.len() - (end - start)) + insert.len());
-
-        let port_len: u32 = self.port_end - self.host_end;
-        let path_len: u32 = self.path_end - self.port_end;
-        let query_len: u32 = self.query_end - self.path_end;
-
+        self.splice(Part::Host, insert);
         self.ip = ip;
-
-        self.url.replace_range(start..end, insert);
-
-        self.host_end = (start + insert.len()) as u32;
-        self.port_end = self.host_end + port_len;
-        self.path_end = self.port_end + path_len;
-        self.query_end = self.path_end + query_len;
 
         debug_assert!(self.is_consistent());
     }

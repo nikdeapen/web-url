@@ -21,7 +21,7 @@ impl<'a> Query<'a> {
     /// Checks if the `query` is valid.
     #[must_use]
     pub const fn is_valid(query: &str) -> bool {
-        parse::is_valid_segment(query, b'?', "")
+        parse::is_valid_prefixed(query, b'?', "")
     }
 }
 

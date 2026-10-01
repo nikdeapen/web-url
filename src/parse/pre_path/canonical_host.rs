@@ -1,8 +1,11 @@
 use address::IPAddress;
-use std::fmt::Write;
+use std::fmt::{Debug, Formatter, Write};
 
-/// The canonical host string of an IP address, written to a stack buffer.
+/// An IP address & its canonical host string, written to a stack buffer.
+#[must_use]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub(crate) struct CanonicalHost {
+    ip: IPAddress,
     buffer: [u8; Self::MAX_LEN],
     len: usize,
 }
@@ -23,6 +26,7 @@ impl CanonicalHost {
     /// display, so it is lowercase & its zero groups are elided.
     pub(crate) fn new(ip: IPAddress) -> Self {
         let mut host: Self = Self {
+            ip,
             buffer: [0; Self::MAX_LEN],
             len: 0,
         };
@@ -43,11 +47,23 @@ impl CanonicalHost {
 impl CanonicalHost {
     //! Properties
 
-    /// Gets the canonical host string.
-    pub(crate) fn as_str(&self) -> &str {
-        debug_assert!(std::str::from_utf8(&self.buffer[..self.len]).is_ok());
+    /// Gets the IP address.
+    pub(crate) const fn ip(&self) -> IPAddress {
+        self.ip
+    }
 
-        unsafe { std::str::from_utf8_unchecked(&self.buffer[..self.len]) }
+    /// Gets the canonical host string.
+    pub(crate) const fn as_str(&self) -> &str {
+        let (bytes, _) = self.buffer.split_at(self.len);
+        debug_assert!(std::str::from_utf8(bytes).is_ok());
+
+        unsafe { std::str::from_utf8_unchecked(bytes) }
+    }
+}
+
+impl Debug for CanonicalHost {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(self.as_str(), f)
     }
 }
 
@@ -82,6 +98,7 @@ mod tests {
             let ip: IPv6Address = IPv6Address::from_str(ip).unwrap();
             let canonical: CanonicalHost = CanonicalHost::new(ip.to_ip());
             assert_eq!(canonical.as_str(), *expected, "ip={}", ip);
+            assert_eq!(canonical.ip(), ip.to_ip(), "ip={}", ip);
         }
 
         let canonical: CanonicalHost = CanonicalHost::new(IPv4Address::LOCALHOST.to_ip());

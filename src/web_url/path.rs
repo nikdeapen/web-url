@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{Path, WebUrl, parse};
 
 impl WebUrl {
@@ -12,8 +13,8 @@ impl WebUrl {
     ///
     /// This will be a valid path starting with a '/' & having no dot-segments.
     const fn path_str(&self) -> &str {
-        let start: usize = self.port_end as usize;
-        let end: usize = self.path_end as usize;
+        let start: usize = self.offsets.port_end as usize;
+        let end: usize = self.offsets.path_end as usize;
         self.url.as_str().split_at(end).0.split_at(start).1
     }
 }
@@ -26,21 +27,21 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn set_path(&mut self, path: Path) {
-        // The path is written with the dot-segments removed, which is the normalized form.
-        let mut insert: String = String::with_capacity(parse::canonical_path_len(path.as_str()));
-        parse::write_canonical_path(path.as_str(), &mut insert);
+        // The path is written with the dot-segments removed, which is the normalized form. Removing
+        // a dot-segment always shortens the path, so a path already of its canonical length has
+        // none & is spliced in directly without building a copy.
+        let path: &str = path.as_str();
+        let canonical_len: usize = parse::canonical_path_len(path);
+        let mut canonical: String = String::new();
+        let insert: &str = if canonical_len == path.len() {
+            path
+        } else {
+            canonical.reserve_exact(canonical_len);
+            parse::write_canonical_path(path, &mut canonical);
+            canonical.as_str()
+        };
 
-        let start: usize = self.port_end as usize;
-        let end: usize = self.path_end as usize;
-
-        Self::check_len((self.url.len() - (end - start)) + insert.len());
-
-        let query_len: u32 = self.query_end - self.path_end;
-
-        self.url.replace_range(start..end, insert.as_str());
-
-        self.path_end = (start + insert.len()) as u32;
-        self.query_end = self.path_end + query_len;
+        self.splice(Part::Path, insert);
 
         debug_assert!(self.is_consistent());
     }

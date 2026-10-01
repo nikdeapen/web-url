@@ -18,7 +18,7 @@ impl WebUrl {
     ///
     /// This will be a valid fragment starting with a '#' or empty.
     const fn fragment_str(&self) -> &str {
-        let start: usize = self.query_end as usize;
+        let start: usize = self.offsets.query_end as usize;
         self.url.as_str().split_at(start).1
     }
 }
@@ -32,7 +32,7 @@ impl WebUrl {
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn set_fragment<'a, F: Into<Option<Fragment<'a>>>>(&mut self, fragment: F) {
         let fragment: Option<Fragment> = fragment.into();
-        let base_len: usize = self.query_end as usize;
+        let base_len: usize = self.offsets.query_end as usize;
         Self::check_len(base_len + fragment.map(|f| f.as_str().len()).unwrap_or(0));
         self.url.truncate(base_len);
         if let Some(fragment) = fragment {

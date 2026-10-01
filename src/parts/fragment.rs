@@ -21,7 +21,7 @@ impl<'a> Fragment<'a> {
     /// Checks if the `fragment` is valid.
     #[must_use]
     pub const fn is_valid(fragment: &str) -> bool {
-        parse::is_valid_segment(fragment, b'#', "")
+        parse::is_valid_prefixed(fragment, b'#', "")
     }
 }
 

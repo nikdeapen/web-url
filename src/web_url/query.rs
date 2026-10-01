@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{Query, WebUrl};
 
 impl WebUrl {
@@ -18,14 +19,9 @@ impl WebUrl {
     ///
     /// This will be a valid query string starting with a '?' or it will be empty.
     const fn query_str(&self) -> &str {
-        let start: usize = self.path_end as usize;
-        let end: usize = self.query_end as usize;
+        let start: usize = self.offsets.path_end as usize;
+        let end: usize = self.offsets.query_end as usize;
         self.url.as_str().split_at(end).0.split_at(start).1
-    }
-
-    /// Gets the length of the query string. (including the '?' prefix)
-    pub(in crate::web_url) const fn query_len(&self) -> usize {
-        (self.query_end - self.path_end) as usize
     }
 }
 
@@ -55,12 +51,8 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub(in crate::web_url) fn set_query_str(&mut self, query: &str) {
-        let start: usize = self.path_end as usize;
-        let end: usize = self.query_end as usize;
+        self.splice(Part::Query, query);
 
-        Self::check_len((self.url.len() - self.query_len()) + query.len());
-        self.url.replace_range(start..end, query);
-        self.query_end = (start + query.len()) as u32;
         debug_assert!(self.is_consistent());
     }
 }

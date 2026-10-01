@@ -1,3 +1,4 @@
+use crate::web_url::Part;
 use crate::{Scheme, WebUrl};
 
 impl WebUrl {
@@ -12,7 +13,7 @@ impl WebUrl {
     ///
     /// This will be a valid lowercase scheme string.
     const fn scheme_str(&self) -> &str {
-        let end: usize = self.scheme_len as usize;
+        let end: usize = self.offsets.scheme_len as usize;
         self.url.as_str().split_at(end).0
     }
 }
@@ -26,24 +27,7 @@ impl WebUrl {
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn set_scheme(&mut self, scheme: Scheme) {
         // A scheme is always lowercase, which is the normalized form.
-        let insert: &str = scheme.as_str();
-
-        let end: usize = self.scheme_len as usize;
-
-        Self::check_len((self.url.len() - end) + insert.len());
-
-        let host_len: u32 = self.host_end - self.host_start();
-        let port_len: u32 = self.port_end - self.host_end;
-        let path_len: u32 = self.path_end - self.port_end;
-        let query_len: u32 = self.query_end - self.path_end;
-
-        self.url.replace_range(..end, insert);
-
-        self.scheme_len = insert.len() as u32;
-        self.host_end = self.host_start() + host_len;
-        self.port_end = self.host_end + port_len;
-        self.path_end = self.port_end + path_len;
-        self.query_end = self.path_end + query_len;
+        self.splice(Part::Scheme, scheme.as_str());
 
         debug_assert!(self.is_consistent());
     }

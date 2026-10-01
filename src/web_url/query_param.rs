@@ -10,7 +10,7 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn add_param(&mut self, param: QueryParam) {
-        let separator: char = if self.path_end == self.query_end {
+        let separator: char = if self.offsets.path_end == self.offsets.query_end {
             '?'
         } else {
             '&'
@@ -18,11 +18,17 @@ impl WebUrl {
 
         let added: usize = Self::push_param_len(param);
         Self::check_len(self.url.len() + added);
-        let mut insert: String = String::with_capacity(added);
-        Self::push_param(&mut insert, separator, param);
-        let at: usize = self.query_end as usize;
-        self.url.insert_str(at, insert.as_str());
-        self.query_end = (at + insert.len()) as u32;
+        let at: usize = self.offsets.query_end as usize;
+        if at == self.url.len() {
+            // The URL has no fragment, so the param is appended in place without building a copy.
+            self.url.reserve(added);
+            Self::push_param(&mut self.url, separator, param);
+        } else {
+            let mut insert: String = String::with_capacity(added);
+            Self::push_param(&mut insert, separator, param);
+            self.url.insert_str(at, insert.as_str());
+        }
+        self.offsets.query_end = (at + added) as u32;
 
         debug_assert!(self.is_consistent());
     }
@@ -40,22 +46,7 @@ impl WebUrl {
     ///
     /// Removing every param removes the query along with its '?'.
     pub fn remove_params(&mut self, name: &str) -> usize {
-        if !self.query().into_iter().flatten().any(|p| p.name() == name) {
-            return 0;
-        }
-
-        let mut removed: usize = 0;
-        let mut query: String = String::with_capacity(self.query_len());
-        for param in self.query().into_iter().flatten() {
-            if param.name() == name {
-                removed += 1;
-            } else {
-                Self::push_query_param(&mut query, param);
-            }
-        }
-        self.set_query_str(query.as_str());
-
-        removed
+        self.rebuild_query(name, None)
     }
 
     /// Removes every query param with the `name`.
@@ -72,25 +63,10 @@ impl WebUrl {
     /// # Panics
     /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
     pub fn replace_params(&mut self, param: QueryParam) -> usize {
-        let mut replaced: usize = 0;
-        let mut query: String = String::with_capacity(self.query_len());
-        for existing in self.query().into_iter().flatten() {
-            if existing.name() == param.name() {
-                replaced += 1;
-                if replaced == 1 {
-                    Self::push_query_param(&mut query, param);
-                }
-            } else {
-                Self::push_query_param(&mut query, existing);
-            }
-        }
-
+        let replaced: usize = self.rebuild_query(param.name(), Some(param));
         if replaced == 0 {
             self.add_param(param);
-        } else {
-            self.set_query_str(query.as_str());
         }
-
         replaced
     }
 
@@ -101,6 +77,48 @@ impl WebUrl {
     pub fn with_replaced_params(mut self, param: QueryParam) -> Self {
         self.replace_params(param);
         self
+    }
+
+    /// Removes every query param with the `name`, putting the `replacement` in place of the first,
+    /// & gets the number of params with the `name`.
+    ///
+    /// The query is left untouched when no param has the `name`.
+    ///
+    /// # Panics
+    /// Panics if the resulting URL would exceed `WebUrl::MAX_LEN`. The URL is left unmodified.
+    fn rebuild_query(&mut self, name: &str, replacement: Option<QueryParam>) -> usize {
+        let Some(query) = self.query() else {
+            return 0;
+        };
+
+        // The query is rebuilt in one pass, starting only once a param has the `name`. The params
+        // before it are unchanged, so they are copied whole: each param spans `push_param_len`
+        // bytes of the query, counting its '?' or '&' separator.
+        let mut matched: usize = 0;
+        let mut rebuilt: String = String::new();
+        let mut separator: usize = 0;
+        for param in query.params() {
+            if param.name() == name {
+                if matched == 0 {
+                    let max_len: usize =
+                        query.as_str().len() + replacement.map_or(0, Self::push_param_len);
+                    rebuilt.reserve(max_len);
+                    rebuilt.push_str(&query.as_str()[..separator]);
+                    if let Some(replacement) = replacement {
+                        Self::push_query_param(&mut rebuilt, replacement);
+                    }
+                }
+                matched += 1;
+            } else if matched != 0 {
+                Self::push_query_param(&mut rebuilt, param);
+            }
+            separator += Self::push_param_len(param);
+        }
+
+        if matched != 0 {
+            self.set_query_str(rebuilt.as_str());
+        }
+        matched
     }
 
     /// Appends the `separator` & the `param` to the `out` string.
@@ -180,6 +198,12 @@ mod tests {
             ("https://host/p?a=1", "a", 1, "https://host/p"),
             ("https://host/p?a=1&b=2", "a", 1, "https://host/p?b=2"),
             ("https://host/p?a=1&b=2&a=3", "a", 2, "https://host/p?b=2"),
+            (
+                "https://host/p?b=2&c=3&a=1&d=4&a=5",
+                "a",
+                2,
+                "https://host/p?b=2&c=3&d=4",
+            ),
             ("https://host/p?a&a=", "a", 2, "https://host/p"),
             ("https://host/p?a=1&b=2#f", "a", 1, "https://host/p?b=2#f"),
             ("https://host/p?a=1#f", "a", 1, "https://host/p#f"),
@@ -218,6 +242,12 @@ mod tests {
         let test_cases: &[(&str, &str, usize, &str)] = &[
             ("https://host/p?a=1", "a=9", 1, "https://host/p?a=9"),
             ("https://host/p?b=2&a=1", "a=9", 1, "https://host/p?b=2&a=9"),
+            (
+                "https://host/p?b=2&c=3&a=1&d=4&a=5",
+                "a=9",
+                2,
+                "https://host/p?b=2&c=3&a=9&d=4",
+            ),
             (
                 "https://host/p?a=1&b=2&a=3",
                 "a=9",

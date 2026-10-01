@@ -5,6 +5,11 @@
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
 pub(crate) fn canonical_path_len(path: &str) -> usize {
+    // A dot-segment always follows a '/', so a path without "/." is already canonical.
+    if !path.contains("/.") {
+        return path.len();
+    }
+
     // The segments are scanned in reverse so the segments a ".." removes are known without a stack:
     // a ".." raises the skip count & the next kept segment lowers it.
     let mut len: usize = 0;
@@ -33,6 +38,12 @@ pub(crate) fn canonical_path_len(path: &str) -> usize {
 /// # RFC 3986
 /// <https://www.rfc-editor.org/rfc/rfc3986#section-5.2.4>
 pub(crate) fn write_canonical_path(path: &str, url: &mut String) {
+    // A dot-segment always follows a '/', so a path without "/." is already canonical.
+    if !path.contains("/.") {
+        url.push_str(path);
+        return;
+    }
+
     // The segments are written as they are scanned & a ".." truncates the last written segment, so
     // the written path is the segment stack. The truncation never reaches past `start`, which is
     // what keeps a leading ".." from escaping the path.
